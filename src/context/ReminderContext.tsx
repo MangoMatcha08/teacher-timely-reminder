@@ -52,6 +52,7 @@ export interface Reminder {
   createdAt: Date;
   priority: ReminderPriority;
   completed?: boolean;
+  termId?: string; // New: term identifier
 }
 
 export interface SchoolHours {
@@ -60,11 +61,30 @@ export interface SchoolHours {
   teacherArrivalTime: string;
 }
 
+export interface Term {
+  id: string;
+  name: string;
+  startDate: string; // ISO date string
+  endDate: string;   // ISO date string
+}
+
 interface SchoolSetup {
+  termId: string;
+  terms: Term[];
   schoolDays: DayOfWeek[];
   periods: Period[];
   schoolHours: SchoolHours;
   categories: string[];
+  iepMeetings?: {
+    enabled: boolean;
+    beforeSchool?: boolean;
+    afterSchool?: boolean;
+    specificTimes?: {
+      day: DayOfWeek;
+      startTime: string;
+      endTime: string;
+    }[];
+  };
 }
 
 interface ReminderContextType {
@@ -82,6 +102,8 @@ interface ReminderContextType {
     type?: ReminderType;
     completed?: boolean;
   }) => Reminder[];
+  completedTasks: number;
+  totalTasks: number;
 }
 
 const ReminderContext = createContext<ReminderContextType>({
@@ -94,6 +116,8 @@ const ReminderContext = createContext<ReminderContextType>({
   todaysReminders: [],
   toggleReminderComplete: () => {},
   filteredReminders: () => [],
+  completedTasks: 0,
+  totalTasks: 0
 });
 
 export const useReminders = () => useContext(ReminderContext);
@@ -103,6 +127,20 @@ const getTodayDayCode = (): DayOfWeek => {
   const days: DayOfWeek[] = ["M", "T", "W", "Th", "F"];
   const dayIndex = new Date().getDay() - 1; // 0 = Sunday, so -1 gives Monday as 0
   return dayIndex >= 0 && dayIndex < 5 ? days[dayIndex] : "M"; // Default to Monday if weekend
+};
+
+// Create a default term
+const createDefaultTerm = (): Term => {
+  const now = new Date();
+  const endDate = new Date();
+  endDate.setMonth(now.getMonth() + 4); // Roughly a semester
+  
+  return {
+    id: "term_default",
+    name: "Current Term",
+    startDate: now.toISOString(),
+    endDate: endDate.toISOString()
+  };
 };
 
 export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -123,7 +161,8 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           timing: r.timing || "During Period",
           recurrence: r.recurrence || "Once",
           priority: r.priority || "Medium",
-          completed: r.completed || false
+          completed: r.completed || false,
+          termId: r.termId || "term_default"
         }));
         setReminders(migratedReminders);
       } catch (e) {
@@ -135,9 +174,12 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (storedSchoolSetup) {
       try {
         const parsed = JSON.parse(storedSchoolSetup);
-        // Handle migration of old school setup to new format with categories
+        // Handle migration of old school setup to new format with terms
+        const defaultTerm = createDefaultTerm();
         setSchoolSetup({
           ...parsed,
+          termId: parsed.termId || defaultTerm.id,
+          terms: parsed.terms || [defaultTerm],
           categories: parsed.categories || [
             "IEP meetings",
             "Materials/Set up",
@@ -145,7 +187,10 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             "School events",
             "Instruction",
             "Administrative tasks"
-          ]
+          ],
+          iepMeetings: parsed.iepMeetings || {
+            enabled: false
+          }
         });
       } catch (e) {
         console.error("Failed to parse school setup from localStorage", e);
@@ -185,7 +230,8 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       days: adjustedDays,
       id: `rem_${Math.random().toString(36).substring(2, 9)}`,
       createdAt: new Date(),
-      completed: false
+      completed: false,
+      termId: schoolSetup?.termId || "term_default"
     };
     
     setReminders((prev) => [...prev, newReminder]);
@@ -273,8 +319,13 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Get today's reminders
   const todayDayCode = getTodayDayCode();
   const todaysReminders = reminders.filter((reminder) => 
-    reminder.days.includes(todayDayCode)
+    reminder.days.includes(todayDayCode) &&
+    (!schoolSetup?.termId || reminder.termId === schoolSetup.termId)
   );
+  
+  // Calculate total and completed tasks
+  const completedTasks = todaysReminders.filter(r => r.completed).length;
+  const totalTasks = todaysReminders.length;
   
   return (
     <ReminderContext.Provider
@@ -288,6 +339,8 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         todaysReminders,
         toggleReminderComplete,
         filteredReminders,
+        completedTasks,
+        totalTasks
       }}
     >
       {children}
