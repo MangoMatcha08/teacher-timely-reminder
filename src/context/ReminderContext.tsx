@@ -97,6 +97,7 @@ interface ReminderContextType {
   totalTasks: number;
   syncWithCloud: () => Promise<void>;
   isOnline: boolean;
+  fetchReminders: () => void;
 }
 
 const ReminderContext = createContext<ReminderContextType>({
@@ -112,7 +113,8 @@ const ReminderContext = createContext<ReminderContextType>({
   completedTasks: 0,
   totalTasks: 0,
   syncWithCloud: async () => {},
-  isOnline: false
+  isOnline: false,
+  fetchReminders: () => {}
 });
 
 export const useReminders = () => useContext(ReminderContext);
@@ -394,6 +396,12 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
   
+  const fetchReminders = () => {
+    if (user && isAuthenticated) {
+      loadDataFromFirebase();
+    }
+  };
+  
   const todayDayCode = getTodayDayCode();
   const todaysReminders = reminders.filter((reminder) => 
     reminder.days.includes(todayDayCode) &&
@@ -418,7 +426,8 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         completedTasks,
         totalTasks,
         syncWithCloud,
-        isOnline
+        isOnline,
+        fetchReminders
       }}
     >
       {children}

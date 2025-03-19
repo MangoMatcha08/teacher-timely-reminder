@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Settings2 } from "lucide-react";
@@ -11,15 +12,16 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/shared/Button";
+import Button from "@/components/shared/Button";
 
 const Dashboard = () => {
-  const { schoolSetup, reminders, fetchReminders } = useReminders();
+  const { schoolSetup, reminders } = useReminders();
   const [isQuickCreateOpen, setIsQuickCreateOpen] = React.useState(false);
   
   const handleQuickCreateComplete = () => {
     setIsQuickCreateOpen(false);
-    fetchReminders();
+    // No need to call fetchReminders as we'll use the context state
+    toast.success("Reminder created successfully");
   };
   
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
