@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 interface User {
@@ -15,6 +14,7 @@ interface AuthContextType {
   logout: () => void;
   setCompleteOnboarding: () => void;
   hasCompletedOnboarding: boolean;
+  resetOnboarding: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   setCompleteOnboarding: () => {},
   hasCompletedOnboarding: false,
+  resetOnboarding: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -70,6 +71,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("onboarding_completed", "true");
   };
 
+  const resetOnboarding = () => {
+    // Clear onboarding status but keep user logged in
+    setHasCompletedOnboarding(false);
+    localStorage.removeItem("onboarding_completed");
+    
+    // Also clear any school setup data that might be in localStorage
+    localStorage.removeItem("school_setup");
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -80,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         setCompleteOnboarding,
         hasCompletedOnboarding,
+        resetOnboarding,
       }}
     >
       {children}
