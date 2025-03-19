@@ -1,5 +1,14 @@
-
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useReminders, DayOfWeek, Period, PeriodSchedule, Term } from "@/context/ReminderContext";
@@ -26,7 +35,6 @@ import {
 } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 
-// Helper to create initial period schedule
 const createInitialSchedule = (day: DayOfWeek, startTime = "9:00 AM", endTime = "9:50 AM"): PeriodSchedule => ({
   dayOfWeek: day,
   startTime,
@@ -37,13 +45,12 @@ const createDefaultTerm = (schoolYear: string, termType: string, termName: strin
   const now = new Date();
   const endDate = new Date();
   
-  // Set end date based on term type
   if (termType === "quarter") {
-    endDate.setMonth(now.getMonth() + 3); // Quarter (3 months)
+    endDate.setMonth(now.getMonth() + 3);
   } else if (termType === "semester") {
-    endDate.setMonth(now.getMonth() + 5); // Semester (5 months)
+    endDate.setMonth(now.getMonth() + 5);
   } else {
-    endDate.setMonth(now.getMonth() + 10); // Full year (10 months)
+    endDate.setMonth(now.getMonth() + 10);
   }
   
   return {
@@ -65,24 +72,20 @@ const Onboarding: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
   
-  // Updated term state
   const [schoolYear, setSchoolYear] = useState(`${new Date().getFullYear()}-${new Date().getFullYear() + 1}`);
   const [termType, setTermType] = useState<TermType>("semester");
   const [termName, setTermName] = useState("Fall Semester");
   
-  // School hours state
   const [schoolStart, setSchoolStart] = useState("8:00 AM");
   const [schoolEnd, setSchoolEnd] = useState("3:00 PM");
   const [teacherArrival, setTeacherArrival] = useState("7:30 AM");
   
-  // IEP Meeting settings
   const [iepMeetingsEnabled, setIepMeetingsEnabled] = useState(false);
   const [iepBeforeSchool, setIepBeforeSchool] = useState(false);
   const [iepBeforeSchoolTime, setIepBeforeSchoolTime] = useState("7:00 AM");
   const [iepAfterSchool, setIepAfterSchool] = useState(false);
   const [iepAfterSchoolTime, setIepAfterSchoolTime] = useState("3:30 PM");
   
-  // Categories state
   const [categories, setCategories] = useState([
     "Materials/Set up",
     "Student support",
@@ -91,10 +94,10 @@ const Onboarding: React.FC = () => {
     "Administrative tasks"
   ]);
   
-  // Custom day schedule visibility controls
   const [customScheduleVisibility, setCustomScheduleVisibility] = useState<Record<string, boolean>>({});
   
-  // Toggle custom schedule visibility for a specific period
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  
   const toggleCustomScheduleVisibility = (periodId: string) => {
     setCustomScheduleVisibility(prev => ({
       ...prev,
@@ -102,7 +105,6 @@ const Onboarding: React.FC = () => {
     }));
   };
   
-  // Updated periods state with day-specific schedules
   const [periods, setPeriods] = useState<Period[]>([
     { 
       id: "period-1", 
@@ -116,7 +118,6 @@ const Onboarding: React.FC = () => {
     },
   ]);
   
-  // Days of the week data
   const days: { label: string; value: DayOfWeek }[] = [
     { label: "M", value: "M" },
     { label: "T", value: "T" },
@@ -125,12 +126,10 @@ const Onboarding: React.FC = () => {
     { label: "F", value: "F" },
   ];
   
-  // Toggle selected day
   const toggleDay = (day: DayOfWeek) => {
     if (selectedDays.includes(day)) {
       setSelectedDays(selectedDays.filter((d) => d !== day));
       
-      // Remove this day from all periods' schedules
       setPeriods(periods.map(period => ({
         ...period,
         schedules: period.schedules.filter(s => s.dayOfWeek !== day)
@@ -138,10 +137,8 @@ const Onboarding: React.FC = () => {
     } else {
       setSelectedDays([...selectedDays, day]);
       
-      // Add default schedules for this day to all periods
       setPeriods(periods.map(period => {
         if (period.schedules.length > 0) {
-          // Use the first schedule's times as default
           const defaultSchedule = period.schedules[0];
           return {
             ...period,
@@ -155,7 +152,6 @@ const Onboarding: React.FC = () => {
             ]
           };
         } else {
-          // No schedules yet, add a default one
           return {
             ...period,
             schedules: [{
@@ -169,12 +165,9 @@ const Onboarding: React.FC = () => {
     }
   };
   
-  // Handle period name change - always format as "Period X"
   const handlePeriodNameChange = (id: string, rawName: string) => {
-    // Extract number if possible, otherwise use the raw name
     let formattedName = rawName;
     if (!rawName.toLowerCase().startsWith("period")) {
-      // Try to extract a number
       const numberMatch = rawName.match(/\d+/);
       if (numberMatch) {
         formattedName = `Period ${numberMatch[0]}`;
@@ -186,7 +179,6 @@ const Onboarding: React.FC = () => {
     setPeriods(periods.map((p) => (p.id === id ? { ...p, name: formattedName } : p)));
   };
   
-  // Handle period schedule time changes
   const handleScheduleStartTimeChange = (periodId: string, day: DayOfWeek, time: string) => {
     setPeriods(periods.map(period => {
       if (period.id !== periodId) return period;
@@ -194,10 +186,8 @@ const Onboarding: React.FC = () => {
       const scheduleIndex = period.schedules.findIndex(s => s.dayOfWeek === day);
       
       if (scheduleIndex === -1) {
-        // This shouldn't happen if they use the UI correctly
         return period;
       } else {
-        // Update existing schedule
         const updatedSchedules = [...period.schedules];
         updatedSchedules[scheduleIndex] = {
           ...updatedSchedules[scheduleIndex],
@@ -219,10 +209,8 @@ const Onboarding: React.FC = () => {
       const scheduleIndex = period.schedules.findIndex(s => s.dayOfWeek === day);
       
       if (scheduleIndex === -1) {
-        // This shouldn't happen if they use the UI correctly
         return period;
       } else {
-        // Update existing schedule
         const updatedSchedules = [...period.schedules];
         updatedSchedules[scheduleIndex] = {
           ...updatedSchedules[scheduleIndex],
@@ -237,7 +225,6 @@ const Onboarding: React.FC = () => {
     }));
   };
   
-  // Apply the same schedule to multiple days
   const applyScheduleToAllDays = (periodId: string, sourceDayOfWeek: DayOfWeek) => {
     const period = periods.find(p => p.id === periodId);
     if (!period) return;
@@ -248,13 +235,10 @@ const Onboarding: React.FC = () => {
     setPeriods(periods.map(p => {
       if (p.id !== periodId) return p;
       
-      // Create schedules for all days this period occurs on
       const updatedSchedules = p.schedules.map(schedule => {
         if (schedule.dayOfWeek === sourceDayOfWeek) {
-          // Keep the source schedule as is
           return schedule;
         } else {
-          // Update other schedules with the same time
           return {
             ...schedule,
             startTime: sourceSchedule.startTime,
@@ -272,7 +256,6 @@ const Onboarding: React.FC = () => {
     toast.success("Schedule applied to all days");
   };
   
-  // Add a new period
   const addPeriod = () => {
     const newId = `period-${periods.length + 1}`;
     const newPeriod: Period = {
@@ -281,9 +264,7 @@ const Onboarding: React.FC = () => {
       schedules: []
     };
     
-    // Add schedules for all selected days
     if (selectedDays.length > 0 && periods.length > 0 && periods[0].schedules.length > 0) {
-      // Use the first period's schedules as a template
       const templatePeriod = periods[0];
       newPeriod.schedules = selectedDays.map(day => {
         const templateSchedule = templatePeriod.schedules.find(s => s.dayOfWeek === day);
@@ -292,14 +273,12 @@ const Onboarding: React.FC = () => {
           : createInitialSchedule(day);
       });
     } else {
-      // No template available, create default schedules
       newPeriod.schedules = selectedDays.map(day => createInitialSchedule(day));
     }
     
     setPeriods([...periods, newPeriod]);
   };
   
-  // Remove a period
   const removePeriod = (id: string) => {
     if (periods.length > 1) {
       setPeriods(periods.filter((p) => p.id !== id));
@@ -308,19 +287,16 @@ const Onboarding: React.FC = () => {
     }
   };
   
-  // Add a new category
   const addCategory = () => {
     setCategories([...categories, `Category ${categories.length + 1}`]);
   };
   
-  // Update a category
   const updateCategory = (index: number, value: string) => {
     const newCategories = [...categories];
     newCategories[index] = value;
     setCategories(newCategories);
   };
   
-  // Remove a category
   const removeCategory = (index: number) => {
     if (categories.length > 1) {
       setCategories(categories.filter((_, i) => i !== index));
@@ -329,16 +305,13 @@ const Onboarding: React.FC = () => {
     }
   };
   
-  // Toggle custom schedule for a specific day and period
   const toggleCustomSchedule = (periodId: string, day: DayOfWeek, isCustom: boolean) => {
     const period = periods.find(p => p.id === periodId);
     if (!period) return;
     
     if (isCustom) {
-      // Keep the current schedule as is (it's already different)
       return;
     } else {
-      // Reset this day to match the first day's schedule
       const firstDay = period.schedules.find(s => s.dayOfWeek !== day)?.dayOfWeek;
       if (!firstDay) return;
       
@@ -367,7 +340,6 @@ const Onboarding: React.FC = () => {
     }
   };
   
-  // Check if a day has a custom schedule different from the default
   const hasCustomSchedule = (periodId: string, day: DayOfWeek): boolean => {
     const period = periods.find(p => p.id === periodId);
     if (!period || period.schedules.length <= 1) return false;
@@ -375,7 +347,6 @@ const Onboarding: React.FC = () => {
     const schedule = period.schedules.find(s => s.dayOfWeek === day);
     if (!schedule) return false;
     
-    // Find the first schedule that's not this day to compare with
     const otherSchedule = period.schedules.find(s => s.dayOfWeek !== day);
     if (!otherSchedule) return false;
     
@@ -383,7 +354,6 @@ const Onboarding: React.FC = () => {
            schedule.endTime !== otherSchedule.endTime;
   };
   
-  // Update term name based on term type selection
   const updateTermNameFromType = (type: TermType) => {
     if (type === 'quarter') {
       setTermName('Quarter 1');
@@ -394,10 +364,8 @@ const Onboarding: React.FC = () => {
     }
   };
   
-  // Navigate to next step
   const goToNextStep = () => {
     if (currentStep === 0) {
-      // Validate term
       if (!schoolYear.trim() || !termName.trim()) {
         toast.error("Please provide both school year and term name");
         return;
@@ -405,7 +373,6 @@ const Onboarding: React.FC = () => {
     }
     
     if (currentStep === 1) {
-      // Validate periods
       for (const period of periods) {
         if (!period.name.trim()) {
           toast.error("Please provide a name for all periods");
@@ -420,7 +387,6 @@ const Onboarding: React.FC = () => {
     }
     
     if (currentStep === 3) {
-      // Validate schedules
       let missingSchedules = false;
       for (const period of periods) {
         if (period.schedules.length === 0) {
@@ -436,7 +402,6 @@ const Onboarding: React.FC = () => {
     }
     
     if (currentStep === 4) {
-      // Validate categories
       if (categories.length === 0) {
         toast.error("Please add at least one category");
         return;
@@ -444,13 +409,11 @@ const Onboarding: React.FC = () => {
     }
     
     if (currentStep === 5) {
-      // Validate school hours
       if (!schoolStart || !schoolEnd || !teacherArrival) {
         toast.error("Please provide all school hours information");
         return;
       }
       
-      // Validate IEP meeting times if enabled
       if (iepMeetingsEnabled) {
         if (iepBeforeSchool && !iepBeforeSchoolTime) {
           toast.error("Please provide a time for before-school IEP meetings");
@@ -462,12 +425,10 @@ const Onboarding: React.FC = () => {
         }
       }
       
-      // Add IEP Meetings category if enabled
       if (iepMeetingsEnabled && !categories.includes("IEP meetings")) {
         setCategories([...categories, "IEP meetings"]);
       }
       
-      // Save school setup
       const defaultTerm = createDefaultTerm(schoolYear, termType, termName);
       
       saveSchoolSetup({
@@ -490,10 +451,8 @@ const Onboarding: React.FC = () => {
         }
       });
       
-      // Mark onboarding as complete
       setCompleteOnboarding();
       
-      // Navigate to dashboard
       navigate("/dashboard");
       return;
     }
@@ -501,12 +460,14 @@ const Onboarding: React.FC = () => {
     setCurrentStep(currentStep + 1);
   };
   
-  // Navigate to previous step
   const goToPreviousStep = () => {
-    setCurrentStep(currentStep - 1);
+    if (currentStep === 0) {
+      setShowExitConfirm(true);
+    } else {
+      setCurrentStep(currentStep - 1);
+    }
   };
   
-  // Render different steps
   const renderStep = () => {
     switch (currentStep) {
       case 0:
@@ -730,7 +691,6 @@ const Onboarding: React.FC = () => {
                     
                     <CollapsibleContent>
                       <div className="p-4">
-                        {/* Default Period Time Block */}
                         {selectedDays.length > 0 && (
                           <div className="p-4 border rounded-md bg-gray-50 mb-4">
                             <div className="flex items-center justify-between mb-3">
@@ -745,7 +705,6 @@ const Onboarding: React.FC = () => {
                                 label="Start Time"
                                 value={period.schedules.length > 0 ? period.schedules[0].startTime : "9:00 AM"}
                                 onChange={(time) => {
-                                  // Apply this start time to all schedules for this period
                                   setPeriods(periods.map(p => {
                                     if (p.id !== period.id) return p;
                                     return {
@@ -764,7 +723,6 @@ const Onboarding: React.FC = () => {
                                 label="End Time"
                                 value={period.schedules.length > 0 ? period.schedules[0].endTime : "9:50 AM"}
                                 onChange={(time) => {
-                                  // Apply this end time to all schedules for this period
                                   setPeriods(periods.map(p => {
                                     if (p.id !== period.id) return p;
                                     return {
@@ -782,7 +740,6 @@ const Onboarding: React.FC = () => {
                           </div>
                         )}
                         
-                        {/* Custom day schedules - now as a collapsible section */}
                         <Collapsible
                           className="border rounded-md"
                           open={customScheduleVisibility[period.id]}
@@ -828,10 +785,8 @@ const Onboarding: React.FC = () => {
                                           if (!checked && isCustom) {
                                             toggleCustomSchedule(period.id, day, isCustom);
                                           } else if (checked && !isCustom) {
-                                            // If turning on custom schedule, make a small change to differentiate
                                             const schedule = period.schedules.find(s => s.dayOfWeek === day);
                                             if (schedule) {
-                                              // Add 5 minutes to end time to make it different
                                               const [hourStr, minuteStr] = schedule.endTime.split(':');
                                               const [minutes, meridian] = minuteStr.split(' ');
                                               let hour = parseInt(hourStr);
@@ -970,7 +925,6 @@ const Onboarding: React.FC = () => {
                 </div>
               </div>
               
-              {/* IEP meeting settings */}
               <div className="mt-6 pt-6 border-t">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-medium">IEP Meeting Settings</h3>
@@ -1096,9 +1050,34 @@ const Onboarding: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {currentStep === 0 && (
+        <button
+          onClick={handleBack}
+          className="absolute top-4 left-4 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="h-6 w-6" />
+        </button>
+      )}
+      
+      <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Exit Onboarding?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to go back? Your progress will not be saved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleExitOnboarding}>
+              Exit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
 
 export default Onboarding;
-

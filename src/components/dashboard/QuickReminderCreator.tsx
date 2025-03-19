@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useReminders, ReminderType, ReminderTiming, ReminderPriority } from "@/context/ReminderContext";
 import Button from "@/components/shared/Button";
@@ -28,14 +27,12 @@ const QuickReminderCreator: React.FC<QuickReminderCreatorProps> = ({ onComplete 
   const [category, setCategory] = useState("");
   const [priority, setPriority] = useState<ReminderPriority>("Medium");
   
-  // Get today's day code
   const getTodayDayCode = (): DayOfWeek => {
     const days: DayOfWeek[] = ["M", "T", "W", "Th", "F"];
     const dayIndex = new Date().getDay() - 1; // 0 = Sunday, so -1 gives Monday as 0
     return dayIndex >= 0 && dayIndex < 5 ? days[dayIndex] : "M"; // Default to Monday if weekend
   };
   
-  // Set the first period by default
   React.useEffect(() => {
     if (schoolSetup?.periods && schoolSetup.periods.length > 0) {
       setPeriodId(schoolSetup.periods[0].id);
@@ -50,18 +47,17 @@ const QuickReminderCreator: React.FC<QuickReminderCreatorProps> = ({ onComplete 
       return;
     }
     
-    if (!periodId) {
+    if (timing.includes("Period") && !periodId) {
       toast.error("Please select a period");
       return;
     }
     
-    // Create the reminder
     createReminder({
       title,
       type,
       timing,
       days: [getTodayDayCode()],
-      periodId,
+      periodId: timing.includes("Period") ? periodId : "",
       category,
       notes: "",
       recurrence: "Once",
@@ -85,12 +81,13 @@ const QuickReminderCreator: React.FC<QuickReminderCreatorProps> = ({ onComplete 
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div className="space-y-1">
-          <label className="text-sm font-medium">Type</label>
-          <Select value={type} onValueChange={(value: ReminderType) => setType(value)}>
+          <label className="text-sm font-medium">Type (Optional)</label>
+          <Select value={type} onValueChange={(value: ReminderType) => setType(value)} defaultValue="">
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Select type (optional)" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="_none">No Type</SelectItem>
               <SelectItem value="Call Home">Call Home</SelectItem>
               <SelectItem value="Email">Email</SelectItem>
               <SelectItem value="Talk to Student">Talk to Student</SelectItem>
@@ -110,29 +107,29 @@ const QuickReminderCreator: React.FC<QuickReminderCreatorProps> = ({ onComplete 
             <SelectContent>
               <SelectItem value="Before School">Before School</SelectItem>
               <SelectItem value="After School">After School</SelectItem>
-              <SelectItem value="During Period">During Period</SelectItem>
-              <SelectItem value="Start of Period">Start of Period</SelectItem>
-              <SelectItem value="End of Period">End of Period</SelectItem>
-              <SelectItem value="15 Minutes Into Period">15 Minutes Into Period</SelectItem>
+              <SelectItem value="Before Period">Before Period</SelectItem>
+              <SelectItem value="After Period">After Period</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Period</label>
-          <Select value={periodId} onValueChange={setPeriodId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select period" />
-            </SelectTrigger>
-            <SelectContent>
-              {schoolSetup?.periods.map((period) => (
-                <SelectItem key={period.id} value={period.id}>
-                  {period.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {timing.includes("Period") && (
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Period</label>
+            <Select value={periodId} onValueChange={setPeriodId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                {schoolSetup?.periods.map((period) => (
+                  <SelectItem key={period.id} value={period.id}>
+                    {period.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

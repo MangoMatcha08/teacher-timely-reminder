@@ -1,4 +1,3 @@
-
 import { firestore, auth } from "@/lib/firebase";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, setDoc, getDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User } from "firebase/auth";
@@ -6,54 +5,28 @@ import { Reminder, SchoolSetup } from "@/context/ReminderContext";
 
 // Authentication functions
 export const register = async (email: string, password: string) => {
-  // For demo, allow password 'google' or 'clever' for special login flows
-  if (password === 'google' || password === 'clever') {
-    // Demo authentication
-    const mockUser = {
-      uid: 'demo-user-123',
-      email: email,
-      emailVerified: true,
-      displayName: 'Demo User',
-    } as User;
-    return mockUser;
-  } else {
-    // Real Firebase authentication
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      return userCredential.user;
-    } catch (error: any) {
-      console.error("Register error:", error);
-      if (error.code === 'auth/email-already-in-use') {
-        throw new Error("This email is already registered. Please sign in instead.");
-      }
-      throw error;
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error: any) {
+    console.error("Register error:", error);
+    if (error.code === 'auth/email-already-in-use') {
+      throw new Error("This email is already registered. Please sign in instead.");
     }
+    throw error;
   }
 };
 
 export const login = async (email: string, password: string) => {
-  // For demo, allow password 'google' or 'clever' for special login flows
-  if (password === 'google' || password === 'clever') {
-    // Demo authentication
-    const mockUser = {
-      uid: 'demo-user-123',
-      email: email,
-      emailVerified: true,
-      displayName: 'Demo User',
-    } as User;
-    return mockUser;
-  } else {
-    // Real Firebase authentication
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return userCredential.user;
-    } catch (error: any) {
-      console.error("Login error:", error);
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        throw new Error("Invalid email or password. Please try again.");
-      }
-      throw error;
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error: any) {
+    console.error("Login error:", error);
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      throw new Error("Invalid email or password. Please try again.");
     }
+    throw error;
   }
 };
 

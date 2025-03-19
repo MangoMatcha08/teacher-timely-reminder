@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import * as FirebaseService from "@/services/firebase";
@@ -17,21 +16,8 @@ export type Period = {
   schedules: PeriodSchedule[];
 };
 
-export type ReminderType = 
-  | "Call Home" 
-  | "Email"
-  | "Talk to Student" 
-  | "Prepare Materials" 
-  | "Grade" 
-  | "Other";
-
-export type ReminderTiming = 
-  | "Before School"
-  | "After School"
-  | "During Period"
-  | "Start of Period"
-  | "End of Period"
-  | "15 Minutes Into Period";
+export type ReminderType = "Call Home" | "Email" | "Talk to Student" | "Prepare Materials" | "Grade" | "Other" | "_none";
+export type ReminderTiming = "Before School" | "After School" | "Before Period" | "After Period" | "During Period" | "Start of Period" | "End of Period" | "15 Minutes Into Period";
 
 export type RecurrencePattern =
   | "Once"
@@ -42,16 +28,16 @@ export type RecurrencePattern =
 export type ReminderPriority = "Low" | "Medium" | "High";
 
 export interface Reminder {
-  id: string;
+  id?: string;
   title: string;
-  type: ReminderType;
+  type?: ReminderType;
   timing: ReminderTiming;
   days: DayOfWeek[];
-  periodId: string;
-  category: string;
-  notes: string;
+  periodId?: string;
+  category?: string;
+  notes?: string;
   recurrence: RecurrencePattern;
-  createdAt: Date;
+  createdAt?: Date;
   priority: ReminderPriority;
   completed?: boolean;
   termId?: string; // Term identifier
@@ -131,14 +117,12 @@ const ReminderContext = createContext<ReminderContextType>({
 
 export const useReminders = () => useContext(ReminderContext);
 
-// Helper function to get today's day code
 const getTodayDayCode = (): DayOfWeek => {
   const days: DayOfWeek[] = ["M", "T", "W", "Th", "F"];
   const dayIndex = new Date().getDay() - 1; // 0 = Sunday, so -1 gives Monday as 0
   return dayIndex >= 0 && dayIndex < 5 ? days[dayIndex] : "M"; // Default to Monday if weekend
 };
 
-// Create a default term
 const createDefaultTerm = (): Term => {
   const now = new Date();
   const endDate = new Date();
@@ -163,7 +147,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'pending' | 'failed'>('synced');
   
-  // Track online status
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -177,14 +160,12 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
   
-  // Load data from Firebase when user authenticates
   useEffect(() => {
     if (isAuthenticated && user) {
       loadDataFromFirebase();
     }
   }, [isAuthenticated, user]);
   
-  // Initialize from localStorage
   useEffect(() => {
     const storedReminders = localStorage.getItem("teacher_reminders");
     const storedSchoolSetup = localStorage.getItem("school_setup");
@@ -192,7 +173,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (storedReminders) {
       try {
         const parsed = JSON.parse(storedReminders);
-        // Handle migration of old reminders to new format
         const migratedReminders = parsed.map((r: any) => ({
           ...r,
           timing: r.timing || "During Period",
@@ -211,7 +191,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (storedSchoolSetup) {
       try {
         const parsed = JSON.parse(storedSchoolSetup);
-        // Handle migration of old school setup to new format with terms
         const defaultTerm = createDefaultTerm();
         setSchoolSetup({
           ...parsed,
@@ -235,7 +214,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
   
-  // Persist to localStorage whenever state changes
   useEffect(() => {
     if (reminders.length > 0) {
       localStorage.setItem("teacher_reminders", JSON.stringify(reminders));
@@ -248,18 +226,15 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [schoolSetup]);
   
-  // Load data from Firebase
   const loadDataFromFirebase = async () => {
     if (!user) return;
     
     try {
-      // Load reminders
       const cloudReminders = await FirebaseService.getUserReminders(user.uid);
       if (cloudReminders.length > 0) {
         setReminders(cloudReminders);
       }
       
-      // Load school setup
       const cloudSetup = await FirebaseService.getSchoolSetup(user.uid);
       if (cloudSetup) {
         setSchoolSetup(cloudSetup);
@@ -272,19 +247,16 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
   
-  // Sync data with Firebase
   const syncWithCloud = async () => {
     if (!user || !isOnline) return;
     
     try {
       setSyncStatus('pending');
       
-      // Sync each reminder
       for (const reminder of reminders) {
         await FirebaseService.saveReminder(reminder, user.uid);
       }
       
-      // Sync school setup
       if (schoolSetup) {
         await FirebaseService.saveSchoolSetup(user.uid, schoolSetup);
       }
@@ -297,16 +269,14 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
   
   const createReminder = (reminderData: Omit<Reminder, "id" | "createdAt" | "completed">) => {
-    // Check if time has already passed for today
     const today = new Date();
     const currentDayCode = getTodayDayCode();
     const shouldBeNextWeek = reminderData.days.includes(currentDayCode) && 
                             reminderData.timing === "During Period" && 
                             isTimePassed(reminderData.periodId, today);
     
-    // If time has passed today, add it for next week
     const adjustedDays = shouldBeNextWeek 
-      ? reminderData.days.filter(d => d !== currentDayCode) // Remove today
+      ? reminderData.days.filter(d => d !== currentDayCode)
       : reminderData.days;
     
     const newReminder: Reminder = {
@@ -320,14 +290,12 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     setReminders((prev) => [...prev, newReminder]);
     
-    // Save to Firebase if online
     if (isOnline && user) {
       FirebaseService.saveReminder(newReminder, user.uid)
         .catch(error => console.error("Error saving reminder to Firebase:", error));
     }
   };
   
-  // Helper to check if a period's time has already passed for today
   const isTimePassed = (periodId: string, currentDate: Date): boolean => {
     if (!schoolSetup) return false;
     
@@ -338,7 +306,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const todaySchedule = period.schedules.find(s => s.dayOfWeek === todayDayCode);
     if (!todaySchedule) return false;
     
-    // Parse end time
     const [hourStr, minuteStr] = todaySchedule.endTime.split(':');
     const [minutes, meridian] = minuteStr.split(' ');
     
@@ -361,7 +328,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       )
     );
     
-    // Update in Firebase if online
     if (isOnline && user) {
       FirebaseService.updateReminder(id, reminderData)
         .catch(error => console.error("Error updating reminder in Firebase:", error));
@@ -371,7 +337,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const deleteReminder = (id: string) => {
     setReminders((prev) => prev.filter((reminder) => reminder.id !== id));
     
-    // Delete from Firebase if online
     if (isOnline && user) {
       FirebaseService.deleteReminder(id)
         .catch(error => console.error("Error deleting reminder from Firebase:", error));
@@ -381,21 +346,18 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const saveSchoolSetup = (setup: SchoolSetup) => {
     setSchoolSetup(setup);
     
-    // Save to Firebase if online
     if (isOnline && user) {
       FirebaseService.saveSchoolSetup(user.uid, setup)
         .catch(error => console.error("Error saving school setup to Firebase:", error));
     }
   };
   
-  // Toggle reminder completion status
   const toggleReminderComplete = (id: string) => {
     setReminders(prev => {
       const updatedReminders = prev.map(reminder => {
         if (reminder.id === id) {
           const completed = !reminder.completed;
           
-          // Update in Firebase if online
           if (isOnline && user) {
             FirebaseService.updateReminder(id, { completed })
               .catch(error => console.error("Error updating reminder in Firebase:", error));
@@ -409,7 +371,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
   
-  // Get filtered reminders based on criteria
   const filteredReminders = (filters: {
     category?: string;
     priority?: ReminderPriority;
@@ -417,7 +378,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     completed?: boolean;
   }) => {
     return reminders.filter(reminder => {
-      // Check each filter criterion
       if (filters.category && reminder.category !== filters.category) {
         return false;
       }
@@ -434,14 +394,12 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
   
-  // Get today's reminders
   const todayDayCode = getTodayDayCode();
   const todaysReminders = reminders.filter((reminder) => 
     reminder.days.includes(todayDayCode) &&
     (!schoolSetup?.termId || reminder.termId === schoolSetup.termId)
   );
   
-  // Calculate total and completed tasks
   const completedTasks = todaysReminders.filter(r => r.completed).length;
   const totalTasks = todaysReminders.length;
   
