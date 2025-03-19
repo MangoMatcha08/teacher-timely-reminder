@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import TimeInput from "@/components/shared/TimeInput";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Check, ChevronDown, Info } from "lucide-react";
+import { Check, ChevronDown, Info, Plus, Trash2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 // Helper to create initial period schedule
 const createInitialSchedule = (day: DayOfWeek): PeriodSchedule => ({
@@ -78,38 +79,37 @@ const Onboarding: React.FC = () => {
   const toggleDay = (day: DayOfWeek) => {
     if (selectedDays.includes(day)) {
       setSelectedDays(selectedDays.filter((d) => d !== day));
-      
-      // Remove schedules for this day from all periods
-      setPeriods(periods.map(period => ({
-        ...period,
-        schedules: period.schedules.filter(schedule => schedule.dayOfWeek !== day)
-      })));
     } else {
       setSelectedDays([...selectedDays, day]);
-      
-      // Add default schedules for this day to all periods
-      setPeriods(periods.map((period, index) => {
-        const defaultStartHour = 8 + index;
-        const defaultEndHour = defaultStartHour + 1;
-        
-        return {
-          ...period,
-          schedules: [
-            ...period.schedules,
-            {
-              dayOfWeek: day,
-              startTime: `${defaultStartHour}:00 AM`,
-              endTime: `${defaultEndHour}:00 AM`,
-            }
-          ]
-        };
-      }));
     }
   };
   
   // Handle period name change
   const handlePeriodNameChange = (id: string, name: string) => {
     setPeriods(periods.map((p) => (p.id === id ? { ...p, name } : p)));
+  };
+  
+  // Toggle period day
+  const togglePeriodDay = (periodId: string, day: DayOfWeek) => {
+    setPeriods(periods.map(period => {
+      if (period.id !== periodId) return period;
+      
+      const periodSchedules = [...period.schedules];
+      const existingScheduleIndex = periodSchedules.findIndex(s => s.dayOfWeek === day);
+      
+      if (existingScheduleIndex >= 0) {
+        // Remove day from period schedules
+        periodSchedules.splice(existingScheduleIndex, 1);
+      } else {
+        // Add default schedule for this day
+        periodSchedules.push(createInitialSchedule(day));
+      }
+      
+      return {
+        ...period,
+        schedules: periodSchedules
+      };
+    }));
   };
   
   // Handle period schedule time changes
@@ -120,11 +120,8 @@ const Onboarding: React.FC = () => {
       const scheduleIndex = period.schedules.findIndex(s => s.dayOfWeek === day);
       
       if (scheduleIndex === -1) {
-        // Add new schedule for this day
-        return {
-          ...period,
-          schedules: [...period.schedules, { dayOfWeek: day, startTime: time, endTime: "10:00 AM" }]
-        };
+        // This shouldn't happen if they use the UI correctly
+        return period;
       } else {
         // Update existing schedule
         const updatedSchedules = [...period.schedules];
@@ -148,11 +145,8 @@ const Onboarding: React.FC = () => {
       const scheduleIndex = period.schedules.findIndex(s => s.dayOfWeek === day);
       
       if (scheduleIndex === -1) {
-        // Add new schedule for this day
-        return {
-          ...period,
-          schedules: [...period.schedules, { dayOfWeek: day, startTime: "9:00 AM", endTime: time }]
-        };
+        // This shouldn't happen if they use the UI correctly
+        return period;
       } else {
         // Update existing schedule
         const updatedSchedules = [...period.schedules];
@@ -175,66 +169,7 @@ const Onboarding: React.FC = () => {
     const newPeriod: Period = {
       id: newId,
       name: `Period ${periods.length + 1}`,
-      schedules: selectedDays.map(day => {
-        // Get default times based on the last period's schedule for this day
-        const lastPeriod = periods[periods.length - 1];
-        const lastSchedule = lastPeriod?.schedules.find(s => s.dayOfWeek === day);
-        
-        if (lastSchedule) {
-          try {
-            // Parse the end time of the last period
-            const [time, meridian] = lastSchedule.endTime.split(" ");
-            const [hourStr, minStr] = time.split(":");
-            let hour = parseInt(hourStr, 10);
-            let min = parseInt(minStr, 10);
-            
-            // Add 15 minutes for the break
-            min += 15;
-            if (min >= 60) {
-              hour += 1;
-              min -= 60;
-            }
-            
-            // Handle hour overflow
-            let startMeridian = meridian;
-            if (hour > 12) {
-              hour -= 12;
-              startMeridian = meridian === "AM" ? "PM" : "AM";
-            }
-            
-            const startTime = `${hour}:${min.toString().padStart(2, "0")} ${startMeridian}`;
-            
-            // Add 50 minutes for the class duration
-            min += 50;
-            let endHour = hour;
-            let endMeridian = startMeridian;
-            
-            if (min >= 60) {
-              endHour += 1;
-              min -= 60;
-            }
-            
-            // Handle hour overflow for end time
-            if (endHour > 12) {
-              endHour -= 12;
-              endMeridian = startMeridian === "AM" ? "PM" : "AM";
-            }
-            
-            const endTime = `${endHour}:${min.toString().padStart(2, "0")} ${endMeridian}`;
-            
-            return {
-              dayOfWeek: day,
-              startTime,
-              endTime
-            };
-          } catch (e) {
-            // If parsing fails, use default values
-            return createInitialSchedule(day);
-          }
-        } else {
-          return createInitialSchedule(day);
-        }
-      })
+      schedules: []
     };
     
     setPeriods([...periods, newPeriod]);
@@ -251,31 +186,32 @@ const Onboarding: React.FC = () => {
   
   // Navigate to next step
   const goToNextStep = () => {
-    if (currentStep === 0 && selectedDays.length === 0) {
-      toast.error("Please select at least one school day");
-      return;
-    }
-    
-    if (currentStep === 1) {
+    if (currentStep === 0) {
       // Validate periods
       for (const period of periods) {
         if (!period.name.trim()) {
           toast.error("Please provide a name for all periods");
           return;
         }
-        
-        // Check if each selected day has a schedule
-        for (const day of selectedDays) {
-          const hasSchedule = period.schedules.some(s => s.dayOfWeek === day);
-          if (!hasSchedule) {
-            toast.error(`${period.name} is missing a schedule for ${day}`);
-            return;
-          }
+      }
+    }
+    
+    if (currentStep === 1 && selectedDays.length === 0) {
+      toast.error("Please select at least one school day");
+      return;
+    }
+    
+    if (currentStep === 2) {
+      // Validate schedules
+      for (const period of periods) {
+        if (period.schedules.length === 0) {
+          toast.error(`${period.name} needs to be scheduled on at least one day`);
+          return;
         }
       }
     }
     
-    if (currentStep === 2) {
+    if (currentStep === 3) {
       // Validate school hours
       if (!schoolStart || !schoolEnd || !teacherArrival) {
         toast.error("Please provide all school hours information");
@@ -315,6 +251,12 @@ const Onboarding: React.FC = () => {
     return period?.schedules.find(s => s.dayOfWeek === day);
   };
   
+  // Check if a period is scheduled on a specific day
+  const isPeriodScheduledOnDay = (periodId: string, day: DayOfWeek) => {
+    const period = periods.find(p => p.id === periodId);
+    return period?.schedules.some(s => s.dayOfWeek === day) || false;
+  };
+  
   // Render different steps
   const renderStep = () => {
     switch (currentStep) {
@@ -322,7 +264,57 @@ const Onboarding: React.FC = () => {
         return (
           <div className="space-y-6 animate-fade-in">
             <div>
-              <h2 className="text-lg font-medium mb-4">What's your school day?</h2>
+              <h2 className="text-lg font-medium mb-4">First, create your class periods</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                Create all the periods or classes you teach during the day.
+                You'll select which days each period occurs on in the next steps.
+              </p>
+              
+              <div className="space-y-4">
+                {periods.map((period) => (
+                  <div key={period.id} className="flex items-center gap-3 border rounded-lg p-4 bg-white">
+                    <div className="flex-1">
+                      <Input
+                        value={period.name}
+                        onChange={(e) => handlePeriodNameChange(period.id, e.target.value)}
+                        className="w-full"
+                        placeholder="Period Name"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => removePeriod(period.id)}
+                      className="text-destructive hover:text-destructive/90"
+                      disabled={periods.length === 1}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Remove</span>
+                    </Button>
+                  </div>
+                ))}
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={addPeriod}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Another Period
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      case 1:
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h2 className="text-lg font-medium mb-4">What days do you teach?</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Select all days when school is in session.
+              </p>
               <div className="flex justify-center gap-4 py-2">
                 {days.map((day) => (
                   <button
@@ -343,89 +335,90 @@ const Onboarding: React.FC = () => {
             </div>
           </div>
         );
-      case 1:
+      case 2:
         return (
           <div className="space-y-8 animate-fade-in">
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium">Set up your periods</h2>
-                <Button type="button" variant="outline" size="sm" onClick={addPeriod}>
-                  Add Period
-                </Button>
-              </div>
+              <h2 className="text-lg font-medium mb-4">Schedule your periods</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Select which days each period occurs on, and set their times.
+              </p>
               
               <div className="space-y-6">
                 {periods.map((period) => (
                   <Collapsible
                     key={period.id}
                     className="border rounded-lg bg-white overflow-hidden"
+                    defaultOpen={true}
                   >
-                    <div className="p-4 flex items-center justify-between">
-                      <div className="flex-1">
-                        <input
-                          id={`period-name-${period.id}`}
-                          type="text"
-                          value={period.name}
-                          onChange={(e) => handlePeriodNameChange(period.id, e.target.value)}
-                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teacher-blue"
-                          placeholder="Period Name"
-                        />
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={() => removePeriod(period.id)}
-                          className="text-destructive hover:text-destructive/90"
-                          disabled={periods.length === 1}
-                        >
-                          Remove
+                    <div className="p-4 flex items-center justify-between border-b">
+                      <h3 className="font-medium">{period.name}</h3>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="w-9 p-0">
+                          <ChevronDown className="h-4 w-4" />
+                          <span className="sr-only">Toggle</span>
                         </Button>
-                        <CollapsibleTrigger asChild>
-                          <Button variant="ghost" size="sm" className="w-9 p-0">
-                            <ChevronDown className="h-4 w-4" />
-                            <span className="sr-only">Toggle</span>
-                          </Button>
-                        </CollapsibleTrigger>
-                      </div>
+                      </CollapsibleTrigger>
                     </div>
                     
                     <CollapsibleContent>
-                      <div className="px-4 pb-4 pt-1">
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Set the start and end times for this period on each day.
-                        </p>
+                      <div className="p-4">
+                        <div className="mb-4">
+                          <h4 className="text-sm font-medium mb-2">Which days does this period occur?</h4>
+                          <div className="flex gap-3">
+                            {days.map((day) => (
+                              <button
+                                key={`${period.id}-${day.value}`}
+                                type="button"
+                                onClick={() => togglePeriodDay(period.id, day.value)}
+                                disabled={!selectedDays.includes(day.value)}
+                                className={cn(
+                                  "day-badge",
+                                  !selectedDays.includes(day.value) 
+                                    ? "day-badge-disabled opacity-30" 
+                                    : isPeriodScheduledOnDay(period.id, day.value)
+                                      ? "day-badge-selected"
+                                      : "day-badge-default"
+                                )}
+                              >
+                                {day.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                         
-                        <div className="space-y-4">
-                          {selectedDays.map((day) => {
-                            const schedule = getPeriodSchedule(period.id, day);
-                            return (
-                              <div key={`${period.id}-${day}`} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {period.schedules.length > 0 ? (
+                          <div className="space-y-4 mt-4">
+                            <h4 className="text-sm font-medium">Schedule for each day</h4>
+                            {period.schedules.map((schedule) => (
+                              <div key={`${period.id}-${schedule.dayOfWeek}-schedule`} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 border rounded-md bg-gray-50">
                                 <div className="font-medium flex items-center">
                                   <div className="day-badge day-badge-selected mr-2">
-                                    {days.find(d => d.value === day)?.label}
+                                    {days.find(d => d.value === schedule.dayOfWeek)?.label}
                                   </div>
-                                  <span>Schedule</span>
                                 </div>
                                 
                                 <TimeInput
                                   label="Start Time"
-                                  value={schedule?.startTime || "9:00 AM"}
-                                  onChange={(time) => handleScheduleStartTimeChange(period.id, day, time)}
-                                  id={`period-${period.id}-${day}-start`}
+                                  value={schedule.startTime}
+                                  onChange={(time) => handleScheduleStartTimeChange(period.id, schedule.dayOfWeek, time)}
+                                  id={`period-${period.id}-${schedule.dayOfWeek}-start`}
                                 />
                                 
                                 <TimeInput
                                   label="End Time"
-                                  value={schedule?.endTime || "9:50 AM"}
-                                  onChange={(time) => handleScheduleEndTimeChange(period.id, day, time)}
-                                  id={`period-${period.id}-${day}-end`}
+                                  value={schedule.endTime}
+                                  onChange={(time) => handleScheduleEndTimeChange(period.id, schedule.dayOfWeek, time)}
+                                  id={`period-${period.id}-${schedule.dayOfWeek}-end`}
                                 />
                               </div>
-                            );
-                          })}
-                        </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground mt-2">
+                            Select at least one day for this period.
+                          </div>
+                        )}
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
@@ -434,7 +427,7 @@ const Onboarding: React.FC = () => {
             </div>
           </div>
         );
-      case 2:
+      case 3:
         return (
           <div className="space-y-6 animate-fade-in">
             <div>
@@ -509,14 +502,14 @@ const Onboarding: React.FC = () => {
               Back
             </Button>
             <Button type="button" variant="primary" onClick={goToNextStep}>
-              {currentStep === 2 ? "Complete Setup" : "Next"}
+              {currentStep === 3 ? "Complete Setup" : "Next"}
             </Button>
           </CardFooter>
         </Card>
         
         <div className="flex justify-center">
           <div className="flex gap-2">
-            {[0, 1, 2].map((step) => (
+            {[0, 1, 2, 3].map((step) => (
               <div
                 key={step}
                 className={cn(
