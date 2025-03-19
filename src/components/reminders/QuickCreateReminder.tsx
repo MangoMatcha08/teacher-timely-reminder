@@ -46,10 +46,14 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
       const daysOfWeek = ["M", "T", "W", "Th", "F"];
       const todayCode = dayIndex >= 0 && dayIndex < 5 ? daysOfWeek[dayIndex] : "M";
       
+      // Ensure all required properties are passed
       createReminder({
-        ...data,
+        title: data.title, // Ensure title is explicitly passed
         type: "Announcement",
         days: [todayCode as any],
+        periodId: data.periodId, // Ensure periodId is explicitly passed
+        category: data.category,
+        notes: "" // Provide a default empty string for notes
       });
       
       toast.success("Quick reminder created!");

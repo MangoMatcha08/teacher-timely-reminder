@@ -23,8 +23,8 @@ export interface Reminder {
   type: ReminderType;
   days: DayOfWeek[];
   periodId: string;
-  category?: string;
-  notes?: string;
+  category: string; // Changed from optional to required with default empty string
+  notes: string; // Changed from optional to required with default empty string
   createdAt: Date;
 }
 

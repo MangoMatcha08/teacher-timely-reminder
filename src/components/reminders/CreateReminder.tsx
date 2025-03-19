@@ -77,7 +77,16 @@ const CreateReminder: React.FC = () => {
   
   const onSubmit = (data: ReminderFormData) => {
     try {
-      createReminder(data);
+      // Ensure all required properties have values
+      createReminder({
+        title: data.title,
+        type: data.type,
+        days: data.days,
+        periodId: data.periodId,
+        category: data.category || "", // Provide default empty string if undefined
+        notes: data.notes || "" // Provide default empty string if undefined
+      });
+      
       toast.success("Reminder created successfully!");
       navigate("/dashboard");
     } catch (error) {
