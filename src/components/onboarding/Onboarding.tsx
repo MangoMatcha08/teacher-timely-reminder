@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -31,12 +30,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 // Helper to create initial period schedule
-const createInitialSchedule = (day: DayOfWeek): PeriodSchedule => ({
+const createInitialSchedule = (day: DayOfWeek, startTime = "9:00 AM", endTime = "9:50 AM"): PeriodSchedule => ({
   dayOfWeek: day,
-  startTime: "9:00 AM",
-  endTime: "9:50 AM",
+  startTime,
+  endTime,
 });
 
 const Onboarding: React.FC = () => {
@@ -161,6 +161,41 @@ const Onboarding: React.FC = () => {
         };
       }
     }));
+  };
+  
+  // Apply the same schedule to multiple days
+  const applyScheduleToAllDays = (periodId: string, sourceDayOfWeek: DayOfWeek) => {
+    const period = periods.find(p => p.id === periodId);
+    if (!period) return;
+    
+    const sourceSchedule = period.schedules.find(s => s.dayOfWeek === sourceDayOfWeek);
+    if (!sourceSchedule) return;
+    
+    setPeriods(periods.map(p => {
+      if (p.id !== periodId) return p;
+      
+      // Create schedules for all days this period occurs on
+      const updatedSchedules = p.schedules.map(schedule => {
+        if (schedule.dayOfWeek === sourceDayOfWeek) {
+          // Keep the source schedule as is
+          return schedule;
+        } else {
+          // Update other schedules with the same time
+          return {
+            ...schedule,
+            startTime: sourceSchedule.startTime,
+            endTime: sourceSchedule.endTime
+          };
+        }
+      });
+      
+      return {
+        ...p,
+        schedules: updatedSchedules
+      };
+    }));
+    
+    toast.success("Schedule applied to all days");
   };
   
   // Add a new period
@@ -342,6 +377,7 @@ const Onboarding: React.FC = () => {
               <h2 className="text-lg font-medium mb-4">Schedule your periods</h2>
               <p className="text-sm text-muted-foreground mb-4">
                 Select which days each period occurs on, and set their times.
+                Most days follow the same schedule, but you can customize exceptions.
               </p>
               
               <div className="space-y-6">
@@ -390,29 +426,117 @@ const Onboarding: React.FC = () => {
                         {period.schedules.length > 0 ? (
                           <div className="space-y-4 mt-4">
                             <h4 className="text-sm font-medium">Schedule for each day</h4>
-                            {period.schedules.map((schedule) => (
-                              <div key={`${period.id}-${schedule.dayOfWeek}-schedule`} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 border rounded-md bg-gray-50">
-                                <div className="font-medium flex items-center">
-                                  <div className="day-badge day-badge-selected mr-2">
-                                    {days.find(d => d.value === schedule.dayOfWeek)?.label}
+                            
+                            {/* New unified time block */}
+                            {period.schedules.length > 1 && (
+                              <div className="p-4 border rounded-md bg-gray-50 mb-2">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h5 className="text-sm font-medium">Default Period Time</h5>
+                                  <div className="text-xs text-muted-foreground">
+                                    Set once and apply to all days
                                   </div>
                                 </div>
                                 
-                                <TimeInput
-                                  label="Start Time"
-                                  value={schedule.startTime}
-                                  onChange={(time) => handleScheduleStartTimeChange(period.id, schedule.dayOfWeek, time)}
-                                  id={`period-${period.id}-${schedule.dayOfWeek}-start`}
-                                />
-                                
-                                <TimeInput
-                                  label="End Time"
-                                  value={schedule.endTime}
-                                  onChange={(time) => handleScheduleEndTimeChange(period.id, schedule.dayOfWeek, time)}
-                                  id={`period-${period.id}-${schedule.dayOfWeek}-end`}
-                                />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <TimeInput
+                                    label="Start Time"
+                                    value={period.schedules[0]?.startTime || "9:00 AM"}
+                                    onChange={(time) => {
+                                      // Apply this start time to all schedules for this period
+                                      setPeriods(periods.map(p => {
+                                        if (p.id !== period.id) return p;
+                                        return {
+                                          ...p,
+                                          schedules: p.schedules.map(schedule => ({
+                                            ...schedule,
+                                            startTime: time
+                                          }))
+                                        };
+                                      }));
+                                    }}
+                                    id={`period-${period.id}-default-start`}
+                                  />
+                                  
+                                  <TimeInput
+                                    label="End Time"
+                                    value={period.schedules[0]?.endTime || "9:50 AM"}
+                                    onChange={(time) => {
+                                      // Apply this end time to all schedules for this period
+                                      setPeriods(periods.map(p => {
+                                        if (p.id !== period.id) return p;
+                                        return {
+                                          ...p,
+                                          schedules: p.schedules.map(schedule => ({
+                                            ...schedule,
+                                            endTime: time
+                                          }))
+                                        };
+                                      }));
+                                    }}
+                                    id={`period-${period.id}-default-end`}
+                                  />
+                                </div>
                               </div>
-                            ))}
+                            )}
+                            
+                            {/* Individual day exceptions */}
+                            <div className="space-y-2">
+                              {period.schedules.map((schedule) => (
+                                <div key={`${period.id}-${schedule.dayOfWeek}-schedule`} 
+                                     className="border rounded-md bg-white overflow-hidden">
+                                  <div className="flex items-center justify-between border-b px-4 py-2 bg-gray-50">
+                                    <div className="flex items-center">
+                                      <div className="day-badge day-badge-selected mr-2">
+                                        {days.find(d => d.value === schedule.dayOfWeek)?.label}
+                                      </div>
+                                      <h5 className="text-sm font-medium">
+                                        {schedule.dayOfWeek === "W" ? "Wednesday (different)" : days.find(d => d.value === schedule.dayOfWeek)?.label}
+                                      </h5>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-xs text-muted-foreground mr-2">
+                                        Different schedule
+                                      </div>
+                                      <Switch
+                                        checked={
+                                          // Check if this day's schedule is different from the first schedule
+                                          period.schedules.length > 1 && 
+                                          (schedule.startTime !== period.schedules[0].startTime || 
+                                           schedule.endTime !== period.schedules[0].endTime)
+                                        }
+                                        onCheckedChange={(checked) => {
+                                          if (!checked) {
+                                            // Reset this day to match the first day's schedule
+                                            const firstSchedule = period.schedules[0];
+                                            handleScheduleStartTimeChange(period.id, schedule.dayOfWeek, firstSchedule.startTime);
+                                            handleScheduleEndTimeChange(period.id, schedule.dayOfWeek, firstSchedule.endTime);
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="p-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <TimeInput
+                                        label="Start Time"
+                                        value={schedule.startTime}
+                                        onChange={(time) => handleScheduleStartTimeChange(period.id, schedule.dayOfWeek, time)}
+                                        id={`period-${period.id}-${schedule.dayOfWeek}-start`}
+                                      />
+                                      
+                                      <TimeInput
+                                        label="End Time"
+                                        value={schedule.endTime}
+                                        onChange={(time) => handleScheduleEndTimeChange(period.id, schedule.dayOfWeek, time)}
+                                        id={`period-${period.id}-${schedule.dayOfWeek}-end`}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         ) : (
                           <div className="text-sm text-muted-foreground mt-2">
