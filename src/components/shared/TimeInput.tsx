@@ -44,7 +44,12 @@ const TimeInput: React.FC<TimeInputProps> = ({
 
   // Combine values and call onChange
   const updateTime = (h: string, m: string, p: "AM" | "PM") => {
-    onChange(`${h}:${m} ${p}`);
+    // Only update if we have valid hours
+    if (h) {
+      // If minutes are empty, default to "00" when updating parent
+      const formattedMinutes = m || "00";
+      onChange(`${h}:${formattedMinutes} ${p}`);
+    }
   };
 
   // Handle hours change
@@ -76,9 +81,10 @@ const TimeInput: React.FC<TimeInputProps> = ({
   const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let m = e.target.value.replace(/\D/g, "");
     
-    // Handle empty input
+    // Handle empty input - allow this state temporarily
     if (m === "") {
       setMinutes("");
+      // Don't call updateTime here to allow the field to be empty
       return;
     }
     
@@ -97,11 +103,20 @@ const TimeInput: React.FC<TimeInputProps> = ({
     updateTime(hours, m, period);
   };
 
+  // Handle minutes blur to format properly when focus leaves
+  const handleMinutesBlur = () => {
+    // If minutes is empty when leaving the field, set it to "00"
+    if (minutes === "") {
+      setMinutes("00");
+      updateTime(hours, "00", period);
+    }
+  };
+
   // Toggle AM/PM
   const togglePeriod = () => {
     const newPeriod = period === "AM" ? "PM" : "AM";
     setPeriod(newPeriod);
-    updateTime(hours, minutes, newPeriod);
+    updateTime(hours, minutes || "00", newPeriod);
   };
 
   return (
@@ -140,6 +155,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
             placeholder="00"
             value={minutes}
             onChange={handleMinutesChange}
+            onBlur={handleMinutesBlur}
             maxLength={2}
           />
         </div>
