@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useReminders } from "@/context/ReminderContext";
+import { useReminders, DayOfWeek } from "@/context/ReminderContext";
 import Layout from "@/components/shared/Layout";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/shared/Card";
 import Button from "@/components/shared/Button";
@@ -22,6 +22,14 @@ const Schedule = () => {
       }
     }
   }, [isAuthenticated, isInitialized, hasCompletedOnboarding, navigate]);
+  
+  // Helper function to get the schedule for a specific day
+  const getPeriodScheduleForDay = (periodId: string, day: DayOfWeek) => {
+    const period = schoolSetup?.periods.find(p => p.id === periodId);
+    if (!period) return null;
+    
+    return period.schedules.find(s => s.dayOfWeek === day);
+  };
   
   if (!isInitialized || !isAuthenticated) {
     // Show loading state
@@ -93,6 +101,7 @@ const Schedule = () => {
                       const period = schoolSetup?.periods.find(
                         (p) => p.id === reminder.periodId
                       );
+                      const schedule = getPeriodScheduleForDay(reminder.periodId, day);
                       
                       return (
                         <li key={reminder.id} className="p-4">
@@ -106,7 +115,7 @@ const Schedule = () => {
                               </div>
                               {period && (
                                 <p className="text-sm text-muted-foreground">
-                                  {period.name} ({period.startTime})
+                                  {period.name} {schedule && `(${schedule.startTime})`}
                                 </p>
                               )}
                             </div>

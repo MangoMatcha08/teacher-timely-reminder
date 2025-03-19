@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertCircle, Calendar, CheckCircle2, Clock, Plus } from "lucide-react";
-import { useReminders, type Reminder, Period } from "@/context/ReminderContext";
+import { useReminders, type Reminder, Period, DayOfWeek } from "@/context/ReminderContext";
 import Button from "@/components/shared/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/shared/Card";
 import Badge from "@/components/shared/Badge";
@@ -11,6 +11,13 @@ import { toast } from "sonner";
 const Dashboard: React.FC = () => {
   const { todaysReminders, schoolSetup, deleteReminder } = useReminders();
   const [completedReminders, setCompletedReminders] = useState<string[]>([]);
+  
+  // Helper to get today's day code
+  const getTodayDayCode = (): DayOfWeek => {
+    const days: DayOfWeek[] = ["M", "T", "W", "Th", "F"];
+    const dayIndex = new Date().getDay() - 1; // 0 = Sunday, so -1 gives Monday as 0
+    return dayIndex >= 0 && dayIndex < 5 ? days[dayIndex] : "M"; // Default to Monday if weekend
+  };
   
   const toggleReminderCompletion = (id: string) => {
     if (completedReminders.includes(id)) {
@@ -47,6 +54,14 @@ const Dashboard: React.FC = () => {
   // Get period details
   const getPeriodDetails = (periodId: string): Period | undefined => {
     return schoolSetup?.periods.find((p) => p.id === periodId);
+  };
+  
+  // Get today's schedule for a period
+  const getTodaySchedule = (period: Period | undefined) => {
+    if (!period) return null;
+    
+    const todayDayCode = getTodayDayCode();
+    return period.schedules.find(schedule => schedule.dayOfWeek === todayDayCode);
   };
   
   // Get reminder type badge color
@@ -101,6 +116,7 @@ const Dashboard: React.FC = () => {
             if (reminders.length === 0) return null;
             
             const periodDetails = getPeriodDetails(periodId);
+            const todaySchedule = getTodaySchedule(periodDetails);
             
             return (
               <Card key={periodId}>
@@ -111,8 +127,8 @@ const Dashboard: React.FC = () => {
                       <Badge variant="blue" className="gap-1.5">
                         <Clock className="w-3 h-3" />
                         <span>
-                          {periodDetails
-                            ? `${periodDetails.startTime} - ${periodDetails.endTime}`
+                          {todaySchedule
+                            ? `${todaySchedule.startTime} - ${todaySchedule.endTime}`
                             : "No time set"}
                         </span>
                       </Badge>

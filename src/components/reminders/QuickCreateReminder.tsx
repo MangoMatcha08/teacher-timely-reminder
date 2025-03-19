@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
-import { useReminders } from "@/context/ReminderContext";
+import { useReminders, DayOfWeek } from "@/context/ReminderContext";
 import Button from "@/components/shared/Button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/shared/Card";
 import { toast } from "sonner";
@@ -38,6 +38,17 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
     },
   });
   
+  // Helper function to get the schedule time for display purposes
+  const getPeriodScheduleDisplay = (period: any) => {
+    if (!period || !period.schedules || period.schedules.length === 0) {
+      return "No schedule";
+    }
+    
+    // Get the first schedule for display in dropdown
+    const firstSchedule = period.schedules[0];
+    return firstSchedule.startTime;
+  };
+  
   const onSubmit = (data: QuickReminderFormData) => {
     try {
       // For quick reminders, use today's day and set default type
@@ -50,9 +61,9 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
       createReminder({
         title: data.title, // Ensure title is explicitly passed
         type: "Announcement",
-        days: [todayCode as any],
+        days: [todayCode as DayOfWeek],
         periodId: data.periodId, // Ensure periodId is explicitly passed
-        category: data.category,
+        category: data.category || "",
         notes: "" // Provide a default empty string for notes
       });
       
@@ -120,7 +131,7 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
                   <option value="">Select a period</option>
                   {schoolSetup?.periods.map((period) => (
                     <option key={period.id} value={period.id}>
-                      {period.name} ({period.startTime})
+                      {period.name} ({getPeriodScheduleDisplay(period)})
                     </option>
                   ))}
                 </select>

@@ -112,6 +112,17 @@ const CreateReminder: React.FC = () => {
     setShowQuickCategories(false);
   };
   
+  // Helper function to get the schedule time for display purposes
+  const getPeriodScheduleDisplay = (period: any) => {
+    if (!period || !period.schedules || period.schedules.length === 0) {
+      return "No schedule";
+    }
+    
+    // Get the first schedule for display in dropdown
+    const firstSchedule = period.schedules[0];
+    return `${firstSchedule.startTime} - ${firstSchedule.endTime}`;
+  };
+  
   return (
     <div className="animate-fade-in">
       <div className="flex items-center mb-6">
@@ -174,7 +185,7 @@ const CreateReminder: React.FC = () => {
                   <option value="">Select a period</option>
                   {schoolSetup?.periods.map((period) => (
                     <option key={period.id} value={period.id}>
-                      {period.name} ({period.startTime} - {period.endTime})
+                      {period.name} ({getPeriodScheduleDisplay(period)})
                     </option>
                   ))}
                 </select>
