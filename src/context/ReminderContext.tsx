@@ -12,24 +12,38 @@ export type PeriodSchedule = {
 export type Period = {
   id: string;
   name: string;
-  schedules: PeriodSchedule[]; // Changed from startTime/endTime to schedules array
+  schedules: PeriodSchedule[];
 };
 
 export type ReminderType = 
-  | "Pop Quiz" 
-  | "Collect Work" 
-  | "Hand Out" 
-  | "Announcement" 
+  | "Call Home" 
+  | "Email"
+  | "Talk to Student" 
+  | "Prepare Materials" 
+  | "Grade" 
   | "Other";
+
+export type ReminderTiming = 
+  | "Before School"
+  | "After School"
+  | "During Period";
+
+export type RecurrencePattern =
+  | "Once"
+  | "Daily" 
+  | "Weekly"
+  | "Specific Days";
 
 export interface Reminder {
   id: string;
   title: string;
   type: ReminderType;
+  timing: ReminderTiming;
   days: DayOfWeek[];
   periodId: string;
   category: string;
   notes: string;
+  recurrence: RecurrencePattern;
   createdAt: Date;
 }
 
@@ -43,6 +57,7 @@ interface SchoolSetup {
   schoolDays: DayOfWeek[];
   periods: Period[];
   schoolHours: SchoolHours;
+  categories: string[];
 }
 
 interface ReminderContextType {
@@ -84,11 +99,40 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const storedSchoolSetup = localStorage.getItem("school_setup");
     
     if (storedReminders) {
-      setReminders(JSON.parse(storedReminders));
+      try {
+        const parsed = JSON.parse(storedReminders);
+        // Handle migration of old reminders to new format
+        const migratedReminders = parsed.map((r: any) => ({
+          ...r,
+          timing: r.timing || "During Period",
+          recurrence: r.recurrence || "Once"
+        }));
+        setReminders(migratedReminders);
+      } catch (e) {
+        console.error("Failed to parse reminders from localStorage", e);
+        setReminders([]);
+      }
     }
     
     if (storedSchoolSetup) {
-      setSchoolSetup(JSON.parse(storedSchoolSetup));
+      try {
+        const parsed = JSON.parse(storedSchoolSetup);
+        // Handle migration of old school setup to new format with categories
+        setSchoolSetup({
+          ...parsed,
+          categories: parsed.categories || [
+            "IEP meetings",
+            "Materials/Set up",
+            "Student support",
+            "School events",
+            "Instruction",
+            "Administrative tasks"
+          ]
+        });
+      } catch (e) {
+        console.error("Failed to parse school setup from localStorage", e);
+        setSchoolSetup(null);
+      }
     }
   }, []);
   

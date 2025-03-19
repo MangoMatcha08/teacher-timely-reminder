@@ -1,17 +1,26 @@
 
 import React, { useState } from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
-import { useReminders, DayOfWeek } from "@/context/ReminderContext";
+import { useReminders, DayOfWeek, ReminderTiming } from "@/context/ReminderContext";
 import Button from "@/components/shared/Button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/shared/Card";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Schema for quick reminder form validation
 const quickReminderSchema = z.object({
   title: z.string().min(1, "Title is required"),
+  timing: z.enum(["Before School", "After School", "During Period"] as const),
   periodId: z.string().min(1, "Period is required"),
   category: z.string().optional(),
 });
@@ -25,18 +34,29 @@ interface QuickCreateReminderProps {
 const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) => {
   const { createReminder, schoolSetup } = useReminders();
   
+  const reminderTimings: ReminderTiming[] = [
+    "Before School",
+    "After School",
+    "During Period"
+  ];
+  
   const {
     register,
     handleSubmit,
+    control,
+    watch,
     formState: { errors },
   } = useForm<QuickReminderFormData>({
     resolver: zodResolver(quickReminderSchema),
     defaultValues: {
       title: "",
+      timing: "During Period",
       periodId: schoolSetup?.periods[0]?.id || "",
       category: "",
     },
   });
+  
+  const watchTiming = watch("timing");
   
   // Helper function to get the schedule time for display purposes
   const getPeriodScheduleDisplay = (period: any) => {
@@ -59,12 +79,14 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
       
       // Ensure all required properties are passed
       createReminder({
-        title: data.title, // Ensure title is explicitly passed
-        type: "Announcement",
+        title: data.title,
+        type: "Talk to Student",
+        timing: data.timing,
         days: [todayCode as DayOfWeek],
-        periodId: data.periodId, // Ensure periodId is explicitly passed
+        periodId: data.periodId,
         category: data.category || "",
-        notes: "" // Provide a default empty string for notes
+        notes: "",
+        recurrence: "Once"
       });
       
       toast.success("Quick reminder created!");
@@ -73,6 +95,9 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
       toast.error("Failed to create reminder");
     }
   };
+  
+  // Show period selection only when timing is "During Period"
+  const showPeriodSelection = watchTiming === "During Period";
   
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4 animate-fade-in">
@@ -113,34 +138,70 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
                 )}
               </div>
               
-              {/* Period/Time */}
+              {/* Timing */}
               <div>
                 <label
-                  htmlFor="quick-periodId"
+                  htmlFor="timing"
                   className="block text-sm font-medium text-foreground mb-2"
                 >
-                  Period/Time
+                  When would you like this reminder?
                 </label>
-                <select
-                  id="quick-periodId"
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teacher-blue ${
-                    errors.periodId ? "border-destructive" : "border-input"
-                  }`}
-                  {...register("periodId")}
-                >
-                  <option value="">Select a period</option>
-                  {schoolSetup?.periods.map((period) => (
-                    <option key={period.id} value={period.id}>
-                      {period.name} ({getPeriodScheduleDisplay(period)})
-                    </option>
-                  ))}
-                </select>
-                {errors.periodId && (
-                  <p className="mt-1 text-sm text-destructive">
-                    {errors.periodId.message}
-                  </p>
-                )}
+                <Controller
+                  control={control}
+                  name="timing"
+                  render={({ field }) => (
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className={cn(
+                        "w-full",
+                        errors.timing ? "border-destructive" : "border-input"
+                      )}>
+                        <SelectValue placeholder="Select a timing" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {reminderTimings.map((timing) => (
+                          <SelectItem key={timing} value={timing}>
+                            {timing}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
+              
+              {/* Class Period - conditional based on timing */}
+              {showPeriodSelection && (
+                <div>
+                  <label
+                    htmlFor="quick-periodId"
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
+                    Class Period
+                  </label>
+                  <select
+                    id="quick-periodId"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teacher-blue ${
+                      errors.periodId ? "border-destructive" : "border-input"
+                    }`}
+                    {...register("periodId")}
+                  >
+                    <option value="">Select a period</option>
+                    {schoolSetup?.periods.map((period) => (
+                      <option key={period.id} value={period.id}>
+                        {period.name} ({getPeriodScheduleDisplay(period)})
+                      </option>
+                    ))}
+                  </select>
+                  {errors.periodId && (
+                    <p className="mt-1 text-sm text-destructive">
+                      {errors.periodId.message}
+                    </p>
+                  )}
+                </div>
+              )}
               
               {/* Category */}
               <div>
@@ -150,12 +211,18 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
                 >
                   Category (Optional)
                 </label>
-                <input
+                <select
                   id="quick-category"
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teacher-blue"
-                  placeholder="E.g., Homework, Test, Project"
                   {...register("category")}
-                />
+                >
+                  <option value="">Select a category</option>
+                  {schoolSetup?.categories?.map((category, index) => (
+                    <option key={index} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2 border-t p-6">

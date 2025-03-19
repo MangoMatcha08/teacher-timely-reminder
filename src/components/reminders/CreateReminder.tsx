@@ -4,21 +4,36 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, AlertCircle, Calendar, Clock, Tag, MessageSquare } from "lucide-react";
-import { useReminders, DayOfWeek, ReminderType } from "@/context/ReminderContext";
+import { ArrowLeft, AlertCircle, Calendar, Clock, Tag, MessageSquare, Phone, Mail, User, BookOpen, FileText } from "lucide-react";
+import { 
+  useReminders, 
+  DayOfWeek, 
+  ReminderType, 
+  ReminderTiming,
+  RecurrencePattern
+} from "@/context/ReminderContext";
 import Button from "@/components/shared/Button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/shared/Card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Schema for reminder form validation
 const reminderSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  type: z.enum(["Pop Quiz", "Collect Work", "Hand Out", "Announcement", "Other"] as const),
+  type: z.enum(["Call Home", "Email", "Talk to Student", "Prepare Materials", "Grade", "Other"] as const),
+  timing: z.enum(["Before School", "After School", "During Period"] as const),
   days: z.array(z.enum(["M", "T", "W", "Th", "F"] as const)).min(1, "Select at least one day"),
   periodId: z.string().min(1, "Period is required"),
   category: z.string().optional(),
   notes: z.string().optional(),
+  recurrence: z.enum(["Once", "Daily", "Weekly", "Specific Days"] as const),
 });
 
 type ReminderFormData = z.infer<typeof reminderSchema>;
@@ -28,52 +43,71 @@ const CreateReminder: React.FC = () => {
   const { createReminder, schoolSetup } = useReminders();
   const [showQuickCategories, setShowQuickCategories] = useState(false);
   
-  const quickCategories = [
-    "Homework",
-    "Test",
-    "Project",
-    "Reading",
-    "Activity",
-    "Discussion",
-  ];
-  
   const {
     register,
     handleSubmit,
     control,
     setValue,
-    formState: { errors },
     watch,
+    formState: { errors },
   } = useForm<ReminderFormData>({
     resolver: zodResolver(reminderSchema),
     defaultValues: {
       title: "",
-      type: "Announcement",
+      type: "Talk to Student",
+      timing: "During Period",
       days: [],
       periodId: schoolSetup?.periods[0]?.id || "",
       category: "",
       notes: "",
+      recurrence: "Once",
     },
   });
   
+  const quickCategories = schoolSetup?.categories || [
+    "IEP meetings",
+    "Materials/Set up",
+    "Student support",
+    "School events",
+    "Instruction",
+    "Administrative tasks"
+  ];
+  
   const watchDays = watch("days");
   const watchType = watch("type");
+  const watchTiming = watch("timing");
+  const watchRecurrence = watch("recurrence");
   
   const reminderTypes: ReminderType[] = [
-    "Pop Quiz",
-    "Collect Work",
-    "Hand Out",
-    "Announcement",
+    "Call Home",
+    "Email",
+    "Talk to Student",
+    "Prepare Materials",
+    "Grade",
     "Other",
   ];
   
   const reminderTypeIcons: Record<ReminderType, React.ReactNode> = {
-    "Pop Quiz": <AlertCircle className="w-4 h-4" />,
-    "Collect Work": <Calendar className="w-4 h-4" />,
-    "Hand Out": <Clock className="w-4 h-4" />,
-    "Announcement": <MessageSquare className="w-4 h-4" />,
+    "Call Home": <Phone className="w-4 h-4" />,
+    "Email": <Mail className="w-4 h-4" />,
+    "Talk to Student": <User className="w-4 h-4" />,
+    "Prepare Materials": <BookOpen className="w-4 h-4" />,
+    "Grade": <FileText className="w-4 h-4" />,
     "Other": <Tag className="w-4 h-4" />,
   };
+  
+  const reminderTimings: ReminderTiming[] = [
+    "Before School",
+    "After School",
+    "During Period"
+  ];
+  
+  const recurrencePatterns: RecurrencePattern[] = [
+    "Once",
+    "Daily",
+    "Weekly",
+    "Specific Days"
+  ];
   
   const onSubmit = (data: ReminderFormData) => {
     try {
@@ -81,10 +115,12 @@ const CreateReminder: React.FC = () => {
       createReminder({
         title: data.title,
         type: data.type,
+        timing: data.timing,
         days: data.days,
         periodId: data.periodId,
         category: data.category || "", // Provide default empty string if undefined
-        notes: data.notes || "" // Provide default empty string if undefined
+        notes: data.notes || "", // Provide default empty string if undefined
+        recurrence: data.recurrence,
       });
       
       toast.success("Reminder created successfully!");
@@ -107,6 +143,14 @@ const CreateReminder: React.FC = () => {
     }
   };
   
+  const selectAllDays = () => {
+    setValue("days", ["M", "T", "W", "Th", "F"], { shouldValidate: true });
+  };
+  
+  const clearAllDays = () => {
+    setValue("days", [], { shouldValidate: true });
+  };
+  
   const selectQuickCategory = (category: string) => {
     setValue("category", category, { shouldValidate: true });
     setShowQuickCategories(false);
@@ -122,6 +166,9 @@ const CreateReminder: React.FC = () => {
     const firstSchedule = period.schedules[0];
     return `${firstSchedule.startTime} - ${firstSchedule.endTime}`;
   };
+  
+  // Show period selection only when timing is "During Period"
+  const showPeriodSelection = watchTiming === "During Period";
   
   return (
     <div className="animate-fade-in">
@@ -167,31 +214,111 @@ const CreateReminder: React.FC = () => {
                 )}
               </div>
               
-              {/* Class Period */}
+              {/* Timing */}
               <div>
                 <label
-                  htmlFor="periodId"
+                  htmlFor="timing"
                   className="block text-sm font-medium text-foreground mb-2"
                 >
-                  Class Period
+                  When would you like this reminder?
                 </label>
-                <select
-                  id="periodId"
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teacher-blue ${
-                    errors.periodId ? "border-destructive" : "border-input"
-                  }`}
-                  {...register("periodId")}
-                >
-                  <option value="">Select a period</option>
-                  {schoolSetup?.periods.map((period) => (
-                    <option key={period.id} value={period.id}>
-                      {period.name} ({getPeriodScheduleDisplay(period)})
-                    </option>
-                  ))}
-                </select>
-                {errors.periodId && (
+                <Controller
+                  control={control}
+                  name="timing"
+                  render={({ field }) => (
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className={cn(
+                        "w-full",
+                        errors.timing ? "border-destructive" : "border-input"
+                      )}>
+                        <SelectValue placeholder="Select a timing" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {reminderTimings.map((timing) => (
+                          <SelectItem key={timing} value={timing}>
+                            {timing}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.timing && (
                   <p className="mt-1 text-sm text-destructive">
-                    {errors.periodId.message}
+                    {errors.timing.message}
+                  </p>
+                )}
+              </div>
+              
+              {/* Class Period / Time - conditional based on timing */}
+              {showPeriodSelection && (
+                <div>
+                  <label
+                    htmlFor="periodId"
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
+                    Class Period
+                  </label>
+                  <select
+                    id="periodId"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teacher-blue ${
+                      errors.periodId ? "border-destructive" : "border-input"
+                    }`}
+                    {...register("periodId")}
+                  >
+                    <option value="">Select a period</option>
+                    {schoolSetup?.periods.map((period) => (
+                      <option key={period.id} value={period.id}>
+                        {period.name} ({getPeriodScheduleDisplay(period)})
+                      </option>
+                    ))}
+                  </select>
+                  {errors.periodId && (
+                    <p className="mt-1 text-sm text-destructive">
+                      {errors.periodId.message}
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {/* Recurrence Pattern */}
+              <div>
+                <label
+                  htmlFor="recurrence"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
+                  How often?
+                </label>
+                <Controller
+                  control={control}
+                  name="recurrence"
+                  render={({ field }) => (
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className={cn(
+                        "w-full",
+                        errors.recurrence ? "border-destructive" : "border-input"
+                      )}>
+                        <SelectValue placeholder="Select recurrence" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {recurrencePatterns.map((pattern) => (
+                          <SelectItem key={pattern} value={pattern}>
+                            {pattern}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.recurrence && (
+                  <p className="mt-1 text-sm text-destructive">
+                    {errors.recurrence.message}
                   </p>
                 )}
               </div>
@@ -202,7 +329,7 @@ const CreateReminder: React.FC = () => {
                   htmlFor="category"
                   className="block text-sm font-medium text-foreground mb-2"
                 >
-                  Category (Optional)
+                  Category
                 </label>
                 <input
                   id="category"
@@ -239,7 +366,7 @@ const CreateReminder: React.FC = () => {
                 control={control}
                 name="type"
                 render={({ field }) => (
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                     {reminderTypes.map((type) => (
                       <button
                         key={type}
@@ -266,40 +393,90 @@ const CreateReminder: React.FC = () => {
               )}
             </div>
             
-            {/* Days of Week */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Which days does your class occur?
-              </label>
-              <Controller
-                control={control}
-                name="days"
-                render={() => (
-                  <div className="flex justify-start gap-3 py-2">
-                    {["M", "T", "W", "Th", "F"].map((day) => (
-                      <button
-                        key={day}
-                        type="button"
-                        onClick={() => toggleDay(day as DayOfWeek)}
-                        className={cn(
-                          "day-badge",
-                          watchDays.includes(day as DayOfWeek)
-                            ? "day-badge-selected"
-                            : "day-badge-default"
-                        )}
-                      >
-                        {day}
-                      </button>
-                    ))}
+            {/* Days of Week - Show only if recurrence is "Specific Days" */}
+            {watchRecurrence === "Specific Days" && (
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Which days?
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={selectAllDays}
+                      className="text-xs text-teacher-blue hover:underline"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-xs text-muted-foreground">|</span>
+                    <button
+                      type="button"
+                      onClick={clearAllDays}
+                      className="text-xs text-teacher-blue hover:underline"
+                    >
+                      Clear All
+                    </button>
                   </div>
+                </div>
+                <Controller
+                  control={control}
+                  name="days"
+                  render={() => (
+                    <div className="flex justify-start gap-3 py-2">
+                      {["M", "T", "W", "Th", "F"].map((day) => (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => toggleDay(day as DayOfWeek)}
+                          className={cn(
+                            "day-badge",
+                            watchDays.includes(day as DayOfWeek)
+                              ? "day-badge-selected"
+                              : "day-badge-default"
+                          )}
+                        >
+                          {day}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                />
+                {errors.days && (
+                  <p className="mt-1 text-sm text-destructive">
+                    {errors.days.message}
+                  </p>
                 )}
-              />
-              {errors.days && (
-                <p className="mt-1 text-sm text-destructive">
-                  {errors.days.message}
-                </p>
-              )}
-            </div>
+              </div>
+            )}
+            
+            {/* For non-specific days recurrence, set a default day */}
+            {watchRecurrence !== "Specific Days" && (
+              <div className="hidden">
+                <Controller
+                  control={control}
+                  name="days"
+                  render={({ field }) => {
+                    // Set today as the default day if none selected
+                    if (field.value.length === 0) {
+                      const today = new Date().getDay();
+                      const dayMap: Record<number, DayOfWeek> = {
+                        1: "M",
+                        2: "T",
+                        3: "W",
+                        4: "Th",
+                        5: "F",
+                        0: "M", // Sunday defaults to Monday
+                        6: "M", // Saturday defaults to Monday
+                      };
+                      setTimeout(() => {
+                        setValue("days", [dayMap[today]], { shouldValidate: true });
+                      }, 0);
+                    }
+                    return null;
+                  }}
+                />
+              </div>
+            )}
             
             {/* Notes */}
             <div>
