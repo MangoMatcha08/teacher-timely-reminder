@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -7,21 +8,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import TimeInput from "@/components/shared/TimeInput";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Check, ChevronDown, Info, Plus, Trash2, Calendar } from "lucide-react";
+import { Check, ChevronDown, Info, Plus, Trash2, Calendar, ChevronRight } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -41,18 +33,29 @@ const createInitialSchedule = (day: DayOfWeek, startTime = "9:00 AM", endTime = 
   endTime,
 });
 
-const createDefaultTerm = (): Term => {
+const createDefaultTerm = (schoolYear: string, termType: string, termName: string): Term => {
   const now = new Date();
   const endDate = new Date();
-  endDate.setMonth(now.getMonth() + 4); // Roughly a semester
+  
+  // Set end date based on term type
+  if (termType === "quarter") {
+    endDate.setMonth(now.getMonth() + 3); // Quarter (3 months)
+  } else if (termType === "semester") {
+    endDate.setMonth(now.getMonth() + 5); // Semester (5 months)
+  } else {
+    endDate.setMonth(now.getMonth() + 10); // Full year (10 months)
+  }
   
   return {
     id: "term_default",
-    name: "Current Term",
+    name: termName,
     startDate: now.toISOString(),
-    endDate: endDate.toISOString()
+    endDate: endDate.toISOString(),
+    schoolYear: schoolYear
   };
 };
+
+type TermType = "quarter" | "semester" | "year";
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -62,8 +65,10 @@ const Onboarding: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
   
-  // Term state
-  const [termName, setTermName] = useState("Current Term");
+  // Updated term state
+  const [schoolYear, setSchoolYear] = useState(`${new Date().getFullYear()}-${new Date().getFullYear() + 1}`);
+  const [termType, setTermType] = useState<TermType>("semester");
+  const [termName, setTermName] = useState("Fall Semester");
   
   // School hours state
   const [schoolStart, setSchoolStart] = useState("8:00 AM");
@@ -73,7 +78,9 @@ const Onboarding: React.FC = () => {
   // IEP Meeting settings
   const [iepMeetingsEnabled, setIepMeetingsEnabled] = useState(false);
   const [iepBeforeSchool, setIepBeforeSchool] = useState(false);
+  const [iepBeforeSchoolTime, setIepBeforeSchoolTime] = useState("7:00 AM");
   const [iepAfterSchool, setIepAfterSchool] = useState(false);
+  const [iepAfterSchoolTime, setIepAfterSchoolTime] = useState("3:30 PM");
   
   // Categories state
   const [categories, setCategories] = useState([
@@ -83,6 +90,17 @@ const Onboarding: React.FC = () => {
     "Instruction",
     "Administrative tasks"
   ]);
+  
+  // Custom day schedule visibility controls
+  const [customScheduleVisibility, setCustomScheduleVisibility] = useState<Record<string, boolean>>({});
+  
+  // Toggle custom schedule visibility for a specific period
+  const toggleCustomScheduleVisibility = (periodId: string) => {
+    setCustomScheduleVisibility(prev => ({
+      ...prev,
+      [periodId]: !prev[periodId]
+    }));
+  };
   
   // Updated periods state with day-specific schedules
   const [periods, setPeriods] = useState<Period[]>([
@@ -365,12 +383,23 @@ const Onboarding: React.FC = () => {
            schedule.endTime !== otherSchedule.endTime;
   };
   
+  // Update term name based on term type selection
+  const updateTermNameFromType = (type: TermType) => {
+    if (type === 'quarter') {
+      setTermName('Quarter 1');
+    } else if (type === 'semester') {
+      setTermName('Fall Semester');
+    } else {
+      setTermName('Full Year');
+    }
+  };
+  
   // Navigate to next step
   const goToNextStep = () => {
     if (currentStep === 0) {
       // Validate term
-      if (!termName.trim()) {
-        toast.error("Please provide a term name");
+      if (!schoolYear.trim() || !termName.trim()) {
+        toast.error("Please provide both school year and term name");
         return;
       }
     }
@@ -421,14 +450,25 @@ const Onboarding: React.FC = () => {
         return;
       }
       
+      // Validate IEP meeting times if enabled
+      if (iepMeetingsEnabled) {
+        if (iepBeforeSchool && !iepBeforeSchoolTime) {
+          toast.error("Please provide a time for before-school IEP meetings");
+          return;
+        }
+        if (iepAfterSchool && !iepAfterSchoolTime) {
+          toast.error("Please provide a time for after-school IEP meetings");
+          return;
+        }
+      }
+      
       // Add IEP Meetings category if enabled
       if (iepMeetingsEnabled && !categories.includes("IEP meetings")) {
         setCategories([...categories, "IEP meetings"]);
       }
       
       // Save school setup
-      const defaultTerm = createDefaultTerm();
-      defaultTerm.name = termName;
+      const defaultTerm = createDefaultTerm(schoolYear, termType, termName);
       
       saveSchoolSetup({
         termId: defaultTerm.id,
@@ -444,7 +484,9 @@ const Onboarding: React.FC = () => {
         iepMeetings: {
           enabled: iepMeetingsEnabled,
           beforeSchool: iepBeforeSchool,
-          afterSchool: iepAfterSchool
+          afterSchool: iepAfterSchool,
+          beforeSchoolTime: iepBeforeSchoolTime,
+          afterSchoolTime: iepAfterSchoolTime
         }
       });
       
@@ -471,23 +513,108 @@ const Onboarding: React.FC = () => {
         return (
           <div className="space-y-6 animate-fade-in">
             <div>
-              <h2 className="text-lg font-medium mb-4">Set Up Your School Term</h2>
+              <h2 className="text-lg font-medium mb-4">Set Up Your School Year</h2>
               <p className="text-sm text-muted-foreground mb-6">
-                Create a term for your teaching schedule. You can create different terms for different semesters or quarters.
+                Enter your school year and select your term structure.
               </p>
               
-              <div className="space-y-4 bg-white p-4 rounded-lg border">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Term Name</label>
+              <div className="space-y-4 bg-white p-6 rounded-lg border">
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">School Year</label>
                   <Input
-                    value={termName}
-                    onChange={(e) => setTermName(e.target.value)}
-                    placeholder="e.g., Fall Semester 2023"
+                    value={schoolYear}
+                    onChange={(e) => setSchoolYear(e.target.value)}
+                    placeholder="e.g., 2023-2024"
                     className="w-full"
                   />
                   <p className="text-xs text-muted-foreground">
-                    This will help you organize different schedules throughout the school year.
+                    Format as YYYY-YYYY (e.g., 2023-2024)
                   </p>
+                </div>
+                
+                <div className="space-y-3 pt-4 border-t mt-4">
+                  <label className="text-sm font-medium">Term Structure</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTermType("quarter");
+                        updateTermNameFromType("quarter");
+                      }}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-3 rounded-lg border transition-colors",
+                        termType === "quarter" 
+                          ? "bg-teacher-blue/10 border-teacher-blue" 
+                          : "bg-white hover:bg-gray-50"
+                      )}
+                    >
+                      <span className="text-sm font-medium">Quarter</span>
+                      <span className="text-xs text-muted-foreground mt-1">3 months</span>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTermType("semester");
+                        updateTermNameFromType("semester");
+                      }}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-3 rounded-lg border transition-colors",
+                        termType === "semester" 
+                          ? "bg-teacher-blue/10 border-teacher-blue" 
+                          : "bg-white hover:bg-gray-50"
+                      )}
+                    >
+                      <span className="text-sm font-medium">Semester</span>
+                      <span className="text-xs text-muted-foreground mt-1">5 months</span>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTermType("year");
+                        updateTermNameFromType("year");
+                      }}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-3 rounded-lg border transition-colors",
+                        termType === "year" 
+                          ? "bg-teacher-blue/10 border-teacher-blue" 
+                          : "bg-white hover:bg-gray-50"
+                      )}
+                    >
+                      <span className="text-sm font-medium">Year-Round</span>
+                      <span className="text-xs text-muted-foreground mt-1">Full year</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-3 pt-4 border-t mt-4">
+                  <label className="text-sm font-medium">Term Name</label>
+                  <Select
+                    value={termName}
+                    onValueChange={setTermName}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select term name" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {termType === "quarter" ? (
+                        <>
+                          <SelectItem value="Quarter 1">Quarter 1</SelectItem>
+                          <SelectItem value="Quarter 2">Quarter 2</SelectItem>
+                          <SelectItem value="Quarter 3">Quarter 3</SelectItem>
+                          <SelectItem value="Quarter 4">Quarter 4</SelectItem>
+                        </>
+                      ) : termType === "semester" ? (
+                        <>
+                          <SelectItem value="Fall Semester">Fall Semester</SelectItem>
+                          <SelectItem value="Spring Semester">Spring Semester</SelectItem>
+                        </>
+                      ) : (
+                        <SelectItem value="Full Year">Full Year</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="flex items-start mt-4 pt-4 border-t">
@@ -655,80 +782,97 @@ const Onboarding: React.FC = () => {
                           </div>
                         )}
                         
-                        {/* Custom day schedules */}
-                        <div className="space-y-2">
-                          <h5 className="text-sm font-medium mb-2">Custom Schedules</h5>
+                        {/* Custom day schedules - now as a collapsible section */}
+                        <Collapsible
+                          className="border rounded-md"
+                          open={customScheduleVisibility[period.id]}
+                          onOpenChange={() => toggleCustomScheduleVisibility(period.id)}
+                        >
+                          <CollapsibleTrigger className="flex w-full items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <h5 className="text-sm font-medium">Custom Day Schedules</h5>
+                            <ChevronRight className={cn(
+                              "h-4 w-4 transition-transform",
+                              customScheduleVisibility[period.id] ? "rotate-90" : ""
+                            )} />
+                          </CollapsibleTrigger>
                           
-                          {selectedDays.map((day) => {
-                            const isCustom = hasCustomSchedule(period.id, day);
+                          <CollapsibleContent className="p-3 space-y-3">
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Enable custom schedules for days that differ from the default
+                            </p>
                             
-                            return (
-                              <div key={`${period.id}-${day}-schedule`} 
-                                  className="border rounded-md bg-white overflow-hidden">
-                                <div className="flex items-center justify-between border-b px-4 py-2 bg-gray-50">
-                                  <div className="flex items-center">
-                                    <div className="day-badge day-badge-selected mr-2">
-                                      {days.find(d => d.value === day)?.label}
+                            {selectedDays.map((day) => {
+                              const isCustom = hasCustomSchedule(period.id, day);
+                              const dayLabel = days.find(d => d.value === day)?.label;
+                              
+                              return (
+                                <div key={`${period.id}-${day}-schedule`} 
+                                    className="border rounded-md bg-white overflow-hidden">
+                                  <div className="flex items-center justify-between border-b px-4 py-2 bg-gray-50">
+                                    <div className="flex items-center">
+                                      <div className="day-badge day-badge-selected mr-2">
+                                        {dayLabel}
+                                      </div>
+                                      <h5 className="text-sm font-medium">
+                                        {dayLabel} Schedule
+                                      </h5>
                                     </div>
-                                    <h5 className="text-sm font-medium">
-                                      {days.find(d => d.value === day)?.label} Schedule
-                                    </h5>
+                                    
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-xs text-muted-foreground mr-2">
+                                        Custom schedule
+                                      </div>
+                                      <Switch
+                                        checked={isCustom}
+                                        onCheckedChange={(checked) => {
+                                          if (!checked && isCustom) {
+                                            toggleCustomSchedule(period.id, day, isCustom);
+                                          } else if (checked && !isCustom) {
+                                            // If turning on custom schedule, make a small change to differentiate
+                                            const schedule = period.schedules.find(s => s.dayOfWeek === day);
+                                            if (schedule) {
+                                              // Add 5 minutes to end time to make it different
+                                              const [hourStr, minuteStr] = schedule.endTime.split(':');
+                                              const [minutes, meridian] = minuteStr.split(' ');
+                                              let hour = parseInt(hourStr);
+                                              let minute = parseInt(minutes) + 5;
+                                              if (minute >= 60) {
+                                                minute = 0;
+                                                hour = (hour % 12) + 1;
+                                              }
+                                              const newEndTime = `${hour}:${minute.toString().padStart(2, '0')} ${meridian}`;
+                                              handleScheduleEndTimeChange(period.id, day, newEndTime);
+                                            }
+                                          }
+                                        }}
+                                      />
+                                    </div>
                                   </div>
                                   
-                                  <div className="flex items-center gap-2">
-                                    <div className="text-xs text-muted-foreground mr-2">
-                                      Different schedule
+                                  {isCustom && (
+                                    <div className="p-3">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <TimeInput
+                                          label="Start Time"
+                                          value={period.schedules.find(s => s.dayOfWeek === day)?.startTime || "9:00 AM"}
+                                          onChange={(time) => handleScheduleStartTimeChange(period.id, day, time)}
+                                          id={`period-${period.id}-${day}-start`}
+                                        />
+                                        
+                                        <TimeInput
+                                          label="End Time"
+                                          value={period.schedules.find(s => s.dayOfWeek === day)?.endTime || "9:50 AM"}
+                                          onChange={(time) => handleScheduleEndTimeChange(period.id, day, time)}
+                                          id={`period-${period.id}-${day}-end`}
+                                        />
+                                      </div>
                                     </div>
-                                    <Switch
-                                      checked={isCustom}
-                                      onCheckedChange={(checked) => {
-                                        if (!checked && isCustom) {
-                                          toggleCustomSchedule(period.id, day, isCustom);
-                                        } else if (checked && !isCustom) {
-                                          // If turning on custom schedule, make a small change to differentiate
-                                          const schedule = period.schedules.find(s => s.dayOfWeek === day);
-                                          if (schedule) {
-                                            // Add 5 minutes to end time to make it different
-                                            const [hourStr, minuteStr] = schedule.endTime.split(':');
-                                            const [minutes, meridian] = minuteStr.split(' ');
-                                            let hour = parseInt(hourStr);
-                                            let minute = parseInt(minutes) + 5;
-                                            if (minute >= 60) {
-                                              minute = 0;
-                                              hour = (hour % 12) + 1;
-                                            }
-                                            const newEndTime = `${hour}:${minute.toString().padStart(2, '0')} ${meridian}`;
-                                            handleScheduleEndTimeChange(period.id, day, newEndTime);
-                                          }
-                                        }
-                                      }}
-                                    />
-                                  </div>
+                                  )}
                                 </div>
-                                
-                                {isCustom && (
-                                  <div className="p-3">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <TimeInput
-                                        label="Start Time"
-                                        value={period.schedules.find(s => s.dayOfWeek === day)?.startTime || "9:00 AM"}
-                                        onChange={(time) => handleScheduleStartTimeChange(period.id, day, time)}
-                                        id={`period-${period.id}-${day}-start`}
-                                      />
-                                      
-                                      <TimeInput
-                                        label="End Time"
-                                        value={period.schedules.find(s => s.dayOfWeek === day)?.endTime || "9:50 AM"}
-                                        onChange={(time) => handleScheduleEndTimeChange(period.id, day, time)}
-                                        id={`period-${period.id}-${day}-end`}
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
+                              );
+                            })}
+                          </CollapsibleContent>
+                        </Collapsible>
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
@@ -838,35 +982,63 @@ const Onboarding: React.FC = () => {
                 
                 {iepMeetingsEnabled && (
                   <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-2">
                       When do you typically hold IEP meetings?
                     </p>
                     
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="iep-before-school"
-                          checked={iepBeforeSchool}
-                          onChange={(e) => setIepBeforeSchool(e.target.checked)}
-                          className="h-4 w-4"
-                        />
-                        <label htmlFor="iep-before-school" className="text-sm">
-                          Before school
-                        </label>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="iep-before-school"
+                            checked={iepBeforeSchool}
+                            onChange={(e) => setIepBeforeSchool(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor="iep-before-school" className="text-sm">
+                            Before school
+                          </label>
+                        </div>
+                        
+                        {iepBeforeSchool && (
+                          <div className="w-32">
+                            <TimeInput
+                              label=""
+                              value={iepBeforeSchoolTime}
+                              onChange={setIepBeforeSchoolTime}
+                              id="iep-before-time"
+                              compact={true}
+                            />
+                          </div>
+                        )}
                       </div>
                       
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="iep-after-school"
-                          checked={iepAfterSchool}
-                          onChange={(e) => setIepAfterSchool(e.target.checked)}
-                          className="h-4 w-4"
-                        />
-                        <label htmlFor="iep-after-school" className="text-sm">
-                          After school
-                        </label>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="iep-after-school"
+                            checked={iepAfterSchool}
+                            onChange={(e) => setIepAfterSchool(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor="iep-after-school" className="text-sm">
+                            After school
+                          </label>
+                        </div>
+                        
+                        {iepAfterSchool && (
+                          <div className="w-32">
+                            <TimeInput
+                              label=""
+                              value={iepAfterSchoolTime}
+                              onChange={setIepAfterSchoolTime}
+                              id="iep-after-time"
+                              compact={true}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -882,7 +1054,7 @@ const Onboarding: React.FC = () => {
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-b from-white to-teacher-gray/30">
-      <div className="w-full max-w-3xl space-y-6">
+      <div className="w-full max-w-4xl mx-auto space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight mb-2">Teacher Reminder</h1>
           <p className="text-muted-foreground">
@@ -894,7 +1066,7 @@ const Onboarding: React.FC = () => {
           <CardHeader>
             <CardTitle>Onboarding</CardTitle>
           </CardHeader>
-          <CardContent>{renderStep()}</CardContent>
+          <CardContent className="px-6">{renderStep()}</CardContent>
           <CardFooter className="flex justify-between border-t p-6">
             <Button
               type="button"
@@ -929,3 +1101,4 @@ const Onboarding: React.FC = () => {
 };
 
 export default Onboarding;
+

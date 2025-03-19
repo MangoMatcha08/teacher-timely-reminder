@@ -1,31 +1,38 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { login, register, logout } from "@/services/firebase";
+import { toast } from "sonner";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
-  login: (email: string, provider?: string) => Promise<void>;
-  logout: () => void;
-  setCompleteOnboarding: () => void;
   hasCompletedOnboarding: boolean;
-  resetOnboarding: () => void;
+  login: (email: string, password: string) => Promise<User>;
+  register: (email: string, password: string) => Promise<User>;
+  logout: () => Promise<void>;
+  setCompleteOnboarding: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   isInitialized: false,
-  login: async () => {},
-  logout: () => {},
-  setCompleteOnboarding: () => {},
   hasCompletedOnboarding: false,
-  resetOnboarding: () => {},
+  login: async () => {
+    throw new Error("Function not implemented");
+  },
+  register: async () => {
+    throw new Error("Function not implemented");
+  },
+  logout: async () => {
+    throw new Error("Function not implemented");
+  },
+  setCompleteOnboarding: () => {
+    throw new Error("Function not implemented");
+  },
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -35,49 +42,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
-  // Simulate initialization
+  // Initialize auth state from Firebase
   useEffect(() => {
-    // Check localStorage for user and onboarding status
-    const storedUser = localStorage.getItem("teacher_user");
-    const onboardingCompleted = localStorage.getItem("onboarding_completed") === "true";
-    
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setHasCompletedOnboarding(onboardingCompleted);
-    }
-    
-    setIsInitialized(true);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      
+      // Check if user has completed onboarding
+      const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
+      setHasCompletedOnboarding(!!onboardingCompleted);
+      
+      setIsInitialized(true);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const login = async (email: string, provider = "email") => {
-    // Simulate API call
-    const mockUser = {
-      id: "usr_" + Math.random().toString(36).substring(2, 9),
-      email,
-      name: email.split("@")[0],
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem("teacher_user", JSON.stringify(mockUser));
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      const user = await login(email, password);
+      setUser(user);
+      return user;
+    } catch (error: any) {
+      toast.error(error.message || "Login failed");
+      throw error;
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("teacher_user");
+  const handleRegister = async (email: string, password: string) => {
+    try {
+      const user = await register(email, password);
+      setUser(user);
+      return user;
+    } catch (error: any) {
+      toast.error(error.message || "Registration failed");
+      throw error;
+    }
   };
 
-  const setCompleteOnboarding = () => {
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setUser(null);
+    } catch (error: any) {
+      toast.error(error.message || "Logout failed");
+      throw error;
+    }
+  };
+
+  const completeOnboarding = () => {
+    localStorage.setItem("hasCompletedOnboarding", "true");
     setHasCompletedOnboarding(true);
-    localStorage.setItem("onboarding_completed", "true");
-  };
-
-  const resetOnboarding = () => {
-    // Clear onboarding status but keep user logged in
-    setHasCompletedOnboarding(false);
-    localStorage.removeItem("onboarding_completed");
-    
-    // Also clear any school setup data that might be in localStorage
-    localStorage.removeItem("school_setup");
   };
 
   return (
@@ -86,11 +100,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isAuthenticated: !!user,
         isInitialized,
-        login,
-        logout,
-        setCompleteOnboarding,
         hasCompletedOnboarding,
-        resetOnboarding,
+        login: handleLogin,
+        register: handleRegister,
+        logout: handleLogout,
+        setCompleteOnboarding: completeOnboarding,
       }}
     >
       {children}

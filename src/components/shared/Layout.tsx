@@ -1,145 +1,148 @@
 
 import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Calendar, Clock, Plus, Menu } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import { cn } from "@/lib/utils";
+import Button from "./Button";
+import { Link, useNavigate } from "react-router-dom";
+import { CheckCircle, Home, Calendar, Settings, Menu, X } from "lucide-react";
+import { useReminders } from "@/context/ReminderContext";
+import { useMobile } from "@/hooks/use-mobile";
+import MobileSync from "./MobileSync";
 
 interface LayoutProps {
   children: React.ReactNode;
-  showNav?: boolean;
   pageTitle?: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({ 
-  children, 
-  showNav = true,
-  pageTitle
-}) => {
-  const location = useLocation();
+const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const isMobile = useMobile();
+  const { completedTasks, totalTasks } = useReminders();
   
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  
-  const navItems = [
-    {
-      name: "Today",
-      path: "/dashboard",
-      icon: <Clock className="w-5 h-5" />,
-    },
-    {
-      name: "Schedule",
-      path: "/schedule",
-      icon: <Calendar className="w-5 h-5" />,
-    },
-  ];
-
-  const handleLogout = () => {
-    logout();
-    navigate("/auth");
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(prev => !prev);
   };
-
+  
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+  
+  const completionPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+  
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {showNav && (
-        <header className="border-b sticky top-0 z-10 bg-white">
-          <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden p-2 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-              <Link to="/dashboard" className="font-semibold text-lg">
-                TeacherReminder
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200 py-2">
+        <div className="container mx-auto px-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <Link to="/dashboard" className="flex items-center">
+              <CheckCircle className="h-6 w-6 text-teacher-blue" />
+              <span className="text-xl font-semibold ml-2 text-gray-900">
+                Teacher Reminder
+              </span>
+            </Link>
+            {pageTitle && (
+              <span className="ml-4 text-gray-500 hidden md:inline">/ {pageTitle}</span>
+            )}
+          </div>
+          
+          {isMobile ? (
+            <button onClick={toggleMobileMenu} className="p-2">
+              {mobileMenuOpen ? (
+                <X className="h-6 w-6 text-gray-600" />
+              ) : (
+                <Menu className="h-6 w-6 text-gray-600" />
+              )}
+            </button>
+          ) : (
+            <div className="flex items-center space-x-4">
+              <MobileSync />
+              
+              <Link to="/dashboard">
+                <Button variant="ghost" className="flex items-center">
+                  <Home className="h-5 w-5 mr-1" />
+                  <span>Dashboard</span>
+                </Button>
+              </Link>
+              
+              <Link to="/schedule">
+                <Button variant="ghost" className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-1" />
+                  <span>Schedule</span>
+                </Button>
+              </Link>
+              
+              <Link to="/settings">
+                <Button variant="ghost" className="flex items-center">
+                  <Settings className="h-5 w-5 mr-1" />
+                  <span>Settings</span>
+                </Button>
               </Link>
             </div>
+          )}
+        </div>
+      </header>
+      
+      {/* Mobile Menu */}
+      {isMobile && mobileMenuOpen && (
+        <div className="bg-white border-b border-gray-200 shadow-md py-2 animate-fade-in">
+          <div className="container mx-auto px-4 flex flex-col space-y-2">
+            <Link to="/dashboard" onClick={closeMobileMenu}>
+              <Button variant="ghost" className="flex items-center w-full justify-start">
+                <Home className="h-5 w-5 mr-2" />
+                <span>Dashboard</span>
+              </Button>
+            </Link>
             
-            {pageTitle && (
-              <h1 className="text-lg font-medium hidden md:block">{pageTitle}</h1>
-            )}
+            <Link to="/schedule" onClick={closeMobileMenu}>
+              <Button variant="ghost" className="flex items-center w-full justify-start">
+                <Calendar className="h-5 w-5 mr-2" />
+                <span>Schedule</span>
+              </Button>
+            </Link>
             
-            <div className="flex items-center gap-2">
-              <Link
-                to="/create-reminder"
-                className="flex items-center justify-center gap-2 h-9 px-4 text-sm font-medium rounded-full text-white bg-teacher-blue hover:bg-teacher-blue/90 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden md:inline">New Reminder</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="hidden md:block text-sm text-muted-foreground hover:text-foreground"
-              >
-                Logout
-              </button>
+            <Link to="/settings" onClick={closeMobileMenu}>
+              <Button variant="ghost" className="flex items-center w-full justify-start">
+                <Settings className="h-5 w-5 mr-2" />
+                <span>Settings</span>
+              </Button>
+            </Link>
+            
+            <div className="pt-2 pb-1">
+              <MobileSync />
             </div>
           </div>
-        </header>
+        </div>
       )}
       
-      <div className="flex-1 flex">
-        {showNav && (
-          <>
-            {/* Mobile menu overlay */}
-            {isMenuOpen && (
-              <div 
-                className="fixed inset-0 bg-black/20 z-20 md:hidden"
-                onClick={() => setIsMenuOpen(false)}
-              />
-            )}
-            
-            {/* Sidebar */}
-            <nav 
-              className={cn(
-                "fixed md:sticky top-0 left-0 bottom-0 z-30 w-64 border-r bg-white transform transition-transform duration-200 ease-in-out",
-                "md:translate-x-0 md:z-0 md:h-[calc(100vh-4rem)] md:top-16",
-                isMenuOpen ? "translate-x-0" : "-translate-x-full"
-              )}
-            >
-              <div className="p-4 h-full flex flex-col">
-                <div className="flex-1 py-8">
-                  <div className="space-y-1">
-                    {navItems.map((item) => (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                          location.pathname === item.path
-                            ? "bg-teacher-blue text-white"
-                            : "text-muted-foreground hover:text-foreground hover:bg-teacher-gray"
-                        )}
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {item.icon}
-                        {item.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="border-t pt-4 md:hidden">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </nav>
-          </>
-        )}
-        
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="container mx-auto max-w-5xl">
-            {children}
+      {/* Task Progress Bar */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="container mx-auto px-4 py-2">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">Today's Progress:</div>
+            <div className="text-sm font-medium">
+              {completedTasks}/{totalTasks} tasks ({completionPercentage}%)
+            </div>
           </div>
-        </main>
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+            <div 
+              className="bg-teacher-blue h-2.5 rounded-full transition-all duration-300"
+              style={{ width: `${completionPercentage}%` }}
+            ></div>
+          </div>
+        </div>
       </div>
+      
+      {/* Main Content */}
+      <main className="flex-1 container mx-auto px-4 py-6">
+        {children}
+      </main>
+      
+      {/* Footer */}
+      <footer className="bg-white shadow-sm border-t border-gray-200 py-4">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-500">
+          © {new Date().getFullYear()} Teacher Reminder App
+        </div>
+      </footer>
     </div>
   );
 };

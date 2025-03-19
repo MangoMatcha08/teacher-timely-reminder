@@ -20,8 +20,10 @@ const Settings: React.FC = () => {
     }
   };
   
+  const currentTerm = schoolSetup?.terms.find(term => term.id === schoolSetup.termId);
+  
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       <div className="flex items-center gap-2 mb-4">
         <Button
           variant="ghost"
@@ -42,8 +44,24 @@ const Settings: React.FC = () => {
             <span>School Schedule</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <div className="space-y-4">
+            {currentTerm && (
+              <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-2">School Year & Term</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">School Year:</span>
+                    <span>{currentTerm.schoolYear || "Not specified"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Current Term:</span>
+                    <span>{currentTerm.name}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="border rounded-lg p-4">
               <h3 className="font-medium mb-2">School Days</h3>
               <div className="flex gap-2">
@@ -72,6 +90,26 @@ const Settings: React.FC = () => {
                 </div>
               </div>
             </div>
+            
+            {schoolSetup?.iepMeetings?.enabled && (
+              <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-2">IEP Meetings</h3>
+                <div className="space-y-2 text-sm">
+                  {schoolSetup.iepMeetings.beforeSchool && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Before School:</span>
+                      <span>{schoolSetup.iepMeetings.beforeSchoolTime || "Not specified"}</span>
+                    </div>
+                  )}
+                  {schoolSetup.iepMeetings.afterSchool && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">After School:</span>
+                      <span>{schoolSetup.iepMeetings.afterSchoolTime || "Not specified"}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             
             <div className="border rounded-lg p-4">
               <div className="flex justify-between items-center mb-2">
