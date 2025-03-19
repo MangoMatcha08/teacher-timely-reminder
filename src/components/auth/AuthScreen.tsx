@@ -18,7 +18,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const AuthScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, resetOnboarding } = useAuth();
   const navigate = useNavigate();
 
   const { 
@@ -52,7 +52,7 @@ const AuthScreen: React.FC = () => {
       toast.success("Signed in with Google!");
       navigate("/onboarding");
     } catch (error) {
-      toast.error("Failed to sign in with Google. Please try again.");
+      toast.error("Failed to sign in with Clever. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -69,6 +69,11 @@ const AuthScreen: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleResetOnboarding = () => {
+    resetOnboarding();
+    toast.success("Onboarding data has been reset for testing!");
   };
 
   return (
@@ -173,8 +178,21 @@ const AuthScreen: React.FC = () => {
               </Button>
             </div>
           </CardContent>
-          <CardFooter className="text-center text-sm text-muted-foreground">
-            By signing in, you agree to our Terms of Service and Privacy Policy.
+          <CardFooter className="flex flex-col gap-4">
+            <p className="text-center text-sm text-muted-foreground">
+              By signing in, you agree to our Terms of Service and Privacy Policy.
+            </p>
+            <div className="border-t border-border pt-4 w-full">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-full text-muted-foreground"
+                onClick={handleResetOnboarding}
+              >
+                Reset Onboarding Data (For Testing)
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       </div>
