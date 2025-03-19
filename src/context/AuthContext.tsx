@@ -14,6 +14,7 @@ interface AuthContextType {
   register: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   setCompleteOnboarding: () => void;
+  resetOnboarding: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -31,6 +32,9 @@ const AuthContext = createContext<AuthContextType>({
     throw new Error("Function not implemented");
   },
   setCompleteOnboarding: () => {
+    throw new Error("Function not implemented");
+  },
+  resetOnboarding: () => {
     throw new Error("Function not implemented");
   },
 });
@@ -93,6 +97,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("hasCompletedOnboarding", "true");
     setHasCompletedOnboarding(true);
   };
+  
+  const resetOnboardingData = () => {
+    localStorage.removeItem("hasCompletedOnboarding");
+    setHasCompletedOnboarding(false);
+    toast.success("Onboarding data has been reset");
+  };
 
   return (
     <AuthContext.Provider
@@ -105,6 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register: handleRegister,
         logout: handleLogout,
         setCompleteOnboarding: completeOnboarding,
+        resetOnboarding: resetOnboardingData,
       }}
     >
       {children}

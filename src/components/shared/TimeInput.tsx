@@ -9,6 +9,7 @@ interface TimeInputProps {
   id?: string;
   className?: string;
   error?: string;
+  compact?: boolean; // Added the missing compact property
 }
 
 const TimeInput: React.FC<TimeInputProps> = ({
@@ -18,6 +19,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
   id,
   className,
   error,
+  compact = false, // Default to false
 }) => {
   const [hours, setHours] = useState("12");
   const [minutes, setMinutes] = useState("00");
@@ -121,8 +123,12 @@ const TimeInput: React.FC<TimeInputProps> = ({
     updateTime(hours, minutes, newPeriod);
   };
 
+  // If compact, adjust the styles and layout
+  const inputClasses = compact ? "text-xs px-1 py-1 w-10" : "px-3 py-2 w-16";
+  const containerClass = cn(className, compact ? "scale-90" : "");
+
   return (
-    <div className={className}>
+    <div className={containerClass}>
       {label && (
         <label
           htmlFor={id}
@@ -132,7 +138,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
         </label>
       )}
       <div className="flex items-center">
-        <div className="flex items-center justify-between rounded-l-lg border border-r-0 px-3 py-2 w-16">
+        <div className={`flex items-center justify-between rounded-l-lg border border-r-0 ${inputClasses}`}>
           <input
             id={id}
             type="text"
@@ -148,7 +154,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
         <div className="flex items-center justify-between border border-x-0 px-1 py-2">
           <span className="text-center">:</span>
         </div>
-        <div className="flex items-center justify-between border border-l-0 px-3 py-2 w-16">
+        <div className={`flex items-center justify-between border border-l-0 ${inputClasses}`}>
           <input
             type="text"
             inputMode="numeric"
@@ -165,7 +171,8 @@ const TimeInput: React.FC<TimeInputProps> = ({
           type="button"
           onClick={togglePeriod}
           className={cn(
-            "inline-flex items-center justify-center rounded-r-lg border border-l-0 px-3 py-2 h-[42px] w-16 text-sm font-medium transition-colors",
+            "inline-flex items-center justify-center rounded-r-lg border border-l-0 text-sm font-medium transition-colors",
+            compact ? "px-2 py-1 h-[30px] w-12 text-xs" : "px-3 py-2 h-[42px] w-16",
             period === "AM"
               ? "bg-teacher-gray text-teacher-darkGray"
               : "bg-teacher-blue text-white"

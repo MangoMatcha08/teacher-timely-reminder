@@ -4,7 +4,7 @@ import Button from "./Button";
 import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle, Home, Calendar, Settings, Menu, X } from "lucide-react";
 import { useReminders } from "@/context/ReminderContext";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import MobileSync from "./MobileSync";
 
 interface LayoutProps {
@@ -15,7 +15,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const navigate = useNavigate();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const { completedTasks, totalTasks } = useReminders();
   
   const toggleMobileMenu = () => {

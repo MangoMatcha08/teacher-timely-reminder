@@ -35,7 +35,8 @@ const AuthScreen: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true);
-      await login(data.email);
+      // Using a mock password for demo purposes
+      await login(data.email, "password123"); 
       toast.success("Signed in successfully!");
       navigate("/onboarding");
     } catch (error) {
@@ -52,7 +53,7 @@ const AuthScreen: React.FC = () => {
       toast.success("Signed in with Google!");
       navigate("/onboarding");
     } catch (error) {
-      toast.error("Failed to sign in with Clever. Please try again.");
+      toast.error("Failed to sign in with Google. Please try again.");
     } finally {
       setIsLoading(false);
     }
