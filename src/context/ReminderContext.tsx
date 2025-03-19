@@ -3,11 +3,16 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 export type DayOfWeek = "M" | "T" | "W" | "Th" | "F";
 
+export type PeriodSchedule = {
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+};
+
 export type Period = {
   id: string;
   name: string;
-  startTime: string;
-  endTime: string;
+  schedules: PeriodSchedule[]; // Changed from startTime/endTime to schedules array
 };
 
 export type ReminderType = 
@@ -23,14 +28,21 @@ export interface Reminder {
   type: ReminderType;
   days: DayOfWeek[];
   periodId: string;
-  category: string; // Changed from optional to required with default empty string
-  notes: string; // Changed from optional to required with default empty string
+  category: string;
+  notes: string;
   createdAt: Date;
+}
+
+export interface SchoolHours {
+  startTime: string;
+  endTime: string;
+  teacherArrivalTime: string;
 }
 
 interface SchoolSetup {
   schoolDays: DayOfWeek[];
   periods: Period[];
+  schoolHours: SchoolHours;
 }
 
 interface ReminderContextType {

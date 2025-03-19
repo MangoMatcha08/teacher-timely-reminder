@@ -23,7 +23,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
   const [minutes, setMinutes] = useState("00");
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
 
-  // Parse initial value on component mount
+  // Parse initial value on component mount or when value prop changes
   useEffect(() => {
     if (value) {
       try {
@@ -46,8 +46,8 @@ const TimeInput: React.FC<TimeInputProps> = ({
   const updateTime = (h: string, m: string, p: "AM" | "PM") => {
     // Only update if we have valid hours
     if (h) {
-      // Format the time string with whatever minutes we have
-      onChange(`${h}:${m} ${p}`);
+      const formattedMinutes = m || "00"; // Use empty minutes as "00"
+      onChange(`${h}:${formattedMinutes} ${p}`);
     }
   };
 
@@ -80,11 +80,11 @@ const TimeInput: React.FC<TimeInputProps> = ({
   const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const m = e.target.value.replace(/\D/g, "");
     
-    // Always update the minutes state first
+    // Always update the internal state
     setMinutes(m);
     
-    // If input is empty, we still update the parent with empty minutes
-    // This allows for proper deletion and re-entry
+    // Always update the parent component with the current value
+    // This ensures we can type new values after deleting
     updateTime(hours, m, period);
   };
 
@@ -97,8 +97,12 @@ const TimeInput: React.FC<TimeInputProps> = ({
       return;
     }
     
-    // Ensure minutes are properly formatted with leading zero if needed
-    const formattedMinutes = parseInt(minutes, 10).toString().padStart(2, "0");
+    // Ensure minutes are valid (0-59)
+    let mins = parseInt(minutes, 10);
+    if (mins > 59) mins = 59;
+    
+    // Format with leading zero
+    const formattedMinutes = mins.toString().padStart(2, "0");
     setMinutes(formattedMinutes);
     updateTime(hours, formattedMinutes, period);
   };
