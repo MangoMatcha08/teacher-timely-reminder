@@ -1,16 +1,17 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, AlertCircle, Calendar, Clock, Tag, MessageSquare, Phone, Mail, User, BookOpen, FileText } from "lucide-react";
+import { ArrowLeft, AlertCircle, Calendar, Clock, Tag, MessageSquare, Phone, Mail, User, BookOpen, FileText, Flag } from "lucide-react";
 import { 
   useReminders, 
   DayOfWeek, 
   ReminderType, 
   ReminderTiming,
-  RecurrencePattern
+  RecurrencePattern,
+  ReminderPriority
 } from "@/context/ReminderContext";
 import Button from "@/components/shared/Button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/shared/Card";
@@ -28,12 +29,13 @@ import {
 const reminderSchema = z.object({
   title: z.string().min(1, "Title is required"),
   type: z.enum(["Call Home", "Email", "Talk to Student", "Prepare Materials", "Grade", "Other"] as const),
-  timing: z.enum(["Before School", "After School", "During Period"] as const),
+  timing: z.enum(["Before School", "After School", "During Period", "Start of Period", "End of Period", "15 Minutes Into Period"] as const),
   days: z.array(z.enum(["M", "T", "W", "Th", "F"] as const)).min(1, "Select at least one day"),
   periodId: z.string().min(1, "Period is required"),
   category: z.string().optional(),
   notes: z.string().optional(),
   recurrence: z.enum(["Once", "Daily", "Weekly", "Specific Days"] as const),
+  priority: z.enum(["Low", "Medium", "High"] as const)
 });
 
 type ReminderFormData = z.infer<typeof reminderSchema>;
@@ -61,8 +63,27 @@ const CreateReminder: React.FC = () => {
       category: "",
       notes: "",
       recurrence: "Once",
+      priority: "Medium"
     },
   });
+  
+  // Check for time constraint on first render
+  useEffect(() => {
+    // Set today as the default day if none selected
+    const today = new Date().getDay();
+    const dayMap: Record<number, DayOfWeek> = {
+      1: "M",
+      2: "T",
+      3: "W",
+      4: "Th",
+      5: "F",
+      0: "M", // Sunday defaults to Monday
+      6: "M", // Saturday defaults to Monday
+    };
+    setTimeout(() => {
+      setValue("days", [dayMap[today]], { shouldValidate: true });
+    }, 0);
+  }, [setValue]);
   
   const quickCategories = schoolSetup?.categories || [
     "IEP meetings",
@@ -77,6 +98,7 @@ const CreateReminder: React.FC = () => {
   const watchType = watch("type");
   const watchTiming = watch("timing");
   const watchRecurrence = watch("recurrence");
+  const watchPriority = watch("priority");
   
   const reminderTypes: ReminderType[] = [
     "Call Home",
@@ -99,7 +121,10 @@ const CreateReminder: React.FC = () => {
   const reminderTimings: ReminderTiming[] = [
     "Before School",
     "After School",
-    "During Period"
+    "During Period",
+    "Start of Period",
+    "End of Period",
+    "15 Minutes Into Period"
   ];
   
   const recurrencePatterns: RecurrencePattern[] = [
@@ -108,6 +133,18 @@ const CreateReminder: React.FC = () => {
     "Weekly",
     "Specific Days"
   ];
+  
+  const priorityLevels: ReminderPriority[] = [
+    "Low",
+    "Medium",
+    "High"
+  ];
+  
+  const priorityColors: Record<ReminderPriority, string> = {
+    "Low": "bg-green-500/10 text-green-700",
+    "Medium": "bg-amber-500/10 text-amber-700",
+    "High": "bg-red-500/10 text-red-700"
+  };
   
   const onSubmit = (data: ReminderFormData) => {
     try {
@@ -121,6 +158,7 @@ const CreateReminder: React.FC = () => {
         category: data.category || "", // Provide default empty string if undefined
         notes: data.notes || "", // Provide default empty string if undefined
         recurrence: data.recurrence,
+        priority: data.priority
       });
       
       toast.success("Reminder created successfully!");
@@ -167,8 +205,8 @@ const CreateReminder: React.FC = () => {
     return `${firstSchedule.startTime} - ${firstSchedule.endTime}`;
   };
   
-  // Show period selection only when timing is "During Period"
-  const showPeriodSelection = watchTiming === "During Period";
+  // Show period selection only when timing involves a period
+  const showPeriodSelection = ["During Period", "Start of Period", "End of Period", "15 Minutes Into Period"].includes(watchTiming);
   
   return (
     <div className="animate-fade-in">
@@ -262,20 +300,30 @@ const CreateReminder: React.FC = () => {
                   >
                     Class Period
                   </label>
-                  <select
-                    id="periodId"
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teacher-blue ${
-                      errors.periodId ? "border-destructive" : "border-input"
-                    }`}
-                    {...register("periodId")}
-                  >
-                    <option value="">Select a period</option>
-                    {schoolSetup?.periods.map((period) => (
-                      <option key={period.id} value={period.id}>
-                        {period.name} ({getPeriodScheduleDisplay(period)})
-                      </option>
-                    ))}
-                  </select>
+                  <Controller 
+                    control={control}
+                    name="periodId"
+                    render={({ field }) => (
+                      <Select 
+                        value={field.value} 
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger className={cn(
+                          "w-full",
+                          errors.periodId ? "border-destructive" : "border-input"
+                        )}>
+                          <SelectValue placeholder="Select a period" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {schoolSetup?.periods.map((period) => (
+                            <SelectItem key={period.id} value={period.id}>
+                              {period.name} ({getPeriodScheduleDisplay(period)})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                   {errors.periodId && (
                     <p className="mt-1 text-sm text-destructive">
                       {errors.periodId.message}
@@ -323,6 +371,45 @@ const CreateReminder: React.FC = () => {
                 )}
               </div>
               
+              {/* Priority */}
+              <div>
+                <label
+                  htmlFor="priority"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
+                  Priority
+                </label>
+                <Controller
+                  control={control}
+                  name="priority"
+                  render={({ field }) => (
+                    <div className="flex gap-2">
+                      {priorityLevels.map((priority) => (
+                        <button
+                          key={priority}
+                          type="button"
+                          onClick={() => field.onChange(priority)}
+                          className={cn(
+                            "flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-1.5 transition-colors",
+                            watchPriority === priority
+                              ? `${priorityColors[priority]} font-medium`
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          )}
+                        >
+                          <Flag className={`h-4 w-4 ${watchPriority === priority ? "opacity-100" : "opacity-50"}`} />
+                          {priority}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                />
+                {errors.priority && (
+                  <p className="mt-1 text-sm text-destructive">
+                    {errors.priority.message}
+                  </p>
+                )}
+              </div>
+              
               {/* Category */}
               <div className="relative">
                 <label
@@ -331,29 +418,31 @@ const CreateReminder: React.FC = () => {
                 >
                   Category
                 </label>
-                <input
-                  id="category"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teacher-blue"
-                  placeholder="E.g., Homework, Test, Project"
-                  {...register("category")}
-                  onFocus={() => setShowQuickCategories(true)}
-                />
-                {showQuickCategories && (
-                  <div className="absolute left-0 right-0 mt-1 p-2 bg-white rounded-lg border shadow-md z-10 max-h-40 overflow-auto">
-                    <div className="grid grid-cols-2 gap-1">
-                      {quickCategories.map((category) => (
-                        <button
-                          key={category}
-                          type="button"
-                          className="text-left px-3 py-2 text-sm rounded-md hover:bg-teacher-gray transition-colors"
-                          onClick={() => selectQuickCategory(category)}
-                        >
-                          {category}
-                        </button>
-                      ))}
+                <div className="flex relative">
+                  <input
+                    id="category"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teacher-blue"
+                    placeholder="E.g., Homework, Test, Project"
+                    {...register("category")}
+                    onFocus={() => setShowQuickCategories(true)}
+                  />
+                  {showQuickCategories && (
+                    <div className="absolute left-0 right-0 top-full mt-1 p-2 bg-white rounded-lg border shadow-md z-10 max-h-40 overflow-auto">
+                      <div className="grid grid-cols-1 gap-1">
+                        {quickCategories.map((category) => (
+                          <button
+                            key={category}
+                            type="button"
+                            className="text-left px-3 py-2 text-sm rounded-md hover:bg-teacher-gray transition-colors"
+                            onClick={() => selectQuickCategory(category)}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
             
@@ -366,21 +455,23 @@ const CreateReminder: React.FC = () => {
                 control={control}
                 name="type"
                 render={({ field }) => (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {reminderTypes.map((type) => (
                       <button
                         key={type}
                         type="button"
                         onClick={() => field.onChange(type)}
                         className={cn(
-                          "reminder-type-badge",
+                          "flex flex-col items-center justify-center p-3 rounded-lg border transition-colors",
                           watchType === type
-                            ? "reminder-type-badge-selected"
-                            : "reminder-type-badge-default"
+                            ? "bg-teacher-blue/10 border-teacher-blue text-teacher-blue"
+                            : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
                         )}
                       >
-                        {reminderTypeIcons[type]}
-                        <span>{type}</span>
+                        <div className="rounded-full bg-white p-2 mb-1 shadow-sm">
+                          {reminderTypeIcons[type]}
+                        </div>
+                        <span className="text-xs font-medium">{type}</span>
                       </button>
                     ))}
                   </div>
@@ -422,17 +513,17 @@ const CreateReminder: React.FC = () => {
                   control={control}
                   name="days"
                   render={() => (
-                    <div className="flex justify-start gap-3 py-2">
+                    <div className="flex flex-wrap justify-start gap-2 py-2">
                       {["M", "T", "W", "Th", "F"].map((day) => (
                         <button
                           key={day}
                           type="button"
                           onClick={() => toggleDay(day as DayOfWeek)}
                           className={cn(
-                            "day-badge",
+                            "w-12 h-12 flex items-center justify-center rounded-full transition-colors",
                             watchDays.includes(day as DayOfWeek)
-                              ? "day-badge-selected"
-                              : "day-badge-default"
+                              ? "bg-teacher-blue text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                           )}
                         >
                           {day}

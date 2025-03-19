@@ -72,6 +72,13 @@ const TimeInput: React.FC<TimeInputProps> = ({
     // Format to string
     h = num.toString();
     
+    // Auto-switch to PM for afternoon hours (12 should be PM)
+    if (num === 12 || (num >= 1 && num <= 5)) {
+      setPeriod("PM");
+    } else if (num >= 7 && num <= 11) {
+      setPeriod("AM");
+    }
+    
     setHours(h);
     updateTime(h, minutes, period);
   };
