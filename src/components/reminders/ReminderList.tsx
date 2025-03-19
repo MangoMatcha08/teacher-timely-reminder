@@ -1,113 +1,103 @@
 
-import React from "react";
-import { Reminder } from "@/context/ReminderContext";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { useReminders } from "@/context/ReminderContext";
-import { toast } from "sonner";
+import React from 'react';
+import { useReminders, Reminder } from '@/context/ReminderContext';
+import { Card, CardContent } from "@/components/shared/Card";
+import { Check, Flag } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ReminderListProps {
   reminders: Reminder[];
 }
 
 const ReminderList: React.FC<ReminderListProps> = ({ reminders }) => {
-  const { toggleReminderComplete, deleteReminder } = useReminders();
-  const [reminderToDelete, setReminderToDelete] = React.useState<string | null>(null);
-
-  const handleToggleComplete = (id: string) => {
-    toggleReminderComplete(id);
-    toast.success("Reminder status updated");
+  const { toggleReminderComplete } = useReminders();
+  
+  const priorityColors: Record<string, string> = {
+    "Low": "bg-green-500/10 text-green-700",
+    "Medium": "bg-amber-500/10 text-amber-700",
+    "High": "bg-red-500/10 text-red-700"
   };
-
-  const handleDeleteReminder = () => {
-    if (reminderToDelete) {
-      deleteReminder(reminderToDelete);
-      setReminderToDelete(null);
-      toast.success("Reminder deleted");
-    }
-  };
-
+  
   if (reminders.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-        <p className="text-gray-500">No reminders found.</p>
-        <p className="text-gray-400 text-sm mt-2">Create a new reminder to get started!</p>
-      </div>
+      <Card>
+        <CardContent className="py-6">
+          <div className="text-center text-muted-foreground">
+            <p>No reminders available.</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
-
+  
   return (
-    <div className="space-y-4">
-      <AlertDialog open={!!reminderToDelete} onOpenChange={(isOpen) => !isOpen && setReminderToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Reminder</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this reminder? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteReminder}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
+    <div className="space-y-3">
       {reminders.map((reminder) => (
-        <div 
-          key={reminder.id} 
-          className={`bg-white rounded-lg shadow-sm p-4 flex items-start space-x-4 transition-all ${
-            reminder.completed ? "opacity-60" : ""
-          }`}
-        >
-          <input
-            type="checkbox"
-            checked={reminder.completed}
-            onChange={() => reminder.id && handleToggleComplete(reminder.id)}
-            className="mt-1 h-5 w-5 rounded-md border-gray-300 text-primary focus:ring-primary"
-          />
-          
-          <div className="flex-1">
-            <div className="flex justify-between items-start">
-              <h3 className={`font-medium ${reminder.completed ? "line-through text-gray-500" : ""}`}>
-                {reminder.title}
-              </h3>
-              <div className="flex space-x-2">
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  reminder.priority === "High" 
-                    ? "bg-red-100 text-red-700" 
-                    : reminder.priority === "Medium"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-green-100 text-green-700"
-                }`}>
-                  {reminder.priority}
-                </span>
-                {reminder.category && (
-                  <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
-                    {reminder.category}
-                  </span>
+        <Card key={reminder.id} className={cn(
+          "transition-colors",
+          reminder.completed ? "bg-gray-100" : "bg-white"
+        )}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <button 
+                onClick={() => reminder.id && toggleReminderComplete(reminder.id)}
+                className={cn(
+                  "flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center",
+                  reminder.completed 
+                    ? "bg-teacher-blue text-white border-teacher-blue" 
+                    : "border-gray-300 text-transparent hover:border-teacher-blue"
                 )}
-                <button 
-                  onClick={() => reminder.id && setReminderToDelete(reminder.id)}
-                  className="text-gray-400 hover:text-red-500"
-                >
-                  <span className="text-sm">-</span>
-                </button>
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap gap-2 items-start justify-between">
+                  <h3 className={cn(
+                    "font-medium truncate",
+                    reminder.completed ? "text-gray-500 line-through" : ""
+                  )}>
+                    {reminder.title}
+                  </h3>
+                  
+                  {reminder.priority && (
+                    <div className={cn(
+                      "px-2 py-1 rounded-full text-xs font-medium",
+                      priorityColors[reminder.priority]
+                    )}>
+                      <Flag className="w-3 h-3 inline-block mr-1" />
+                      {reminder.priority}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {reminder.category && (
+                    <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full">
+                      {reminder.category}
+                    </span>
+                  )}
+                  
+                  {reminder.type && reminder.type !== "_none" && (
+                    <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full">
+                      {reminder.type}
+                    </span>
+                  )}
+                  
+                  <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full">
+                    {reminder.timing}
+                  </span>
+                </div>
+                
+                {reminder.notes && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    {reminder.notes}
+                  </p>
+                )}
               </div>
             </div>
-            
-            {reminder.notes && (
-              <p className="text-sm text-gray-600 mt-1">{reminder.notes}</p>
-            )}
-            
-            <div className="flex items-center mt-2 text-xs text-gray-500">
-              <span className="mr-2">{reminder.timing}</span>
-              <span>{reminder.days.join(", ")}</span>
-              {reminder.type && reminder.type !== "_none" && (
-                <span className="ml-2 bg-gray-100 px-2 py-0.5 rounded">{reminder.type}</span>
-              )}
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

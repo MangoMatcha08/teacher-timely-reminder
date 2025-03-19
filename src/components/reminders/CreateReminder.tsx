@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -25,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Schema for reminder form validation
 const reminderSchema = z.object({
   title: z.string().min(1, "Title is required"),
   type: z.enum(["Call Home", "Email", "Talk to Student", "Prepare Materials", "Grade", "Other"] as const),
@@ -67,9 +65,7 @@ const CreateReminder: React.FC = () => {
     },
   });
   
-  // Check for time constraint on first render
   useEffect(() => {
-    // Set today as the default day if none selected
     const today = new Date().getDay();
     const dayMap: Record<number, DayOfWeek> = {
       1: "M",
@@ -77,8 +73,8 @@ const CreateReminder: React.FC = () => {
       3: "W",
       4: "Th",
       5: "F",
-      0: "M", // Sunday defaults to Monday
-      6: "M", // Saturday defaults to Monday
+      0: "M",
+      6: "M",
     };
     setTimeout(() => {
       setValue("days", [dayMap[today]], { shouldValidate: true });
@@ -116,6 +112,7 @@ const CreateReminder: React.FC = () => {
     "Prepare Materials": <BookOpen className="w-4 h-4" />,
     "Grade": <FileText className="w-4 h-4" />,
     "Other": <Tag className="w-4 h-4" />,
+    "_none": <Clock className="w-4 h-4" />
   };
   
   const reminderTimings: ReminderTiming[] = [
@@ -148,15 +145,14 @@ const CreateReminder: React.FC = () => {
   
   const onSubmit = (data: ReminderFormData) => {
     try {
-      // Ensure all required properties have values
       createReminder({
         title: data.title,
         type: data.type,
         timing: data.timing,
         days: data.days,
         periodId: data.periodId,
-        category: data.category || "", // Provide default empty string if undefined
-        notes: data.notes || "", // Provide default empty string if undefined
+        category: data.category || "",
+        notes: data.notes || "",
         recurrence: data.recurrence,
         priority: data.priority
       });
@@ -194,18 +190,15 @@ const CreateReminder: React.FC = () => {
     setShowQuickCategories(false);
   };
   
-  // Helper function to get the schedule time for display purposes
   const getPeriodScheduleDisplay = (period: any) => {
     if (!period || !period.schedules || period.schedules.length === 0) {
       return "No schedule";
     }
     
-    // Get the first schedule for display in dropdown
     const firstSchedule = period.schedules[0];
     return `${firstSchedule.startTime} - ${firstSchedule.endTime}`;
   };
   
-  // Show period selection only when timing involves a period
   const showPeriodSelection = ["During Period", "Start of Period", "End of Period", "15 Minutes Into Period"].includes(watchTiming);
   
   return (
@@ -229,7 +222,6 @@ const CreateReminder: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Title */}
               <div className="md:col-span-2">
                 <label
                   htmlFor="title"
@@ -252,7 +244,6 @@ const CreateReminder: React.FC = () => {
                 )}
               </div>
               
-              {/* Timing */}
               <div>
                 <label
                   htmlFor="timing"
@@ -291,7 +282,6 @@ const CreateReminder: React.FC = () => {
                 )}
               </div>
               
-              {/* Class Period / Time - conditional based on timing */}
               {showPeriodSelection && (
                 <div>
                   <label
@@ -332,7 +322,6 @@ const CreateReminder: React.FC = () => {
                 </div>
               )}
               
-              {/* Recurrence Pattern */}
               <div>
                 <label
                   htmlFor="recurrence"
@@ -371,7 +360,6 @@ const CreateReminder: React.FC = () => {
                 )}
               </div>
               
-              {/* Priority */}
               <div>
                 <label
                   htmlFor="priority"
@@ -410,7 +398,6 @@ const CreateReminder: React.FC = () => {
                 )}
               </div>
               
-              {/* Category */}
               <div className="relative">
                 <label
                   htmlFor="category"
@@ -446,7 +433,6 @@ const CreateReminder: React.FC = () => {
               </div>
             </div>
             
-            {/* Reminder Type */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Type of Reminder
@@ -484,7 +470,6 @@ const CreateReminder: React.FC = () => {
               )}
             </div>
             
-            {/* Days of Week - Show only if recurrence is "Specific Days" */}
             {watchRecurrence === "Specific Days" && (
               <div>
                 <div className="flex items-center justify-between">
@@ -540,14 +525,12 @@ const CreateReminder: React.FC = () => {
               </div>
             )}
             
-            {/* For non-specific days recurrence, set a default day */}
             {watchRecurrence !== "Specific Days" && (
               <div className="hidden">
                 <Controller
                   control={control}
                   name="days"
                   render={({ field }) => {
-                    // Set today as the default day if none selected
                     if (field.value.length === 0) {
                       const today = new Date().getDay();
                       const dayMap: Record<number, DayOfWeek> = {
@@ -556,8 +539,8 @@ const CreateReminder: React.FC = () => {
                         3: "W",
                         4: "Th",
                         5: "F",
-                        0: "M", // Sunday defaults to Monday
-                        6: "M", // Saturday defaults to Monday
+                        0: "M",
+                        6: "M",
                       };
                       setTimeout(() => {
                         setValue("days", [dayMap[today]], { shouldValidate: true });
@@ -569,7 +552,6 @@ const CreateReminder: React.FC = () => {
               </div>
             )}
             
-            {/* Notes */}
             <div>
               <label
                 htmlFor="notes"

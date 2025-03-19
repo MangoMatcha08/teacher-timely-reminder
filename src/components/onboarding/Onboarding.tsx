@@ -17,7 +17,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import TimeInput from "@/components/shared/TimeInput";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Check, ChevronDown, Info, Plus, Trash2, Calendar, ChevronRight } from "lucide-react";
+import { Check, ChevronDown, Info, Plus, Trash2, Calendar, ChevronRight, ArrowLeft } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -1006,6 +1006,18 @@ const Onboarding: React.FC = () => {
     }
   };
   
+  const handleBack = () => {
+    if (currentStep === 0) {
+      setShowExitConfirm(true);
+    } else {
+      goToPreviousStep();
+    }
+  };
+  
+  const handleExitOnboarding = () => {
+    navigate("/");
+  };
+  
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-b from-white to-teacher-gray/30">
       <div className="w-full max-w-4xl mx-auto space-y-6">
@@ -1025,7 +1037,7 @@ const Onboarding: React.FC = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={goToPreviousStep}
+              onClick={handleBack}
               disabled={currentStep === 0}
             >
               Back
