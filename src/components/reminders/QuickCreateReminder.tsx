@@ -86,7 +86,8 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
         periodId: data.periodId,
         category: data.category || "",
         notes: "",
-        recurrence: "Once"
+        recurrence: "Once",
+        priority: "Medium" // Add the missing priority field with a default value
       });
       
       toast.success("Quick reminder created!");
