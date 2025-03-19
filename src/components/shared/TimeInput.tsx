@@ -46,9 +46,8 @@ const TimeInput: React.FC<TimeInputProps> = ({
   const updateTime = (h: string, m: string, p: "AM" | "PM") => {
     // Only update if we have valid hours
     if (h) {
-      // If minutes are empty, default to "00" when updating parent
-      const formattedMinutes = m || "00";
-      onChange(`${h}:${formattedMinutes} ${p}`);
+      // Format the time string with whatever minutes we have
+      onChange(`${h}:${m} ${p}`);
     }
   };
 
@@ -79,44 +78,36 @@ const TimeInput: React.FC<TimeInputProps> = ({
 
   // Handle minutes change
   const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let m = e.target.value.replace(/\D/g, "");
+    const m = e.target.value.replace(/\D/g, "");
     
-    // Handle empty input - allow this state temporarily
-    if (m === "") {
-      setMinutes("");
-      // Don't call updateTime here to allow the field to be empty
-      return;
-    }
-    
-    // Convert to number and validate
-    let num = parseInt(m, 10);
-    if (isNaN(num)) num = 0;
-    
-    // Ensure minutes are between 0 and 59
-    if (num < 0) num = 0;
-    if (num > 59) num = 59;
-    
-    // Format to string with leading zero if needed
-    m = num.toString().padStart(2, "0");
-    
+    // Always update the minutes state first
     setMinutes(m);
+    
+    // If input is empty, we still update the parent with empty minutes
+    // This allows for proper deletion and re-entry
     updateTime(hours, m, period);
   };
 
   // Handle minutes blur to format properly when focus leaves
   const handleMinutesBlur = () => {
-    // If minutes is empty when leaving the field, set it to "00"
-    if (minutes === "") {
+    // If minutes is empty or invalid when leaving the field, set it to "00"
+    if (minutes === "" || isNaN(parseInt(minutes, 10))) {
       setMinutes("00");
       updateTime(hours, "00", period);
+      return;
     }
+    
+    // Ensure minutes are properly formatted with leading zero if needed
+    const formattedMinutes = parseInt(minutes, 10).toString().padStart(2, "0");
+    setMinutes(formattedMinutes);
+    updateTime(hours, formattedMinutes, period);
   };
 
   // Toggle AM/PM
   const togglePeriod = () => {
     const newPeriod = period === "AM" ? "PM" : "AM";
     setPeriod(newPeriod);
-    updateTime(hours, minutes || "00", newPeriod);
+    updateTime(hours, minutes, newPeriod);
   };
 
   return (
