@@ -41,17 +41,20 @@ const Auth = () => {
   if (isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center">
-          <h2 className="text-xl font-medium mb-4">Already logged in</h2>
-          <p className="mb-6 text-muted-foreground">
-            You're already logged in. Do you want to reset the onboarding process?
+        <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4 text-center">Already Signed In</h2>
+          <p className="mb-6 text-center text-muted-foreground">
+            You're already logged in. Where would you like to go?
           </p>
-          <div className="space-x-4">
-            <Button variant="primary" onClick={handleResetOnboarding}>
+          <div className="space-y-3">
+            <Button variant="primary" onClick={() => navigate("/dashboard")} className="w-full">
+              Go to Dashboard
+            </Button>
+            <Button variant="outline" onClick={handleResetOnboarding} className="w-full">
               Reset Onboarding
             </Button>
-            <Button variant="outline" onClick={() => navigate("/dashboard")}>
-              Go to Dashboard
+            <Button variant="ghost" onClick={() => navigate("/")} className="w-full">
+              Return to Home
             </Button>
           </div>
         </div>
