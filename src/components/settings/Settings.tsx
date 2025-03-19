@@ -106,7 +106,8 @@ const Settings: React.FC = () => {
         </CardContent>
         <CardFooter className="flex justify-end gap-3 border-t p-4">
           <Button
-            variant="destructive"
+            variant="outline"
+            className="bg-red-100 text-red-700 hover:bg-red-200 border-red-200"
             onClick={handleResetOnboarding}
           >
             <Trash2 className="h-4 w-4 mr-2" />
