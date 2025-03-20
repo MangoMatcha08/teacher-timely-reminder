@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/shared/Card";
-import { SchoolSetup, Reminder } from "@/context/ReminderContext";
+import { SchoolSetup, Reminder } from "@/components/schedule/types";
 
 interface ReminderCardProps {
   reminder: Reminder;
@@ -16,10 +16,12 @@ const ReminderCard = ({ reminder, schoolSetup }: ReminderCardProps) => {
       </CardHeader>
       <CardContent className="p-3 text-xs">
         <div className="flex flex-col space-y-1">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Type:</span>
-            <span>{reminder.type}</span>
-          </div>
+          {reminder.type && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Type:</span>
+              <span>{reminder.type}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">Timing:</span>
             <span>{reminder.timing}</span>
@@ -43,6 +45,10 @@ const ReminderCard = ({ reminder, schoolSetup }: ReminderCardProps) => {
           <div className="flex justify-between">
             <span className="text-muted-foreground">Priority:</span>
             <span>{reminder.priority}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Recurrence:</span>
+            <span>{reminder.recurrence}</span>
           </div>
           {reminder.notes && (
             <div className="mt-2 pt-2 border-t">

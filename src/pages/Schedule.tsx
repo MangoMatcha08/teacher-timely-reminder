@@ -119,6 +119,10 @@ const Schedule = () => {
                   return todayCode !== null;
                 })
                 .map(period => {
+                  const scheduleForToday = period.schedules?.find(s => s.dayOfWeek === getCurrentDayCode());
+                  const startTime = scheduleForToday?.startTime || "";
+                  const endTime = scheduleForToday?.endTime || "";
+                  
                   const periodReminders = reminders.filter(r => 
                     r.periodId === period.id && 
                     r.days.includes(getCurrentDayCode() as any) &&
@@ -131,7 +135,7 @@ const Schedule = () => {
                         <div>
                           <h3 className="font-medium">{period.name}</h3>
                           <div className="text-xs text-gray-500 mt-1">
-                            {period.startTime} - {period.endTime}
+                            {startTime} - {endTime}
                           </div>
                         </div>
                       </div>
@@ -188,7 +192,9 @@ const Schedule = () => {
                   >
                     <div className="p-3 border-r text-sm">
                       <div className="font-medium">{period.name}</div>
-                      <div className="text-xs text-gray-500">{period.startTime} - {period.endTime}</div>
+                      <div className="text-xs text-gray-500">
+                        {period.schedules?.[0]?.startTime || ""} - {period.schedules?.[0]?.endTime || ""}
+                      </div>
                     </div>
                     
                     {schoolSetup?.schoolDays.map(day => {
@@ -235,8 +241,8 @@ const Schedule = () => {
             
             <div className="mt-3">
               <ReminderCardList 
-                reminders={filteredReminders} 
-                schoolSetup={schoolSetup} 
+                reminders={filteredReminders}
+                schoolSetup={schoolSetup}
               />
             </div>
           </TabsContent>

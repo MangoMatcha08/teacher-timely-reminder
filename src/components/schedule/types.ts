@@ -1,27 +1,7 @@
 
-export interface Period {
-  id: string;
-  name: string;
-  startTime: string;
-  endTime: string;
-}
+import { Period as ContextPeriod, Reminder as ContextReminder, SchoolSetup as ContextSchoolSetup } from "@/context/ReminderContext";
 
-export interface SchoolSetup {
-  schoolDays: string[];
-  periods: Period[];
-  categories: string[];
-}
-
-export interface Reminder {
-  id?: string;
-  title: string;
-  type: string;
-  timing: string;
-  days: string[];
-  periodId: string;
-  category?: string;
-  priority: string;
-  notes?: string;
-  completed?: boolean;
-  dueDate?: string;
-}
+// Export the types from the context directly to avoid duplication and type mismatches
+export type Period = ContextPeriod;
+export type Reminder = ContextReminder;
+export type SchoolSetup = ContextSchoolSetup;
