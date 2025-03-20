@@ -8,6 +8,7 @@ import QuickReminderCreator from '@/components/dashboard/QuickReminderCreator';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import PastDueReminders from '@/components/reminders/PastDueReminders';
+import CompletedReminders from '@/components/reminders/CompletedReminders';
 import Button from '@/components/shared/Button';
 
 const StatCard = ({ title, value, icon, className = '' }) => {
@@ -55,13 +56,31 @@ const Dashboard = () => {
   return (
     <div className="space-y-6 pb-8">
       <div className="flex flex-col space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">
-          {greeting}, {user?.displayName || 'Teacher'}
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">
+            {greeting}, {user?.displayName || 'Teacher'}
+          </h1>
+          <Button 
+            variant="primary" 
+            onClick={() => setIsQuickCreateOpen(true)}
+            className="flex items-center gap-1"
+          >
+            <Plus size={16} />
+            <span>Quick Add</span>
+          </Button>
+        </div>
         <p className="text-muted-foreground">
           Here's what's on your schedule for today.
         </p>
       </div>
+      
+      {/* Quick Reminder Creator */}
+      {isQuickCreateOpen && (
+        <QuickReminderCreator 
+          onComplete={handleQuickCreateComplete} 
+          onClose={() => setIsQuickCreateOpen(false)} 
+        />
+      )}
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -93,28 +112,15 @@ const Dashboard = () => {
       {/* Add Past Due Reminders component */}
       <PastDueReminders />
       
-      {/* Quick Reminder Creator */}
-      {isQuickCreateOpen && (
-        <QuickReminderCreator 
-          onComplete={handleQuickCreateComplete} 
-          onClose={() => setIsQuickCreateOpen(false)} 
-        />
-      )}
-      
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold tracking-tight">Today's Reminders</h2>
-          <Button 
-            variant="primary" 
-            onClick={() => setIsQuickCreateOpen(true)}
-            className="flex items-center gap-1"
-          >
-            <Plus size={16} />
-            <span>Quick Add</span>
-          </Button>
         </div>
         <ReminderList />
       </div>
+      
+      {/* Add Completed Reminders component */}
+      <CompletedReminders />
     </div>
   );
 };
