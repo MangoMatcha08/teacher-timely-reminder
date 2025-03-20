@@ -334,9 +334,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const period = periods.find(p => p.id === periodId);
     if (!period) return;
     
-    if (isCustom) {
-      return;
-    } else {
+    if (!isCustom) {
       const firstDay = period.schedules.find(s => s.dayOfWeek !== day)?.dayOfWeek;
       if (!firstDay) return;
       

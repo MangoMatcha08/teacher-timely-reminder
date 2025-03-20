@@ -3,8 +3,9 @@ import React from "react";
 import { useReminders } from "@/context/ReminderContext";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/shared/Card";
 import Button from "@/components/shared/Button";
-import { ArrowLeft, Clock, Calendar, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, Edit, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import NotificationSettings from "./NotificationSettings";
 
 interface SettingsProps {
   onResetOnboarding: () => void;
@@ -38,6 +39,10 @@ const Settings: React.FC<SettingsProps> = ({ onResetOnboarding, onModifySettings
       
       <h1 className="text-xl font-bold">Settings</h1>
       
+      {/* Notification Settings */}
+      <NotificationSettings />
+      
+      {/* School Schedule Card */}
       <Card>
         <CardHeader className="py-3">
           <CardTitle className="flex items-center text-lg">

@@ -1,104 +1,78 @@
+import React, { useState } from "react";
+import { useReminders } from "@/context/ReminderContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/shared/Card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { format } from 'date-fns';
+import { Clock } from "lucide-react";
 
-import React from 'react';
-import { useReminders, Reminder } from '@/context/ReminderContext';
-import { Card, CardContent } from "@/components/shared/Card";
-import { Check, Flag } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-interface ReminderListProps {
-  reminders: Reminder[];
-}
-
-const ReminderList: React.FC<ReminderListProps> = ({ reminders }) => {
-  const { toggleReminderComplete } = useReminders();
+const ReminderList = () => {
+  const { reminders, schoolSetup, toggleReminderComplete } = useReminders();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
-  const priorityColors: Record<string, string> = {
-    "Low": "bg-green-500/10 text-green-700",
-    "Medium": "bg-amber-500/10 text-amber-700",
-    "High": "bg-red-500/10 text-red-700"
-  };
-  
-  if (reminders.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-6">
-          <div className="text-center text-muted-foreground">
-            <p>No reminders available.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const filteredReminders = reminders.filter(reminder => {
+    if (selectedCategory && reminder.category !== selectedCategory) {
+      return false;
+    }
+    return true;
+  });
   
   return (
-    <div className="space-y-3">
-      {reminders.map((reminder) => (
-        <Card key={reminder.id} className={cn(
-          "transition-colors",
-          reminder.completed ? "bg-gray-100" : "bg-white"
-        )}>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <button 
-                onClick={() => reminder.id && toggleReminderComplete(reminder.id)}
-                className={cn(
-                  "flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center",
-                  reminder.completed 
-                    ? "bg-teacher-blue text-white border-teacher-blue" 
-                    : "border-gray-300 text-transparent hover:border-teacher-blue"
-                )}
-              >
-                <Check className="w-4 h-4" />
-              </button>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap gap-2 items-start justify-between">
-                  <h3 className={cn(
-                    "font-medium truncate",
-                    reminder.completed ? "text-gray-500 line-through" : ""
-                  )}>
-                    {reminder.title}
-                  </h3>
-                  
-                  {reminder.priority && (
-                    <div className={cn(
-                      "px-2 py-1 rounded-full text-xs font-medium",
-                      priorityColors[reminder.priority]
-                    )}>
-                      <Flag className="w-3 h-3 inline-block mr-1" />
-                      {reminder.priority}
-                    </div>
-                  )}
+    <div className="space-y-4">
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <Select value={selectedCategory || ""} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Filter by category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="" className="font-medium bg-gray-100">
+              Clear Category Filter
+            </SelectItem>
+            {schoolSetup?.categories?.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {filteredReminders.length === 0 ? (
+        <p className="text-muted-foreground">No reminders found.</p>
+      ) : (
+        <div className="space-y-2">
+          {filteredReminders.map((reminder) => (
+            <Card key={reminder.id} className="border">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {reminder.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pl-2 pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`reminder-${reminder.id}`}
+                      checked={reminder.completed}
+                      onCheckedChange={() => toggleReminderComplete(reminder.id!)}
+                    />
+                    <label
+                      htmlFor={`reminder-${reminder.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed"
+                    >
+                      {reminder.completed ? "Completed" : "Mark Complete"}
+                    </label>
+                  </div>
+                  <div className="text-xs text-muted-foreground flex items-center">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {reminder.dueDate ? format(new Date(reminder.dueDate), 'MMM d, yyyy') : 'No due date'}
+                  </div>
                 </div>
-                
-                <div className="mt-1 flex flex-wrap gap-2">
-                  {reminder.category && (
-                    <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full">
-                      {reminder.category}
-                    </span>
-                  )}
-                  
-                  {reminder.type && reminder.type !== "_none" && (
-                    <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full">
-                      {reminder.type}
-                    </span>
-                  )}
-                  
-                  <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full">
-                    {reminder.timing}
-                  </span>
-                </div>
-                
-                {reminder.notes && (
-                  <p className="text-sm text-gray-600 mt-2">
-                    {reminder.notes}
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

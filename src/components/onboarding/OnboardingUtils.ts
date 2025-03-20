@@ -1,4 +1,3 @@
-
 import { DayOfWeek, Period, PeriodSchedule, Term } from "@/context/ReminderContext";
 
 export const createInitialSchedule = (day: DayOfWeek, startTime = "9:00 AM", endTime = "9:50 AM"): PeriodSchedule => ({
@@ -29,41 +28,38 @@ export const createDefaultTerm = (schoolYear: string, termType: string, termName
 };
 
 // New utility function to generate progressive period times
-export const generateProgressivePeriodTimes = (periodIndex: number): { startTime: string; endTime: string } => {
-  const baseHour = 8;
-  const periodHour = baseHour + Math.floor(periodIndex / 2) + Math.floor(periodIndex / 3);
-  const periodMinute = periodIndex % 2 === 0 ? 0 : 30;
+export const generateProgressivePeriodTimes = (periodIndex: number) => {
+  // Start with 9:00 AM for the first period
+  const baseHour = 9;
+  const baseMinute = 0;
   
-  let startHour = periodHour;
-  let startMinute = periodMinute;
-  let startMeridian = "AM";
+  // Each period is 50 minutes with a 10-minute break
+  const periodDuration = 50;
+  const breakDuration = 10;
   
-  if (startHour >= 12) {
-    startMeridian = "PM";
-    if (startHour > 12) {
-      startHour = startHour - 12;
-    }
+  // Calculate start time for this period
+  let startHour = baseHour + Math.floor((periodIndex * (periodDuration + breakDuration)) / 60);
+  let startMinute = baseMinute + ((periodIndex * (periodDuration + breakDuration)) % 60);
+  
+  // Adjust if minutes overflow
+  if (startMinute >= 60) {
+    startHour += 1;
+    startMinute -= 60;
   }
   
-  // End time is 50 minutes after start time
-  let endHour = startHour;
-  let endMinute = startMinute + 50;
-  let endMeridian = startMeridian;
+  // Calculate end time (start time + period duration)
+  let endHour = startHour + Math.floor((startMinute + periodDuration) / 60);
+  let endMinute = (startMinute + periodDuration) % 60;
   
-  if (endMinute >= 60) {
-    endHour += 1;
-    endMinute = endMinute - 60;
-    
-    if (endHour === 12 && startMeridian === "AM") {
-      endMeridian = "PM";
-    } else if (endHour > 12) {
-      endHour = 1;
-      endMeridian = "PM";
-    }
-  }
+  // Format times
+  const startMeridian = startHour >= 12 ? 'PM' : 'AM';
+  const endMeridian = endHour >= 12 ? 'PM' : 'AM';
   
-  const startTime = `${startHour}:${startMinute.toString().padStart(2, '0')} ${startMeridian}`;
-  const endTime = `${endHour}:${endMinute.toString().padStart(2, '0')} ${endMeridian}`;
+  const formattedStartHour = startHour > 12 ? startHour - 12 : (startHour === 0 ? 12 : startHour);
+  const formattedEndHour = endHour > 12 ? endHour - 12 : (endHour === 0 ? 12 : endHour);
+  
+  const startTime = `${formattedStartHour}:${startMinute.toString().padStart(2, '0')} ${startMeridian}`;
+  const endTime = `${formattedEndHour}:${endMinute.toString().padStart(2, '0')} ${endMeridian}`;
   
   return { startTime, endTime };
 };

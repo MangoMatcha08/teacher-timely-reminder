@@ -161,6 +161,7 @@ const ScheduleSetup: React.FC<ScheduleSetupProps> = ({
             {editingPeriod && selectedDays.map((day) => {
               const isCustom = hasCustomSchedule(editingPeriod.id, day);
               const dayLabel = days.find(d => d.value === day)?.label;
+              const schedule = editingPeriod.schedules.find(s => s.dayOfWeek === day);
               
               return (
                 <div key={`${editingPeriod.id}-${day}-schedule`} 
@@ -185,31 +186,31 @@ const ScheduleSetup: React.FC<ScheduleSetupProps> = ({
                       <Switch
                         checked={isCustom}
                         onCheckedChange={(checked) => {
-                          toggleCustomSchedule(editingPeriod.id, day, isCustom);
+                          toggleCustomSchedule(editingPeriod.id, day, checked);
                         }}
                       />
                     </div>
                   </div>
                   
-                  {isCustom && (
-                    <div className="p-3">
-                      <div className="grid grid-cols-2 gap-4">
-                        <TimeInput
-                          label="Start Time"
-                          value={editingPeriod.schedules.find(s => s.dayOfWeek === day)?.startTime || "9:00 AM"}
-                          onChange={(time) => handleScheduleStartTimeChange(editingPeriod.id, day, time)}
-                          id={`period-${editingPeriod.id}-${day}-start`}
-                        />
-                        
-                        <TimeInput
-                          label="End Time"
-                          value={editingPeriod.schedules.find(s => s.dayOfWeek === day)?.endTime || "9:50 AM"}
-                          onChange={(time) => handleScheduleEndTimeChange(editingPeriod.id, day, time)}
-                          id={`period-${editingPeriod.id}-${day}-end`}
-                        />
-                      </div>
+                  <div className={cn("p-3", !isCustom && "opacity-50")}>
+                    <div className="grid grid-cols-2 gap-4">
+                      <TimeInput
+                        label="Start Time"
+                        value={schedule?.startTime || "9:00 AM"}
+                        onChange={(time) => handleScheduleStartTimeChange(editingPeriod.id, day, time)}
+                        id={`period-${editingPeriod.id}-${day}-start`}
+                        disabled={!isCustom}
+                      />
+                      
+                      <TimeInput
+                        label="End Time"
+                        value={schedule?.endTime || "9:50 AM"}
+                        onChange={(time) => handleScheduleEndTimeChange(editingPeriod.id, day, time)}
+                        id={`period-${editingPeriod.id}-${day}-end`}
+                        disabled={!isCustom}
+                      />
                     </div>
-                  )}
+                  </div>
                 </div>
               );
             })}

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import * as FirebaseService from "@/services/firebase";
@@ -27,6 +28,25 @@ export type RecurrencePattern =
 
 export type ReminderPriority = "Low" | "Medium" | "High";
 
+export type NotificationType = "Email" | "Push" | "Text";
+
+export interface NotificationPreferences {
+  email: {
+    enabled: boolean;
+    address: string;
+    minPriority: ReminderPriority;
+  };
+  push: {
+    enabled: boolean;
+    minPriority: ReminderPriority;
+  };
+  text: {
+    enabled: boolean;
+    phoneNumber?: string;
+    minPriority: ReminderPriority;
+  };
+}
+
 export interface Reminder {
   id?: string;
   title: string;
@@ -41,6 +61,8 @@ export interface Reminder {
   priority: ReminderPriority;
   completed?: boolean;
   termId?: string; // Term identifier
+  dueDate?: string; // ISO date string
+  isPastDue?: boolean;
 }
 
 export interface SchoolHours {
@@ -64,6 +86,7 @@ export interface SchoolSetup {
   periods: Period[];
   schoolHours: SchoolHours;
   categories: string[];
+  notificationPreferences?: NotificationPreferences;
   iepMeetings?: {
     enabled: boolean;
     beforeSchool?: boolean;
@@ -86,13 +109,17 @@ interface ReminderContextType {
   deleteReminder: (id: string) => void;
   saveSchoolSetup: (setup: SchoolSetup) => void;
   todaysReminders: Reminder[];
+  pastDueReminders: Reminder[];
   toggleReminderComplete: (id: string) => void;
   filteredReminders: (filters: {
     category?: string;
     priority?: ReminderPriority;
     type?: ReminderType;
     completed?: boolean;
+    includePastDue?: boolean;
   }) => Reminder[];
+  bulkCompleteReminders: (ids: string[]) => void;
+  updateNotificationPreferences: (preferences: NotificationPreferences) => void;
   completedTasks: number;
   totalTasks: number;
   syncWithCloud: () => Promise<void>;
@@ -108,8 +135,11 @@ const ReminderContext = createContext<ReminderContextType>({
   deleteReminder: () => {},
   saveSchoolSetup: () => {},
   todaysReminders: [],
+  pastDueReminders: [],
   toggleReminderComplete: () => {},
   filteredReminders: () => [],
+  bulkCompleteReminders: () => {},
+  updateNotificationPreferences: () => {},
   completedTasks: 0,
   totalTasks: 0,
   syncWithCloud: async () => {},
@@ -123,6 +153,26 @@ const getTodayDayCode = (): DayOfWeek => {
   const days: DayOfWeek[] = ["M", "T", "W", "Th", "F"];
   const dayIndex = new Date().getDay() - 1; // 0 = Sunday, so -1 gives Monday as 0
   return dayIndex >= 0 && dayIndex < 5 ? days[dayIndex] : "M"; // Default to Monday if weekend
+};
+
+// Get the default notification preferences
+const getDefaultNotificationPreferences = (): NotificationPreferences => {
+  return {
+    email: {
+      enabled: true,
+      address: "zhom08@gmail.com", // Default email for test account
+      minPriority: "Medium"
+    },
+    push: {
+      enabled: false,
+      minPriority: "High"
+    },
+    text: {
+      enabled: false,
+      phoneNumber: "",
+      minPriority: "High"
+    }
+  };
 };
 
 const createDefaultTerm = (): Term => {
@@ -181,7 +231,9 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           recurrence: r.recurrence || "Once",
           priority: r.priority || "Medium",
           completed: r.completed || false,
-          termId: r.termId || "term_default"
+          termId: r.termId || "term_default",
+          dueDate: r.dueDate || new Date().toISOString(),
+          isPastDue: false // Will be calculated later
         }));
         setReminders(migratedReminders);
       } catch (e) {
@@ -194,6 +246,8 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         const parsed = JSON.parse(storedSchoolSetup);
         const defaultTerm = createDefaultTerm();
+        const defaultNotificationPreferences = getDefaultNotificationPreferences();
+        
         setSchoolSetup({
           ...parsed,
           termId: parsed.termId || defaultTerm.id,
@@ -205,6 +259,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             "Instruction",
             "Administrative tasks"
           ],
+          notificationPreferences: parsed.notificationPreferences || defaultNotificationPreferences,
           iepMeetings: parsed.iepMeetings || {
             enabled: false
           }
@@ -214,6 +269,32 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSchoolSetup(null);
       }
     }
+  }, []);
+
+  // Calculate past due reminders
+  useEffect(() => {
+    const updatePastDueStatus = () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      setReminders(prev => 
+        prev.map(reminder => {
+          if (reminder.dueDate) {
+            const dueDate = new Date(reminder.dueDate);
+            dueDate.setHours(0, 0, 0, 0);
+            const isPastDue = dueDate < today && !reminder.completed;
+            return { ...reminder, isPastDue };
+          }
+          return reminder;
+        })
+      );
+    };
+
+    updatePastDueStatus();
+    // Set up daily check for past due reminders
+    const interval = setInterval(updatePastDueStatus, 86400000); // 24 hours
+    
+    return () => clearInterval(interval);
   }, []);
   
   useEffect(() => {
@@ -239,6 +320,10 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       const cloudSetup = await FirebaseService.getSchoolSetup(user.uid);
       if (cloudSetup) {
+        // Ensure notification preferences exist
+        if (!cloudSetup.notificationPreferences) {
+          cloudSetup.notificationPreferences = getDefaultNotificationPreferences();
+        }
         setSchoolSetup(cloudSetup);
       }
       
@@ -281,13 +366,18 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ? reminderData.days.filter(d => d !== currentDayCode)
       : reminderData.days;
     
+    // Calculate due date based on next occurrence
+    const dueDate = calculateNextOccurrence(reminderData.days);
+    
     const newReminder: Reminder = {
       ...reminderData,
       days: adjustedDays,
       id: `rem_${Math.random().toString(36).substring(2, 9)}`,
       createdAt: new Date(),
       completed: false,
-      termId: schoolSetup?.termId || "term_default"
+      termId: schoolSetup?.termId || "term_default",
+      dueDate: dueDate.toISOString(),
+      isPastDue: false
     };
     
     setReminders((prev) => [...prev, newReminder]);
@@ -296,12 +386,70 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       FirebaseService.saveReminder(newReminder, user.uid)
         .catch(error => console.error("Error saving reminder to Firebase:", error));
     }
+
+    // Send notification if applicable
+    sendReminderNotification(newReminder);
+  };
+
+  const calculateNextOccurrence = (days: DayOfWeek[]): Date => {
+    if (!days.length) return new Date();
+    
+    const today = new Date();
+    const todayDayIndex = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Convert day codes to day indices (0-6)
+    const dayIndices = days.map(day => {
+      switch (day) {
+        case 'M': return 1;
+        case 'T': return 2;
+        case 'W': return 3;
+        case 'Th': return 4;
+        case 'F': return 5;
+        default: return 1;
+      }
+    });
+    
+    // Find the next occurrence
+    let daysUntilNext = 7;
+    for (const dayIndex of dayIndices) {
+      const difference = (dayIndex - todayDayIndex + 7) % 7;
+      if (difference < daysUntilNext && (difference > 0 || (difference === 0 && !isTimePassed(undefined, today)))) {
+        daysUntilNext = difference;
+      }
+    }
+    
+    // If no next day found in the current week, use the first day of next week
+    if (daysUntilNext === 7) {
+      daysUntilNext = (dayIndices[0] - todayDayIndex + 7) % 7;
+    }
+    
+    const nextDate = new Date(today);
+    nextDate.setDate(today.getDate() + daysUntilNext);
+    return nextDate;
   };
   
-  const isTimePassed = (periodId: string, currentDate: Date): boolean => {
+  const isTimePassed = (periodId?: string, currentDate: Date = new Date()): boolean => {
     if (!schoolSetup) return false;
     
     const todayDayCode = getTodayDayCode();
+    
+    if (!periodId) {
+      // Check if the school day has ended
+      const [hourStr, minuteStr] = schoolSetup.schoolHours.endTime.split(':');
+      const [minutes, meridian] = minuteStr.split(' ');
+      
+      let hour = parseInt(hourStr);
+      if (meridian === 'PM' && hour < 12) hour += 12;
+      if (meridian === 'AM' && hour === 12) hour = 0;
+      
+      const endTimeDate = new Date();
+      endTimeDate.setHours(hour);
+      endTimeDate.setMinutes(parseInt(minutes));
+      endTimeDate.setSeconds(0);
+      
+      return currentDate > endTimeDate;
+    }
+    
     const period = schoolSetup.periods.find(p => p.id === periodId);
     if (!period) return false;
     
@@ -346,6 +494,11 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
   
   const saveSchoolSetup = (setup: SchoolSetup) => {
+    // Ensure notification preferences
+    if (!setup.notificationPreferences) {
+      setup.notificationPreferences = schoolSetup?.notificationPreferences || getDefaultNotificationPreferences();
+    }
+    
     setSchoolSetup(setup);
     
     if (isOnline && user) {
@@ -365,7 +518,24 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               .catch(error => console.error("Error updating reminder in Firebase:", error));
           }
           
-          return { ...reminder, completed };
+          return { ...reminder, completed, isPastDue: completed ? false : reminder.isPastDue };
+        }
+        return reminder;
+      });
+      return updatedReminders;
+    });
+  };
+
+  const bulkCompleteReminders = (ids: string[]) => {
+    setReminders(prev => {
+      const updatedReminders = prev.map(reminder => {
+        if (ids.includes(reminder.id!)) {
+          if (isOnline && user) {
+            FirebaseService.updateReminder(reminder.id!, { completed: true })
+              .catch(error => console.error("Error updating reminder in Firebase:", error));
+          }
+          
+          return { ...reminder, completed: true, isPastDue: false };
         }
         return reminder;
       });
@@ -378,6 +548,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     priority?: ReminderPriority;
     type?: ReminderType;
     completed?: boolean;
+    includePastDue?: boolean;
   }) => {
     return reminders.filter(reminder => {
       if (filters.category && reminder.category !== filters.category) {
@@ -392,8 +563,66 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (filters.completed !== undefined && reminder.completed !== filters.completed) {
         return false;
       }
+      if (filters.includePastDue === false && reminder.isPastDue) {
+        return false;
+      }
       return true;
     });
+  };
+
+  const updateNotificationPreferences = (preferences: NotificationPreferences) => {
+    if (!schoolSetup) return;
+    
+    const updatedSchoolSetup = {
+      ...schoolSetup,
+      notificationPreferences: preferences
+    };
+    
+    saveSchoolSetup(updatedSchoolSetup);
+    
+    // Send test notification if requested
+    if (preferences.email.enabled) {
+      // This would normally trigger an API call to send a test email
+      console.log(`Test email notification would be sent to ${preferences.email.address}`);
+    }
+  };
+
+  const sendReminderNotification = (reminder: Reminder) => {
+    if (!schoolSetup?.notificationPreferences) return;
+    
+    const { notificationPreferences } = schoolSetup;
+    const shouldSendEmail = notificationPreferences.email.enabled && 
+      getPriorityValue(reminder.priority) >= getPriorityValue(notificationPreferences.email.minPriority);
+    
+    const shouldSendPush = notificationPreferences.push.enabled && 
+      getPriorityValue(reminder.priority) >= getPriorityValue(notificationPreferences.push.minPriority);
+    
+    const shouldSendText = notificationPreferences.text.enabled && 
+      getPriorityValue(reminder.priority) >= getPriorityValue(notificationPreferences.text.minPriority);
+    
+    if (shouldSendEmail) {
+      // In a real app, this would call an API to send an email
+      console.log(`Email notification for "${reminder.title}" would be sent to ${notificationPreferences.email.address}`);
+    }
+    
+    if (shouldSendPush) {
+      // In a real app, this would trigger a push notification
+      console.log(`Push notification for "${reminder.title}" would be sent`);
+    }
+    
+    if (shouldSendText && notificationPreferences.text.phoneNumber) {
+      // In a real app, this would call an API to send an SMS
+      console.log(`Text notification for "${reminder.title}" would be sent to ${notificationPreferences.text.phoneNumber}`);
+    }
+  };
+
+  const getPriorityValue = (priority: ReminderPriority): number => {
+    switch (priority) {
+      case "Low": return 1;
+      case "Medium": return 2;
+      case "High": return 3;
+      default: return 2;
+    }
   };
   
   const fetchReminders = () => {
@@ -406,6 +635,10 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const todaysReminders = reminders.filter((reminder) => 
     reminder.days.includes(todayDayCode) &&
     (!schoolSetup?.termId || reminder.termId === schoolSetup.termId)
+  );
+  
+  const pastDueReminders = reminders.filter((reminder) => 
+    reminder.isPastDue === true && !reminder.completed
   );
   
   const completedTasks = todaysReminders.filter(r => r.completed).length;
@@ -421,8 +654,11 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         deleteReminder,
         saveSchoolSetup,
         todaysReminders,
+        pastDueReminders,
         toggleReminderComplete,
         filteredReminders,
+        bulkCompleteReminders,
+        updateNotificationPreferences,
         completedTasks,
         totalTasks,
         syncWithCloud,
