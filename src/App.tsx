@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import './App.css'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -12,7 +13,6 @@ import CreateReminder from './pages/CreateReminder'
 import { Toaster } from '@/components/ui/sonner'
 import Schedule from './pages/Schedule'
 import Settings from './pages/Settings'
-import PastDueReminders from './components/reminders/PastDueReminders';
 
 function App() {
   return (

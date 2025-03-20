@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Button from "@/components/shared/Button";
 import { Plus } from "lucide-react";
 import ReminderCard from "@/components/schedule/ReminderCard";
-import { Reminder, SchoolSetup } from "@/context/ReminderContext";
+import { Reminder, SchoolSetup } from "@/components/schedule/types";
 
 interface ReminderCardListProps {
   reminders: Reminder[];
@@ -18,10 +18,12 @@ const ReminderCardList = ({ reminders, schoolSetup }: ReminderCardListProps) => 
     return (
       <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
         <p className="text-muted-foreground mb-4">No reminders match your filters</p>
-        <Button onClick={() => navigate("/create-reminder")} className="h-8 text-sm">
-          <Plus className="h-3 w-3 mr-1" />
-          Create Reminder
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 justify-center">
+          <Button onClick={() => navigate("/create-reminder")} className="h-8 text-sm">
+            <Plus className="h-3 w-3 mr-1" />
+            Add a Detailed Reminder
+          </Button>
+        </div>
       </div>
     );
   }

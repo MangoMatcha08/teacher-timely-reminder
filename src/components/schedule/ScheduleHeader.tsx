@@ -14,13 +14,15 @@ const ScheduleHeader = ({ title }: ScheduleHeaderProps) => {
   return (
     <div className="flex justify-between items-center">
       <h1 className="text-xl font-bold">{title}</h1>
-      <Button 
-        onClick={() => navigate("/create-reminder")}
-        className="h-8 text-sm"
-      >
-        <Plus className="h-3 w-3 mr-1" />
-        New Reminder
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          onClick={() => navigate("/create-reminder")}
+          className="h-8 text-sm"
+        >
+          <Plus className="h-3 w-3 mr-1" />
+          Add a Detailed Reminder
+        </Button>
+      </div>
     </div>
   );
 };

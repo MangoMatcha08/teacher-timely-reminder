@@ -2,7 +2,7 @@
 import React from "react";
 import Button from "./Button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { CheckCircle, Home, Calendar, Settings, Menu, X, Plus, Bell } from "lucide-react";
+import { CheckCircle, Home, Calendar, Settings, Menu, X, Plus, Bell, BarChart3, ListChecks } from "lucide-react";
 import { useReminders } from "@/context/ReminderContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileSync from "./MobileSync";
@@ -101,7 +101,7 @@ const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
               <Link to="/create-reminder">
                 <Button variant="primary" className="flex items-center h-8 text-sm ml-2">
                   <Plus className="h-4 w-4 mr-1" />
-                  <span>New Reminder</span>
+                  <span>Add a Detailed Reminder</span>
                 </Button>
               </Link>
             </div>
@@ -149,7 +149,7 @@ const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
                 className="flex items-center w-full justify-start h-8 text-sm mt-2"
               >
                 <Plus className="h-4 w-4 mr-1.5" />
-                <span>New Reminder</span>
+                <span>Add a Detailed Reminder</span>
               </Button>
             </Link>
             
@@ -187,12 +187,43 @@ const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
       </div>
       
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-3 py-4">
+      <main className="flex-1 container mx-auto px-3 py-4 pb-20 md:pb-4">
         {children}
       </main>
       
+      {/* Mobile Navigation Tabs */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+          <div className="grid grid-cols-3 h-16">
+            <Link 
+              to="/dashboard" 
+              className={`flex flex-col items-center justify-center ${isActivePath("/dashboard") ? "text-teacher-blue" : "text-gray-500"}`}
+            >
+              <Home className="h-5 w-5" />
+              <span className="text-xs mt-1">Dashboard</span>
+            </Link>
+            
+            <Link 
+              to="/schedule" 
+              className={`flex flex-col items-center justify-center ${isActivePath("/schedule") ? "text-teacher-blue" : "text-gray-500"}`}
+            >
+              <ListChecks className="h-5 w-5" />
+              <span className="text-xs mt-1">Today's Tasks</span>
+            </Link>
+            
+            <Link 
+              to="/settings" 
+              className={`flex flex-col items-center justify-center ${isActivePath("/settings") ? "text-teacher-blue" : "text-gray-500"}`}
+            >
+              <BarChart3 className="h-5 w-5" />
+              <span className="text-xs mt-1">Progress</span>
+            </Link>
+          </div>
+        </div>
+      )}
+      
       {/* Footer */}
-      <footer className="bg-white shadow-sm border-t border-gray-200 py-3 mt-auto">
+      <footer className="bg-white shadow-sm border-t border-gray-200 py-3 mt-auto hidden md:block">
         <div className="container mx-auto px-3 text-center text-xs text-gray-500">
           © {new Date().getFullYear()} Teacher Reminder App • Stay organized, teach better
         </div>

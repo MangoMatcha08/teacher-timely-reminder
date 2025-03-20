@@ -57,7 +57,7 @@ const Dashboard = () => {
   
   return (
     <div className="space-y-6 pb-8">
-      {/* Welcome Card */}
+      {/* Welcome Card with Quick Actions */}
       <Card className="bg-gradient-to-r from-teacher-lightBlue to-teacher-lightGreen border-none overflow-hidden">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -73,14 +73,23 @@ const Dashboard = () => {
               </p>
             </div>
             
-            <div className="mt-4 md:mt-0">
+            <div className="mt-4 md:mt-0 flex gap-2 flex-col sm:flex-row">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsQuickCreateOpen(true)}
+                className="flex items-center gap-1 bg-white/80 backdrop-blur-sm shadow-sm border-white"
+              >
+                <Plus size={16} />
+                <span>Quick Reminder</span>
+              </Button>
+              
               <Button 
                 variant="primary" 
-                onClick={() => setIsQuickCreateOpen(true)}
+                onClick={() => navigate('/create-reminder')}
                 className="flex items-center gap-1 shadow-md"
               >
                 <Plus size={16} />
-                <span>Add Reminder</span>
+                <span>Add a Detailed Reminder</span>
               </Button>
             </div>
           </div>
@@ -102,7 +111,7 @@ const Dashboard = () => {
           className="h-auto py-4 flex flex-col items-center bg-teacher-lightBlue hover:bg-teacher-blue hover:text-white transition-colors border-none"
         >
           <Plus size={24} className="mb-2" />
-          <span>Create Reminder</span>
+          <span>Add a Detailed Reminder</span>
         </Button>
         
         <Button 
@@ -110,7 +119,7 @@ const Dashboard = () => {
           className="h-auto py-4 flex flex-col items-center bg-teacher-lightIndigo hover:bg-teacher-indigo hover:text-white transition-colors border-none"
         >
           <Calendar size={24} className="mb-2" />
-          <span>View Schedule</span>
+          <span>Today's Schedule</span>
         </Button>
         
         <Button 
@@ -206,7 +215,7 @@ const Dashboard = () => {
       </div>
       
       {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-50 md:hidden">
+      <div className="fixed bottom-20 right-6 z-50 md:hidden">
         <Button
           variant="primary"
           size="icon"
