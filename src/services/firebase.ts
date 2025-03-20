@@ -1,8 +1,7 @@
-
 import { firestore, auth, googleProvider } from "@/lib/firebase";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, setDoc, getDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User, signInWithPopup } from "firebase/auth";
-import { Reminder, SchoolSetup } from "@/context/ReminderContext";
+import { Reminder, SchoolSetup, DayOfWeek, ReminderType, ReminderTiming, Period, SchoolHours, Term } from "@/context/ReminderContext";
 
 // Authentication functions
 export const register = async (email: string, password: string) => {
@@ -13,7 +12,6 @@ export const register = async (email: string, password: string) => {
   } catch (error: any) {
     console.error("Register error:", error);
     
-    // Provide more specific error messages
     if (error.code === 'auth/email-already-in-use') {
       throw new Error("This email is already registered. Please sign in instead.");
     } else if (error.code === 'auth/invalid-email') {
@@ -38,7 +36,6 @@ export const login = async (email: string, password: string) => {
   } catch (error: any) {
     console.error("Login error:", error);
     
-    // Provide more specific error messages
     if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
       throw new Error("Invalid email or password. Please try again.");
     } else if (error.code === 'auth/invalid-email') {
@@ -70,10 +67,8 @@ export const signInWithGoogle = async () => {
 
 // Simulated test account login for demo purposes
 export const loginWithTestAccount = async () => {
-  // Generate a unique ID for the test user
   const testUserId = "test-user-" + Date.now().toString();
   
-  // Create a mock user object that mimics Firebase User
   const testUser = {
     uid: testUserId,
     email: "test@teacherreminder.app",
@@ -100,59 +95,123 @@ export const loginWithTestAccount = async () => {
     toJSON: () => ({})
   } as unknown as User;
   
-  // Setup default school setup for test user
+  const defaultPeriods: Period[] = [
+    {
+      id: "period-1",
+      name: "Period 1",
+      schedules: [
+        { dayOfWeek: "M", startTime: "8:00 AM", endTime: "8:50 AM" },
+        { dayOfWeek: "T", startTime: "8:00 AM", endTime: "8:50 AM" },
+        { dayOfWeek: "W", startTime: "8:00 AM", endTime: "8:50 AM" },
+        { dayOfWeek: "Th", startTime: "8:00 AM", endTime: "8:50 AM" },
+        { dayOfWeek: "F", startTime: "8:00 AM", endTime: "8:50 AM" }
+      ]
+    },
+    {
+      id: "period-2",
+      name: "Period 2",
+      schedules: [
+        { dayOfWeek: "M", startTime: "9:00 AM", endTime: "9:50 AM" },
+        { dayOfWeek: "T", startTime: "9:00 AM", endTime: "9:50 AM" },
+        { dayOfWeek: "W", startTime: "9:00 AM", endTime: "9:50 AM" },
+        { dayOfWeek: "Th", startTime: "9:00 AM", endTime: "9:50 AM" },
+        { dayOfWeek: "F", startTime: "9:00 AM", endTime: "9:50 AM" }
+      ]
+    },
+    {
+      id: "period-3",
+      name: "Period 3",
+      schedules: [
+        { dayOfWeek: "M", startTime: "10:00 AM", endTime: "10:50 AM" },
+        { dayOfWeek: "T", startTime: "10:00 AM", endTime: "10:50 AM" },
+        { dayOfWeek: "W", startTime: "10:00 AM", endTime: "10:50 AM" },
+        { dayOfWeek: "Th", startTime: "10:00 AM", endTime: "10:50 AM" },
+        { dayOfWeek: "F", startTime: "10:00 AM", endTime: "10:50 AM" }
+      ]
+    },
+    {
+      id: "period-4",
+      name: "Period 4",
+      schedules: [
+        { dayOfWeek: "M", startTime: "11:00 AM", endTime: "11:50 AM" },
+        { dayOfWeek: "T", startTime: "11:00 AM", endTime: "11:50 AM" },
+        { dayOfWeek: "W", startTime: "11:00 AM", endTime: "11:50 AM" },
+        { dayOfWeek: "Th", startTime: "11:00 AM", endTime: "11:50 AM" },
+        { dayOfWeek: "F", startTime: "11:00 AM", endTime: "11:50 AM" }
+      ]
+    }
+  ];
+
+  const defaultTerm: Term = {
+    id: "term-default",
+    name: "Current Term",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 86400000 * 120).toISOString(),
+    schoolYear: "2023-2024"
+  };
+
+  const schoolHours: SchoolHours = {
+    startTime: "7:45 AM",
+    endTime: "3:15 PM",
+    teacherArrivalTime: "7:30 AM"
+  };
+
   await saveSchoolSetup(testUserId, {
-    schoolName: "Demo High School",
-    role: "Teacher",
-    subjects: ["Math", "Science", "English", "History"],
-    classPeriods: ["Period 1", "Period 2", "Period 3", "Period 4"],
-    categories: ["Homework", "Exam", "Project", "Meeting", "Other"],
-    gradeLevels: ["9th Grade", "10th Grade", "11th Grade", "12th Grade"],
+    termId: defaultTerm.id,
+    terms: [defaultTerm],
+    schoolDays: ["M", "T", "W", "Th", "F"],
+    periods: defaultPeriods,
+    schoolHours: schoolHours,
+    categories: ["Materials/Set up", "Student support", "School events", "Instruction", "Administrative tasks"],
+    iepMeetings: {
+      enabled: false
+    }
   });
   
-  // Create a few sample reminders for the test account
-  const sampleReminders = [
+  const sampleReminders: Partial<Reminder>[] = [
     {
       title: "Collect Math Homework",
-      description: "Collect homework from Period 1",
-      date: new Date(),
-      time: "09:00",
-      category: "Homework",
+      notes: "Collect homework from Period 1",
+      category: "Materials/Set up",
       priority: "Medium",
       completed: false,
-      period: "Period 1",
-      subject: "Math",
+      periodId: "period-1",
       type: "Prepare Materials",
+      timing: "During Period",
+      days: ["M", "W", "F"],
+      recurrence: "Weekly",
+      termId: defaultTerm.id
     },
     {
       title: "Science Project Due",
-      description: "Final project presentations",
-      date: new Date(Date.now() + 86400000), // Tomorrow
-      time: "13:30",
-      category: "Project",
+      notes: "Final project presentations",
+      category: "Instruction",
       priority: "High",
       completed: false,
-      period: "Period 3",
-      subject: "Science",
+      periodId: "period-3",
       type: "Grade",
+      timing: "End of Period",
+      days: ["T"],
+      recurrence: "Once",
+      termId: defaultTerm.id
     },
     {
       title: "Parent Conference",
-      description: "Meeting with Alex's parents",
-      date: new Date(Date.now() + 172800000), // Day after tomorrow
-      time: "15:00",
-      category: "Meeting",
+      notes: "Meeting with Alex's parents",
+      category: "Student support",
       priority: "High",
       completed: false,
-      period: "After School",
-      subject: "English",
+      periodId: "period-4",
       type: "Call Home",
+      timing: "After School",
+      days: ["Th"],
+      recurrence: "Once",
+      termId: defaultTerm.id
     },
   ];
   
-  // Add sample reminders
   for (const reminder of sampleReminders) {
-    await saveReminder(reminder, testUserId);
+    await saveReminder(reminder as Reminder, testUserId);
   }
   
   return testUser;
