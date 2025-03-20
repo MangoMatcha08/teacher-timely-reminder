@@ -11,7 +11,15 @@ const QuickReminderCreator: React.FC<QuickReminderCreatorProps> = ({
   onComplete = () => {}, 
   onClose = () => {} 
 }) => {
-  return <QuickCreateReminder onClose={onClose} />;
+  const handleClose = () => {
+    onClose();
+  };
+  
+  const handleComplete = () => {
+    onComplete();
+  };
+  
+  return <QuickCreateReminder onClose={handleClose} onComplete={handleComplete} />;
 };
 
 export default QuickReminderCreator;

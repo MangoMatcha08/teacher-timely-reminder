@@ -30,9 +30,13 @@ type QuickReminderFormData = z.infer<typeof quickReminderSchema>;
 
 interface QuickCreateReminderProps {
   onClose: () => void;
+  onComplete?: () => void;
 }
 
-const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) => {
+const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ 
+  onClose,
+  onComplete = () => {}
+}) => {
   const { createReminder, schoolSetup } = useReminders();
   
   const reminderTimings: ReminderTiming[] = [
@@ -105,7 +109,8 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
       });
       
       toast.success("Quick reminder created!");
-      onClose();
+      onComplete(); // Call onComplete to notify parent component
+      onClose();   // Close the modal
     } catch (error) {
       toast.error("Failed to create reminder");
     }

@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useReminders } from '@/context/ReminderContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/shared/Card';
-import { CheckCircle, Clock, Calendar, ListChecks } from 'lucide-react';
+import { CheckCircle, Clock, Calendar, ListChecks, Plus } from 'lucide-react';
 import ReminderList from '@/components/reminders/ReminderList';
 import QuickReminderCreator from '@/components/dashboard/QuickReminderCreator';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import PastDueReminders from '@/components/reminders/PastDueReminders';
+import Button from '@/components/shared/Button';
 
 const StatCard = ({ title, value, icon, className = '' }) => {
   return (
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState('');
+  const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
   
   useEffect(() => {
     const hour = new Date().getHours();
@@ -45,6 +47,10 @@ const Dashboard = () => {
     : 0;
   
   const currentTerm = schoolSetup?.terms.find(term => term.id === schoolSetup.termId);
+  
+  const handleQuickCreateComplete = () => {
+    setIsQuickCreateOpen(false);
+  };
   
   return (
     <div className="space-y-6 pb-8">
@@ -88,11 +94,24 @@ const Dashboard = () => {
       <PastDueReminders />
       
       {/* Quick Reminder Creator */}
-      <QuickReminderCreator />
+      {isQuickCreateOpen && (
+        <QuickReminderCreator 
+          onComplete={handleQuickCreateComplete} 
+          onClose={() => setIsQuickCreateOpen(false)} 
+        />
+      )}
       
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold tracking-tight">Today's Reminders</h2>
+          <Button 
+            variant="primary" 
+            onClick={() => setIsQuickCreateOpen(true)}
+            className="flex items-center gap-1"
+          >
+            <Plus size={16} />
+            <span>Quick Add</span>
+          </Button>
         </div>
         <ReminderList />
       </div>
