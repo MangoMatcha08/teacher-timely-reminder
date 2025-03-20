@@ -1,12 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DayOfWeek, Period } from "@/context/ReminderContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import TimeInput from "@/components/shared/TimeInput";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import Button from "@/components/shared/Button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 interface ScheduleSetupProps {
@@ -39,6 +40,11 @@ const ScheduleSetup: React.FC<ScheduleSetupProps> = ({
     { label: "Th", value: "Th" },
     { label: "F", value: "F" },
   ];
+  
+  const [editingPeriodId, setEditingPeriodId] = useState<string | null>(null);
+  const [customScheduleDialogOpen, setCustomScheduleDialogOpen] = useState(false);
+
+  const editingPeriod = editingPeriodId ? periods.find(p => p.id === editingPeriodId) : null;
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -114,100 +120,110 @@ const ScheduleSetup: React.FC<ScheduleSetupProps> = ({
                     </div>
                   )}
                   
-                  <Collapsible
-                    className="border rounded-md"
-                    open={customScheduleVisibility[period.id]}
-                    onOpenChange={() => toggleCustomScheduleVisibility(period.id)}
+                  <Button
+                    variant="outline"
+                    className="w-full flex items-center justify-center"
+                    onClick={() => {
+                      setEditingPeriodId(period.id);
+                      setCustomScheduleDialogOpen(true);
+                    }}
                   >
-                    <CollapsibleTrigger className="flex w-full items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors">
-                      <h5 className="text-sm font-medium">Custom Day Schedules</h5>
-                      <ChevronRight className={cn(
-                        "h-4 w-4 transition-transform",
-                        customScheduleVisibility[period.id] ? "rotate-90" : ""
-                      )} />
-                    </CollapsibleTrigger>
-                    
-                    <CollapsibleContent className="p-3 space-y-3">
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Enable custom schedules for days that differ from the default
-                      </p>
-                      
-                      {selectedDays.map((day) => {
-                        const isCustom = hasCustomSchedule(period.id, day);
-                        const dayLabel = days.find(d => d.value === day)?.label;
-                        
-                        return (
-                          <div key={`${period.id}-${day}-schedule`} 
-                              className="border rounded-md bg-white overflow-hidden">
-                            <div className="flex items-center justify-between border-b px-4 py-2 bg-gray-50">
-                              <div className="flex items-center">
-                                <div className="day-badge day-badge-selected mr-2">
-                                  {dayLabel}
-                                </div>
-                                <h5 className="text-sm font-medium">
-                                  {dayLabel} Schedule
-                                </h5>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <div className="text-xs text-muted-foreground mr-2">
-                                  Custom schedule
-                                </div>
-                                <Switch
-                                  checked={isCustom}
-                                  onCheckedChange={(checked) => {
-                                    if (!checked && isCustom) {
-                                      toggleCustomSchedule(period.id, day, isCustom);
-                                    } else if (checked && !isCustom) {
-                                      const schedule = period.schedules.find(s => s.dayOfWeek === day);
-                                      if (schedule) {
-                                        const [hourStr, minuteStr] = schedule.endTime.split(':');
-                                        const [minutes, meridian] = minuteStr.split(' ');
-                                        let hour = parseInt(hourStr);
-                                        let minute = parseInt(minutes) + 5;
-                                        if (minute >= 60) {
-                                          minute = 0;
-                                          hour = (hour % 12) + 1;
-                                        }
-                                        const newEndTime = `${hour}:${minute.toString().padStart(2, '0')} ${meridian}`;
-                                        handleScheduleEndTimeChange(period.id, day, newEndTime);
-                                      }
-                                    }
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            
-                            {isCustom && (
-                              <div className="p-3">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <TimeInput
-                                    label="Start Time"
-                                    value={period.schedules.find(s => s.dayOfWeek === day)?.startTime || "9:00 AM"}
-                                    onChange={(time) => handleScheduleStartTimeChange(period.id, day, time)}
-                                    id={`period-${period.id}-${day}-start`}
-                                  />
-                                  
-                                  <TimeInput
-                                    label="End Time"
-                                    value={period.schedules.find(s => s.dayOfWeek === day)?.endTime || "9:50 AM"}
-                                    onChange={(time) => handleScheduleEndTimeChange(period.id, day, time)}
-                                    id={`period-${period.id}-${day}-end`}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </CollapsibleContent>
-                  </Collapsible>
+                    <Clock className="h-4 w-4 mr-2" />
+                    Customize Day Schedules
+                  </Button>
                 </div>
               </CollapsibleContent>
             </Collapsible>
           ))}
         </div>
       </div>
+      
+      {/* Custom Schedule Dialog */}
+      <Dialog 
+        open={customScheduleDialogOpen} 
+        onOpenChange={(open) => {
+          setCustomScheduleDialogOpen(open);
+          if (!open) setEditingPeriodId(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingPeriod ? `Customize ${editingPeriod.name} Schedule` : 'Customize Schedule'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-2 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Enable custom schedules for specific days that differ from the default.
+            </p>
+            
+            {editingPeriod && selectedDays.map((day) => {
+              const isCustom = hasCustomSchedule(editingPeriod.id, day);
+              const dayLabel = days.find(d => d.value === day)?.label;
+              
+              return (
+                <div key={`${editingPeriod.id}-${day}-schedule`} 
+                    className="border rounded-md bg-white overflow-hidden">
+                  <div className="flex items-center justify-between border-b px-4 py-2 bg-gray-50">
+                    <div className="flex items-center">
+                      <div className="flex items-center justify-center w-6 h-6 bg-teacher-blue text-white rounded-full mr-2">
+                        {dayLabel}
+                      </div>
+                      <h5 className="text-sm font-medium">
+                        {dayLabel === 'M' ? 'Monday' : 
+                         dayLabel === 'T' ? 'Tuesday' : 
+                         dayLabel === 'W' ? 'Wednesday' : 
+                         dayLabel === 'Th' ? 'Thursday' : 'Friday'} Schedule
+                      </h5>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-muted-foreground mr-2">
+                        Custom
+                      </div>
+                      <Switch
+                        checked={isCustom}
+                        onCheckedChange={(checked) => {
+                          toggleCustomSchedule(editingPeriod.id, day, isCustom);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  {isCustom && (
+                    <div className="p-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <TimeInput
+                          label="Start Time"
+                          value={editingPeriod.schedules.find(s => s.dayOfWeek === day)?.startTime || "9:00 AM"}
+                          onChange={(time) => handleScheduleStartTimeChange(editingPeriod.id, day, time)}
+                          id={`period-${editingPeriod.id}-${day}-start`}
+                        />
+                        
+                        <TimeInput
+                          label="End Time"
+                          value={editingPeriod.schedules.find(s => s.dayOfWeek === day)?.endTime || "9:50 AM"}
+                          onChange={(time) => handleScheduleEndTimeChange(editingPeriod.id, day, time)}
+                          id={`period-${editingPeriod.id}-${day}-end`}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            
+            <Button 
+              variant="primary" 
+              className="w-full mt-4" 
+              onClick={() => setCustomScheduleDialogOpen(false)}
+            >
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

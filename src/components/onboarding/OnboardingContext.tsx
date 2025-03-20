@@ -1,7 +1,7 @@
-
 import React, { createContext, useContext, useState } from 'react';
 import { DayOfWeek, Period } from "@/context/ReminderContext";
-import { createInitialSchedule, TermType } from './OnboardingUtils';
+import { createInitialSchedule, generateProgressivePeriodTimes, doPeriodsOverlap, TermType } from './OnboardingUtils';
+import { toast } from "sonner";
 
 interface OnboardingContextType {
   currentStep: number;
@@ -96,6 +96,9 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   
+  const defaultPeriod1 = generateProgressivePeriodTimes(0);
+  const defaultPeriod2 = generateProgressivePeriodTimes(1);
+  
   const [periods, setPeriods] = useState<Period[]>([
     { 
       id: "period-1", 
@@ -130,7 +133,9 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     } else {
       setSelectedDays([...selectedDays, day]);
       
-      setPeriods(periods.map(period => {
+      setPeriods(periods.map((period, index) => {
+        const defaultTimes = generateProgressivePeriodTimes(index);
+        
         if (period.schedules.length > 0) {
           const defaultSchedule = period.schedules[0];
           return {
@@ -139,8 +144,8 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               ...period.schedules,
               {
                 dayOfWeek: day,
-                startTime: defaultSchedule ? defaultSchedule.startTime : "9:00 AM",
-                endTime: defaultSchedule ? defaultSchedule.endTime : "9:50 AM"
+                startTime: defaultSchedule ? defaultSchedule.startTime : defaultTimes.startTime,
+                endTime: defaultSchedule ? defaultSchedule.endTime : defaultTimes.endTime
               }
             ]
           };
@@ -149,8 +154,8 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             ...period,
             schedules: [{
               dayOfWeek: day,
-              startTime: "9:00 AM",
-              endTime: "9:50 AM"
+              startTime: defaultTimes.startTime,
+              endTime: defaultTimes.endTime
             }]
           };
         }
@@ -187,6 +192,16 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           startTime: time
         };
         
+        const periodWithNewTime = {
+          ...period,
+          schedules: updatedSchedules
+        };
+        
+        if (checkForOverlaps(periodWithNewTime, periods, day)) {
+          toast.error(`This time overlaps with another period on ${day}`);
+          return period;
+        }
+        
         return {
           ...period,
           schedules: updatedSchedules
@@ -210,12 +225,45 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           endTime: time
         };
         
+        const periodWithNewTime = {
+          ...period,
+          schedules: updatedSchedules
+        };
+        
+        if (checkForOverlaps(periodWithNewTime, periods, day)) {
+          toast.error(`This time overlaps with another period on ${day}`);
+          return period;
+        }
+        
         return {
           ...period,
           schedules: updatedSchedules
         };
       }
     }));
+  };
+  
+  const checkForOverlaps = (periodToCheck: Period, allPeriods: Period[], day: DayOfWeek): boolean => {
+    const scheduleToCheck = periodToCheck.schedules.find(s => s.dayOfWeek === day);
+    if (!scheduleToCheck) return false;
+    
+    for (const otherPeriod of allPeriods) {
+      if (otherPeriod.id === periodToCheck.id) continue;
+      
+      const otherSchedule = otherPeriod.schedules.find(s => s.dayOfWeek === day);
+      if (!otherSchedule) continue;
+      
+      if (doPeriodsOverlap(
+        scheduleToCheck.startTime,
+        scheduleToCheck.endTime,
+        otherSchedule.startTime,
+        otherSchedule.endTime
+      )) {
+        return true;
+      }
+    }
+    
+    return false;
   };
   
   const applyScheduleToAllDays = (periodId: string, sourceDayOfWeek: DayOfWeek) => {
@@ -248,23 +296,22 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
   
   const addPeriod = () => {
-    const newId = `period-${periods.length + 1}`;
+    const newIndex = periods.length;
+    const newId = `period-${newIndex + 1}`;
+    const defaultTimes = generateProgressivePeriodTimes(newIndex);
+    
     const newPeriod: Period = {
       id: newId,
-      name: `Period ${periods.length + 1}`,
+      name: `Period ${newIndex + 1}`,
       schedules: []
     };
     
-    if (selectedDays.length > 0 && periods.length > 0 && periods[0].schedules.length > 0) {
-      const templatePeriod = periods[0];
-      newPeriod.schedules = selectedDays.map(day => {
-        const templateSchedule = templatePeriod.schedules.find(s => s.dayOfWeek === day);
-        return templateSchedule
-          ? { ...templateSchedule, dayOfWeek: day }
-          : createInitialSchedule(day);
-      });
-    } else {
-      newPeriod.schedules = selectedDays.map(day => createInitialSchedule(day));
+    if (selectedDays.length > 0) {
+      newPeriod.schedules = selectedDays.map(day => ({
+        dayOfWeek: day,
+        startTime: defaultTimes.startTime,
+        endTime: defaultTimes.endTime
+      }));
     }
     
     setPeriods([...periods, newPeriod]);
@@ -384,7 +431,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     showExitConfirm,
     setShowExitConfirm,
     
-    // Methods
     updateTermNameFromType,
     toggleDay,
     handlePeriodNameChange,

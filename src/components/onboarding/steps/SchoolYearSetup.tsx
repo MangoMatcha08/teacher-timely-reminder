@@ -34,8 +34,8 @@ const SchoolYearSetup: React.FC<SchoolYearSetupProps> = ({
           Enter your school year and select your term structure.
         </p>
         
-        <div className="space-y-4 bg-white p-6 rounded-lg border">
-          <div className="space-y-3">
+        <div className="space-y-4 bg-white p-5 rounded-lg border">
+          <div className="space-y-2">
             <label className="text-sm font-medium">School Year</label>
             <Input
               value={schoolYear}
@@ -48,7 +48,7 @@ const SchoolYearSetup: React.FC<SchoolYearSetupProps> = ({
             </p>
           </div>
           
-          <div className="space-y-3 pt-4 border-t mt-4">
+          <div className="space-y-2 pt-3 border-t mt-3">
             <label className="text-sm font-medium">Term Structure</label>
             <div className="grid grid-cols-3 gap-3">
               <button
@@ -58,14 +58,13 @@ const SchoolYearSetup: React.FC<SchoolYearSetupProps> = ({
                   updateTermNameFromType("quarter");
                 }}
                 className={cn(
-                  "flex flex-col items-center justify-center p-3 rounded-lg border transition-colors",
+                  "flex items-center justify-center p-3 rounded-lg border transition-colors",
                   termType === "quarter" 
                     ? "bg-teacher-blue/10 border-teacher-blue" 
                     : "bg-white hover:bg-gray-50"
                 )}
               >
                 <span className="text-sm font-medium">Quarter</span>
-                <span className="text-xs text-muted-foreground mt-1">3 months</span>
               </button>
               
               <button
@@ -75,14 +74,13 @@ const SchoolYearSetup: React.FC<SchoolYearSetupProps> = ({
                   updateTermNameFromType("semester");
                 }}
                 className={cn(
-                  "flex flex-col items-center justify-center p-3 rounded-lg border transition-colors",
+                  "flex items-center justify-center p-3 rounded-lg border transition-colors",
                   termType === "semester" 
                     ? "bg-teacher-blue/10 border-teacher-blue" 
                     : "bg-white hover:bg-gray-50"
                 )}
               >
                 <span className="text-sm font-medium">Semester</span>
-                <span className="text-xs text-muted-foreground mt-1">5 months</span>
               </button>
               
               <button
@@ -92,19 +90,18 @@ const SchoolYearSetup: React.FC<SchoolYearSetupProps> = ({
                   updateTermNameFromType("year");
                 }}
                 className={cn(
-                  "flex flex-col items-center justify-center p-3 rounded-lg border transition-colors",
+                  "flex items-center justify-center p-3 rounded-lg border transition-colors",
                   termType === "year" 
                     ? "bg-teacher-blue/10 border-teacher-blue" 
                     : "bg-white hover:bg-gray-50"
                 )}
               >
-                <span className="text-sm font-medium">Year-Round</span>
-                <span className="text-xs text-muted-foreground mt-1">Full year</span>
+                <span className="text-sm font-medium">Full Year</span>
               </button>
             </div>
           </div>
           
-          <div className="space-y-3 pt-4 border-t mt-4">
+          <div className="space-y-2 pt-3 border-t mt-3">
             <label className="text-sm font-medium">Term Name</label>
             <Select
               value={termName}
@@ -133,9 +130,9 @@ const SchoolYearSetup: React.FC<SchoolYearSetupProps> = ({
             </Select>
           </div>
           
-          <div className="flex items-start mt-4 pt-4 border-t">
-            <Calendar className="h-5 w-5 text-muted-foreground mt-0.5 mr-2" />
-            <p className="text-sm text-muted-foreground">
+          <div className="flex items-start mt-3 pt-3 border-t">
+            <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 mr-2" />
+            <p className="text-xs text-muted-foreground">
               You'll be able to create additional terms and switch between them after completing setup.
             </p>
           </div>

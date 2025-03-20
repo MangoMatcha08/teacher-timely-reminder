@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -54,16 +53,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
-  // Initialize auth state from Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       
-      // Check if user has completed onboarding
       if (user) {
-        // Check for test user specifically
         if (user.uid.startsWith("test-user-")) {
-          // Check localStorage for test user onboarding state
           const testUserOnboarding = localStorage.getItem("testUserOnboarding");
           setHasCompletedOnboarding(testUserOnboarding !== "reset");
         } else {
@@ -86,8 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       const errorMsg = error.code === "auth/invalid-credential" 
         ? "Invalid email or password" 
-        : error.code === "auth/api-key-not-valid"
-        ? "Firebase authentication error. Please try again later or use the test account."
+        : error.code === "auth/api-key-not-valid" || error.code === "auth/app-not-authorized"
+        ? "Firebase authentication is unavailable. Please use the test account or try again later."
         : error.message || "Login failed";
       
       toast.error(errorMsg);
@@ -103,8 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       const errorMsg = error.code === "auth/email-already-in-use" 
         ? "Email is already in use" 
-        : error.code === "auth/api-key-not-valid"
-        ? "Firebase authentication error. Please try again later or use the test account."
+        : error.code === "auth/api-key-not-valid" || error.code === "auth/app-not-authorized"
+        ? "Firebase authentication is unavailable. Please use the test account or try again later."
         : error.message || "Registration failed";
       
       toast.error(errorMsg);
@@ -118,8 +113,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       return user;
     } catch (error: any) {
-      const errorMsg = error.code === "auth/api-key-not-valid"
-        ? "Firebase authentication error. Please try again later or use the test account."
+      const errorMsg = error.code === "auth/api-key-not-valid" || error.code === "auth/app-not-authorized"
+        ? "Firebase authentication is unavailable. Please use the test account or try again later."
         : error.message || "Google sign-in failed";
       
       toast.error(errorMsg);
@@ -132,7 +127,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const testUser = await loginWithTestAccount();
       setUser(testUser);
       
-      // Check if onboarding has been reset for the test account
       const testUserOnboarding = localStorage.getItem("testUserOnboarding");
       if (testUserOnboarding === "reset") {
         setHasCompletedOnboarding(false);
@@ -171,11 +165,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetOnboardingData = () => {
     if (user?.uid.startsWith("test-user-")) {
       localStorage.setItem("testUserOnboarding", "reset");
+      setHasCompletedOnboarding(false);
+      toast.success("Onboarding has been reset. Log out and back in to see changes.");
     } else {
       localStorage.removeItem("hasCompletedOnboarding");
+      setHasCompletedOnboarding(false);
+      toast.success("Onboarding data has been reset");
     }
-    setHasCompletedOnboarding(false);
-    toast.success("Onboarding data has been reset");
   };
 
   return (
