@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useReminders } from "@/context/ReminderContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,6 +11,15 @@ const ReminderList = () => {
   const { reminders, schoolSetup, toggleReminderComplete } = useReminders();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
+  // Handle category change
+  const handleCategoryChange = (value: string) => {
+    if (value === "_clear") {
+      setSelectedCategory(null);
+    } else {
+      setSelectedCategory(value);
+    }
+  };
+  
   const filteredReminders = reminders.filter(reminder => {
     if (selectedCategory && reminder.category !== selectedCategory) {
       return false;
@@ -20,12 +30,12 @@ const ReminderList = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row">
-        <Select value={selectedCategory || ""} onValueChange={setSelectedCategory}>
+        <Select value={selectedCategory || ""} onValueChange={handleCategoryChange}>
           <SelectTrigger className="w-full sm:w-[200px]">
             <SelectValue placeholder="Filter by category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="" className="font-medium bg-gray-100">
+            <SelectItem value="_clear" className="font-medium bg-gray-100">
               Clear Category Filter
             </SelectItem>
             {schoolSetup?.categories?.map((category) => (
