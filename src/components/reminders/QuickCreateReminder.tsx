@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
-import { useReminders, DayOfWeek, ReminderTiming } from "@/context/ReminderContext";
+import { X, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { useReminders, DayOfWeek, ReminderTiming, ReminderPriority } from "@/context/ReminderContext";
 import Button from "@/components/shared/Button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/shared/Card";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ const quickReminderSchema = z.object({
   timing: z.enum(["Before School", "After School", "During Period"] as const),
   periodId: z.string().min(1, "Period is required"),
   category: z.string().optional(),
+  priority: z.enum(["Low", "Medium", "High"] as const).default("Medium"),
 });
 
 type QuickReminderFormData = z.infer<typeof quickReminderSchema>;
@@ -53,6 +54,7 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
       timing: "During Period",
       periodId: schoolSetup?.periods[0]?.id || "",
       category: "",
+      priority: "Medium"
     },
   });
   
@@ -67,6 +69,18 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
     // Get the first schedule for display in dropdown
     const firstSchedule = period.schedules[0];
     return firstSchedule.startTime;
+  };
+  
+  // Helper function to render priority icons
+  const getPriorityIcon = (priority: ReminderPriority) => {
+    switch (priority) {
+      case "High":
+        return <ArrowUp className="h-4 w-4 text-red-500" />;
+      case "Low":
+        return <ArrowDown className="h-4 w-4 text-green-500" />;
+      default:
+        return <Minus className="h-4 w-4 text-amber-500" />;
+    }
   };
   
   const onSubmit = (data: QuickReminderFormData) => {
@@ -87,7 +101,7 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
         category: data.category || "",
         notes: "",
         recurrence: "Once",
-        priority: "Medium" // Add the missing priority field with a default value
+        priority: data.priority
       });
       
       toast.success("Quick reminder created!");
@@ -203,6 +217,55 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
                   )}
                 </div>
               )}
+              
+              {/* Priority */}
+              <div>
+                <label
+                  htmlFor="quick-priority"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
+                  Priority
+                </label>
+                <Controller
+                  control={control}
+                  name="priority"
+                  render={({ field }) => (
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select priority">
+                          <div className="flex items-center gap-2">
+                            {getPriorityIcon(field.value as ReminderPriority)}
+                            <span>{field.value}</span>
+                          </div>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Low">
+                          <div className="flex items-center gap-2">
+                            <ArrowDown className="h-4 w-4 text-green-500" />
+                            <span>Low</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="Medium">
+                          <div className="flex items-center gap-2">
+                            <Minus className="h-4 w-4 text-amber-500" />
+                            <span>Medium</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="High">
+                          <div className="flex items-center gap-2">
+                            <ArrowUp className="h-4 w-4 text-red-500" />
+                            <span>High</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
               
               {/* Category */}
               <div>
