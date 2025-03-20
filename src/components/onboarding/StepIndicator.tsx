@@ -1,0 +1,28 @@
+
+import React from 'react';
+import { cn } from "@/lib/utils";
+
+interface StepIndicatorProps {
+  currentStep: number;
+  totalSteps: number;
+}
+
+const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }) => {
+  return (
+    <div className="flex justify-center">
+      <div className="flex gap-2">
+        {Array.from({ length: totalSteps }).map((_, index) => (
+          <div
+            key={index}
+            className={cn(
+              "h-2 w-2 rounded-full transition-colors",
+              currentStep === index ? "bg-teacher-blue" : "bg-teacher-gray"
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default StepIndicator;
