@@ -7,12 +7,24 @@ import { Reminder, SchoolSetup } from "@/context/ReminderContext";
 export const register = async (email: string, password: string) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    console.log("Registration successful:", userCredential.user.uid);
     return userCredential.user;
   } catch (error: any) {
     console.error("Register error:", error);
+    
+    // Provide more specific error messages
     if (error.code === 'auth/email-already-in-use') {
       throw new Error("This email is already registered. Please sign in instead.");
+    } else if (error.code === 'auth/invalid-email') {
+      throw new Error("Invalid email format. Please check your email address.");
+    } else if (error.code === 'auth/weak-password') {
+      throw new Error("Password is too weak. Please use a stronger password.");
+    } else if (error.code === 'auth/network-request-failed') {
+      throw new Error("Network error. Please check your internet connection.");
+    } else if (error.code?.includes('api-key')) {
+      throw new Error("Authentication service is currently unavailable. Please try again later.");
     }
+    
     throw error;
   }
 };
@@ -20,12 +32,26 @@ export const register = async (email: string, password: string) => {
 export const login = async (email: string, password: string) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    console.log("Login successful:", userCredential.user.uid);
     return userCredential.user;
   } catch (error: any) {
     console.error("Login error:", error);
+    
+    // Provide more specific error messages
     if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
       throw new Error("Invalid email or password. Please try again.");
+    } else if (error.code === 'auth/invalid-email') {
+      throw new Error("Invalid email format. Please check your email address.");
+    } else if (error.code === 'auth/user-disabled') {
+      throw new Error("This account has been disabled. Please contact support.");
+    } else if (error.code === 'auth/too-many-requests') {
+      throw new Error("Too many failed login attempts. Please try again later.");
+    } else if (error.code === 'auth/network-request-failed') {
+      throw new Error("Network error. Please check your internet connection.");
+    } else if (error.code?.includes('api-key')) {
+      throw new Error("Authentication service is currently unavailable. Please try again later.");
     }
+    
     throw error;
   }
 };
