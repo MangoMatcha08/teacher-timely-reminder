@@ -60,8 +60,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       
       // Check if user has completed onboarding
-      const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
-      setHasCompletedOnboarding(!!onboardingCompleted);
+      if (user) {
+        // Check for test user specifically
+        if (user.uid.startsWith("test-user-")) {
+          setHasCompletedOnboarding(true);
+        } else {
+          const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
+          setHasCompletedOnboarding(!!onboardingCompleted);
+        }
+      }
       
       setIsInitialized(true);
     });
@@ -108,7 +115,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(testUser);
       
       // Set onboarding as completed for the test account
-      localStorage.setItem("hasCompletedOnboarding", "true");
       setHasCompletedOnboarding(true);
       
       return testUser;
@@ -122,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await logout();
       setUser(null);
+      setHasCompletedOnboarding(false);
     } catch (error: any) {
       toast.error(error.message || "Logout failed");
       throw error;

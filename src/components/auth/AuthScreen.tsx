@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -88,7 +87,9 @@ const AuthScreen: React.FC = () => {
       setIsLoading(true);
       await loginWithTestAccount();
       toast.success("Logged in with test account!");
-      navigate("/dashboard");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 500);
     } catch (error) {
       toast.error("Failed to sign in with test account. Please try again.");
     } finally {
