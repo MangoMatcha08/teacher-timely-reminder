@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useReminders } from '@/context/ReminderContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/shared/Card';
 import { CheckCircle, Clock, Calendar, ListChecks } from 'lucide-react';
 import ReminderList from '@/components/reminders/ReminderList';
-import QuickReminderCreator from '@/components/reminders/QuickReminderCreator';
+import QuickReminderCreator from '@/components/dashboard/QuickReminderCreator';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import PastDueReminders from '@/components/reminders/PastDueReminders';
