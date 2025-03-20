@@ -6,7 +6,7 @@ import { getFirestore } from "firebase/firestore";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDwFgrsbNYqXu-ht7TXPfIb-VPFDBXY0zM",
+  apiKey: "AIzaSyAwCpl0yx_OfVZ4pXUcFkZxRV7tFJ8RNvM",
   authDomain: "teacher-reminder-app.firebaseapp.com",
   projectId: "teacher-reminder-app",
   storageBucket: "teacher-reminder-app.appspot.com",

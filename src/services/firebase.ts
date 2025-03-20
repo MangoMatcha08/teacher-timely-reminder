@@ -1,3 +1,4 @@
+
 import { firestore, auth, googleProvider } from "@/lib/firebase";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, setDoc, getDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User, signInWithPopup } from "firebase/auth";
@@ -21,7 +22,7 @@ export const register = async (email: string, password: string) => {
     } else if (error.code === 'auth/network-request-failed') {
       throw new Error("Network error. Please check your internet connection.");
     } else if (error.code?.includes('api-key')) {
-      throw new Error("Authentication service is currently unavailable. Please try again later.");
+      throw new Error("Authentication service configuration error. Please contact support.");
     }
     
     throw error;
@@ -47,7 +48,7 @@ export const login = async (email: string, password: string) => {
     } else if (error.code === 'auth/network-request-failed') {
       throw new Error("Network error. Please check your internet connection.");
     } else if (error.code?.includes('api-key')) {
-      throw new Error("Authentication service is currently unavailable. Please try again later.");
+      throw new Error("Authentication service configuration error. Please contact support.");
     }
     
     throw error;
