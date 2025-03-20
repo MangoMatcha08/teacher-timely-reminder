@@ -1,15 +1,30 @@
 
 import React from "react";
-import Layout from "@/components/shared/Layout";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import SettingsComponent from "@/components/settings/Settings";
+import Layout from "@/components/shared/Layout";
 
-const Settings = () => {
+const Settings: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, isInitialized, hasCompletedOnboarding, resetOnboarding } = useAuth();
+  
+  // Handlers to be passed to the SettingsComponent
+  const handleResetOnboarding = () => {
+    resetOnboarding();
+    navigate("/auth"); // Force the user to log in again to see the onboarding
+  };
+  
+  const handleModifySettings = () => {
+    navigate("/onboarding");
+  };
   
   return (
     <Layout pageTitle="Settings">
-      <SettingsComponent />
+      <SettingsComponent 
+        onResetOnboarding={handleResetOnboarding}
+        onModifySettings={handleModifySettings}
+      />
     </Layout>
   );
 };

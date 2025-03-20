@@ -1,26 +1,26 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
-import { Settings2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Settings, Calendar } from "lucide-react";
 import ReminderList from "@/components/reminders/ReminderList";
 import QuickReminderCreator from "@/components/dashboard/QuickReminderCreator";
 import { useReminders } from "@/context/ReminderContext";
 import { toast } from "sonner";
-import { Calendar } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import Button from "@/components/shared/Button";
 
 const Dashboard = () => {
   const { schoolSetup, reminders } = useReminders();
+  const navigate = useNavigate();
   const [isQuickCreateOpen, setIsQuickCreateOpen] = React.useState(false);
   
   const handleQuickCreateComplete = () => {
     setIsQuickCreateOpen(false);
-    // No need to call fetchReminders as we'll use the context state
     toast.success("Reminder created successfully");
   };
   
@@ -42,81 +42,85 @@ const Dashboard = () => {
   }, [reminders, selectedCategory, selectedPriority]);
   
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="flex flex-col space-y-6">
+    <div className="container mx-auto px-3 py-4">
+      <div className="flex flex-col space-y-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Your Reminders</h1>
+          <h1 className="text-xl font-bold">Your Reminders</h1>
           <Link 
             to="/settings"
             className="p-2 text-gray-600 hover:text-gray-900"
+            aria-label="Settings"
           >
-            <Settings2 className="w-5 h-5" />
+            <Settings className="w-5 h-5" />
           </Link>
         </div>
         
         {/* Move filters below header */}
-        <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9">
-                Category <span className="ml-2 hidden sm:inline">
+              <Button variant="outline" className="h-8 text-sm">
+                Category <span className="ml-1 hidden sm:inline">
                   {selectedCategory ? `(${selectedCategory})` : ""}
                 </span>
-                <Calendar className="ml-2 h-4 w-4" />
+                <Calendar className="ml-1 h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
               {schoolSetup?.categories.map((category) => (
-                <button
+                <DropdownMenuItem
                   key={category}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 text-sm"
                   onClick={() => setSelectedCategory(category)}
                 >
                   {category}
-                </button>
+                </DropdownMenuItem>
               ))}
-              <button
-                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+              <DropdownMenuItem
+                className="w-full text-left px-3 py-2 text-sm"
                 onClick={() => setSelectedCategory(null)}
               >
                 Clear Category
-              </button>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9">
-                Priority <span className="ml-2 hidden sm:inline">
+              <Button variant="outline" className="h-8 text-sm">
+                Priority <span className="ml-1 hidden sm:inline">
                   {selectedPriority ? `(${selectedPriority})` : ""}
                 </span>
-                <Calendar className="ml-2 h-4 w-4" />
+                <Calendar className="ml-1 h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
               {["Low", "Medium", "High"].map((priority) => (
-                <button
+                <DropdownMenuItem
                   key={priority}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 text-sm"
                   onClick={() => setSelectedPriority(priority)}
                 >
                   {priority}
-                </button>
+                </DropdownMenuItem>
               ))}
-              <button
-                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+              <DropdownMenuItem
+                className="w-full text-left px-3 py-2 text-sm"
                 onClick={() => setSelectedPriority(null)}
               >
                 Clear Priority
-              </button>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <Button onClick={() => setIsQuickCreateOpen(true)}>
+          <Button 
+            onClick={() => setIsQuickCreateOpen(true)}
+            className="h-8 text-sm"
+          >
             Quick Add
           </Button>
           <Link to="/create-reminder">
-            <Button>Create Reminder</Button>
+            <Button className="h-8 text-sm">Create Reminder</Button>
           </Link>
         </div>
         
@@ -124,11 +128,7 @@ const Dashboard = () => {
       </div>
       
       {isQuickCreateOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4 animate-fade-in">
-          <div className="w-full max-w-md animate-scale-in">
-            <QuickReminderCreator onComplete={handleQuickCreateComplete} />
-          </div>
-        </div>
+        <QuickReminderCreator onComplete={handleQuickCreateComplete} onClose={() => setIsQuickCreateOpen(false)} />
       )}
     </div>
   );

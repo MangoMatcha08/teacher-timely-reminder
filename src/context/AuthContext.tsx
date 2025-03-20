@@ -63,7 +63,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (user) {
         // Check for test user specifically
         if (user.uid.startsWith("test-user-")) {
-          setHasCompletedOnboarding(true);
+          // Check localStorage for test user onboarding state
+          const testUserOnboarding = localStorage.getItem("testUserOnboarding");
+          setHasCompletedOnboarding(testUserOnboarding !== "reset");
         } else {
           const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
           setHasCompletedOnboarding(!!onboardingCompleted);
@@ -82,7 +84,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       return user;
     } catch (error: any) {
-      toast.error(error.message || "Login failed");
+      const errorMsg = error.code === "auth/invalid-credential" 
+        ? "Invalid email or password" 
+        : error.code === "auth/api-key-not-valid"
+        ? "Firebase authentication error. Please try again later or use the test account."
+        : error.message || "Login failed";
+      
+      toast.error(errorMsg);
       throw error;
     }
   };
@@ -93,7 +101,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       return user;
     } catch (error: any) {
-      toast.error(error.message || "Registration failed");
+      const errorMsg = error.code === "auth/email-already-in-use" 
+        ? "Email is already in use" 
+        : error.code === "auth/api-key-not-valid"
+        ? "Firebase authentication error. Please try again later or use the test account."
+        : error.message || "Registration failed";
+      
+      toast.error(errorMsg);
       throw error;
     }
   };
@@ -104,7 +118,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       return user;
     } catch (error: any) {
-      toast.error(error.message || "Google sign-in failed");
+      const errorMsg = error.code === "auth/api-key-not-valid"
+        ? "Firebase authentication error. Please try again later or use the test account."
+        : error.message || "Google sign-in failed";
+      
+      toast.error(errorMsg);
       throw error;
     }
   };
@@ -114,8 +132,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const testUser = await loginWithTestAccount();
       setUser(testUser);
       
-      // Set onboarding as completed for the test account
-      setHasCompletedOnboarding(true);
+      // Check if onboarding has been reset for the test account
+      const testUserOnboarding = localStorage.getItem("testUserOnboarding");
+      if (testUserOnboarding === "reset") {
+        setHasCompletedOnboarding(false);
+      } else {
+        setHasCompletedOnboarding(true);
+        localStorage.setItem("testUserOnboarding", "completed");
+      }
       
       return testUser;
     } catch (error: any) {
@@ -136,12 +160,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const completeOnboarding = () => {
-    localStorage.setItem("hasCompletedOnboarding", "true");
+    if (user?.uid.startsWith("test-user-")) {
+      localStorage.setItem("testUserOnboarding", "completed");
+    } else {
+      localStorage.setItem("hasCompletedOnboarding", "true");
+    }
     setHasCompletedOnboarding(true);
   };
   
   const resetOnboardingData = () => {
-    localStorage.removeItem("hasCompletedOnboarding");
+    if (user?.uid.startsWith("test-user-")) {
+      localStorage.setItem("testUserOnboarding", "reset");
+    } else {
+      localStorage.removeItem("hasCompletedOnboarding");
+    }
     setHasCompletedOnboarding(false);
     toast.success("Onboarding data has been reset");
   };
