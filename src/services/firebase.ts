@@ -1,6 +1,7 @@
-import { firestore, auth } from "@/lib/firebase";
+
+import { firestore, auth, googleProvider } from "@/lib/firebase";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, setDoc, getDoc } from "firebase/firestore";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User, signInWithPopup } from "firebase/auth";
 import { Reminder, SchoolSetup } from "@/context/ReminderContext";
 
 // Authentication functions
@@ -54,6 +55,107 @@ export const login = async (email: string, password: string) => {
     
     throw error;
   }
+};
+
+export const signInWithGoogle = async () => {
+  try {
+    const userCredential = await signInWithPopup(auth, googleProvider);
+    console.log("Google sign-in successful:", userCredential.user.uid);
+    return userCredential.user;
+  } catch (error: any) {
+    console.error("Google sign-in error:", error);
+    throw new Error("Failed to sign in with Google. Please try again.");
+  }
+};
+
+// Simulated test account login for demo purposes
+export const loginWithTestAccount = async () => {
+  // Generate a unique ID for the test user
+  const testUserId = "test-user-" + Date.now().toString();
+  
+  // Create a mock user object that mimics Firebase User
+  const testUser = {
+    uid: testUserId,
+    email: "test@teacherreminder.app",
+    displayName: "Test Teacher",
+    emailVerified: true,
+    isAnonymous: false,
+    metadata: {
+      creationTime: new Date().toISOString(),
+      lastSignInTime: new Date().toISOString()
+    },
+    providerData: [],
+    refreshToken: "test-refresh-token",
+    tenantId: null,
+    delete: () => Promise.resolve(),
+    getIdToken: () => Promise.resolve("test-id-token"),
+    getIdTokenResult: () => Promise.resolve({
+      token: "test-id-token",
+      signInProvider: "password",
+      expirationTime: new Date(Date.now() + 3600000).toISOString(),
+      issuedAtTime: new Date().toISOString(),
+      claims: {}
+    }),
+    reload: () => Promise.resolve(),
+    toJSON: () => ({})
+  } as unknown as User;
+  
+  // Setup default school setup for test user
+  await saveSchoolSetup(testUserId, {
+    schoolName: "Demo High School",
+    role: "Teacher",
+    subjects: ["Math", "Science", "English", "History"],
+    classPeriods: ["Period 1", "Period 2", "Period 3", "Period 4"],
+    categories: ["Homework", "Exam", "Project", "Meeting", "Other"],
+    gradeLevels: ["9th Grade", "10th Grade", "11th Grade", "12th Grade"],
+  });
+  
+  // Create a few sample reminders for the test account
+  const sampleReminders = [
+    {
+      title: "Collect Math Homework",
+      description: "Collect homework from Period 1",
+      date: new Date(),
+      time: "09:00",
+      category: "Homework",
+      priority: "Medium",
+      completed: false,
+      period: "Period 1",
+      subject: "Math",
+      type: "Prepare Materials",
+    },
+    {
+      title: "Science Project Due",
+      description: "Final project presentations",
+      date: new Date(Date.now() + 86400000), // Tomorrow
+      time: "13:30",
+      category: "Project",
+      priority: "High",
+      completed: false,
+      period: "Period 3",
+      subject: "Science",
+      type: "Grade",
+    },
+    {
+      title: "Parent Conference",
+      description: "Meeting with Alex's parents",
+      date: new Date(Date.now() + 172800000), // Day after tomorrow
+      time: "15:00",
+      category: "Meeting",
+      priority: "High",
+      completed: false,
+      period: "After School",
+      subject: "English",
+      type: "Call Home",
+    },
+  ];
+  
+  // Add sample reminders
+  for (const reminder of sampleReminders) {
+    await saveReminder(reminder, testUserId);
+  }
+  
+  return testUser;
 };
 
 export const logout = async () => {

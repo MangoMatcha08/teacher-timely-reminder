@@ -22,7 +22,7 @@ type AuthFormData = z.infer<typeof authSchema>;
 const AuthScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
-  const { login, register, resetOnboarding } = useAuth();
+  const { login, register, loginWithGoogle, loginWithTestAccount, resetOnboarding } = useAuth();
   const navigate = useNavigate();
 
   const { 
@@ -50,8 +50,7 @@ const AuthScreen: React.FC = () => {
       }
       navigate("/onboarding");
     } catch (error) {
-      const action = isLoginMode ? "sign in" : "register";
-      toast.error(`Failed to ${action}. Please try again.`);
+      // Error is already displayed in a toast from AuthContext
     } finally {
       setIsLoading(false);
     }
@@ -60,11 +59,11 @@ const AuthScreen: React.FC = () => {
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
-      await login("teacher@example.com", "google");
+      await loginWithGoogle();
       toast.success("Signed in with Google!");
       navigate("/onboarding");
     } catch (error) {
-      toast.error("Failed to sign in with Google. Please try again.");
+      // Error is already displayed in a toast from AuthContext
     } finally {
       setIsLoading(false);
     }
@@ -73,11 +72,25 @@ const AuthScreen: React.FC = () => {
   const handleCleverLogin = async () => {
     try {
       setIsLoading(true);
-      await login("teacher@example.com", "clever");
+      // For now, just use the test account login
+      await loginWithTestAccount();
       toast.success("Signed in with Clever!");
-      navigate("/onboarding");
+      navigate("/dashboard");
     } catch (error) {
       toast.error("Failed to sign in with Clever. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTestAccountLogin = async () => {
+    try {
+      setIsLoading(true);
+      await loginWithTestAccount();
+      toast.success("Logged in with test account!");
+      navigate("/dashboard");
+    } catch (error) {
+      toast.error("Failed to sign in with test account. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -215,6 +228,15 @@ const AuthScreen: React.FC = () => {
                       <path d="M12 6.75C9.13 6.75 6.75 9.13 6.75 12C6.75 14.87 9.13 17.25 12 17.25C14.87 17.25 17.25 14.87 17.25 12C17.25 9.13 14.87 6.75 12 6.75ZM12 15.75C9.93 15.75 8.25 14.07 8.25 12C8.25 9.93 9.93 8.25 12 8.25C14.07 8.25 15.75 9.93 15.75 12C15.75 14.07 14.07 15.75 12 15.75Z" fill="white" />
                     </svg>
                     Sign in with Clever
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="w-full"
+                    onClick={handleTestAccountLogin}
+                    disabled={isLoading}
+                  >
+                    Use Test Account
                   </Button>
                 </div>
               </>

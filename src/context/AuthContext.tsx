@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { login, register, logout } from "@/services/firebase";
+import { login, register, logout, signInWithGoogle, loginWithTestAccount } from "@/services/firebase";
 import { toast } from "sonner";
 
 interface AuthContextType {
@@ -12,6 +12,8 @@ interface AuthContextType {
   hasCompletedOnboarding: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string) => Promise<User>;
+  loginWithGoogle: () => Promise<User>;
+  loginWithTestAccount: () => Promise<User>;
   logout: () => Promise<void>;
   setCompleteOnboarding: () => void;
   resetOnboarding: () => void;
@@ -26,6 +28,12 @@ const AuthContext = createContext<AuthContextType>({
     throw new Error("Function not implemented");
   },
   register: async () => {
+    throw new Error("Function not implemented");
+  },
+  loginWithGoogle: async () => {
+    throw new Error("Function not implemented");
+  },
+  loginWithTestAccount: async () => {
     throw new Error("Function not implemented");
   },
   logout: async () => {
@@ -83,6 +91,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const user = await signInWithGoogle();
+      setUser(user);
+      return user;
+    } catch (error: any) {
+      toast.error(error.message || "Google sign-in failed");
+      throw error;
+    }
+  };
+
+  const handleTestAccountLogin = async () => {
+    try {
+      const testUser = await loginWithTestAccount();
+      setUser(testUser);
+      
+      // Set onboarding as completed for the test account
+      localStorage.setItem("hasCompletedOnboarding", "true");
+      setHasCompletedOnboarding(true);
+      
+      return testUser;
+    } catch (error: any) {
+      toast.error(error.message || "Test account login failed");
+      throw error;
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -113,6 +148,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         hasCompletedOnboarding,
         login: handleLogin,
         register: handleRegister,
+        loginWithGoogle: handleGoogleLogin,
+        loginWithTestAccount: handleTestAccountLogin,
         logout: handleLogout,
         setCompleteOnboarding: completeOnboarding,
         resetOnboarding: resetOnboardingData,
