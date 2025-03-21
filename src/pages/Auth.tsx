@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
 
 const Auth = () => {
-  const { isAuthenticated, isInitialized, hasCompletedOnboarding, resetOnboarding, isOffline } = useAuth();
+  const { isAuthenticated, isInitialized, hasCompletedOnboarding, resetOnboarding, isOffline, loginWithTestAccount } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -29,6 +29,17 @@ const Auth = () => {
     resetOnboarding();
     toast.success("Onboarding reset successfully!");
     navigate("/onboarding");
+  };
+  
+  const handleContinueOffline = async () => {
+    try {
+      toast.success("Using demo mode with test account");
+      await loginWithTestAccount();
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error logging in with test account:", error);
+      toast.error("Failed to use offline mode. Please try again.");
+    }
   };
   
   if (!isInitialized) {
@@ -82,13 +93,7 @@ const Auth = () => {
             </Button>
             <Button 
               variant="ghost" 
-              onClick={() => {
-                const { loginWithTestAccount } = useAuth();
-                toast.success("Using demo mode with test account");
-                loginWithTestAccount().then(() => {
-                  navigate("/dashboard");
-                });
-              }} 
+              onClick={handleContinueOffline} 
               className="w-full"
             >
               Continue in Offline Mode
