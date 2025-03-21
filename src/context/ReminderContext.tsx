@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import * as FirebaseService from "@/services/firebase";
@@ -155,7 +154,6 @@ const getTodayDayCode = (): DayOfWeek => {
   return dayIndex >= 0 && dayIndex < 5 ? days[dayIndex] : "M"; // Default to Monday if weekend
 };
 
-// Get the default notification preferences
 const getDefaultNotificationPreferences = (): NotificationPreferences => {
   return {
     email: {
@@ -271,7 +269,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
 
-  // Calculate past due reminders
   useEffect(() => {
     const updatePastDueStatus = () => {
       const today = new Date();
@@ -291,7 +288,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     updatePastDueStatus();
-    // Set up daily check for past due reminders
     const interval = setInterval(updatePastDueStatus, 86400000); // 24 hours
     
     return () => clearInterval(interval);
@@ -313,12 +309,12 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!user) return;
     
     try {
-      const cloudReminders = await FirebaseService.getUserReminders(user.uid);
+      const cloudReminders = await FirebaseService.getUserReminders(user.id);
       if (cloudReminders.length > 0) {
         setReminders(cloudReminders);
       }
       
-      const cloudSetup = await FirebaseService.getSchoolSetup(user.uid);
+      const cloudSetup = await FirebaseService.getSchoolSetup(user.id);
       if (cloudSetup) {
         // Ensure notification preferences exist
         if (!cloudSetup.notificationPreferences) {
@@ -341,11 +337,11 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setSyncStatus('pending');
       
       for (const reminder of reminders) {
-        await FirebaseService.saveReminder(reminder, user.uid);
+        await FirebaseService.saveReminder(reminder, user.id);
       }
       
       if (schoolSetup) {
-        await FirebaseService.saveSchoolSetup(user.uid, schoolSetup);
+        await FirebaseService.saveSchoolSetup(user.id, schoolSetup);
       }
       
       setSyncStatus('synced');
@@ -366,7 +362,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ? reminderData.days.filter(d => d !== currentDayCode)
       : reminderData.days;
     
-    // Calculate due date based on next occurrence
     const dueDate = calculateNextOccurrence(reminderData.days);
     
     const newReminder: Reminder = {
@@ -383,11 +378,10 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setReminders((prev) => [...prev, newReminder]);
     
     if (isOnline && user) {
-      FirebaseService.saveReminder(newReminder, user.uid)
+      FirebaseService.saveReminder(newReminder, user.id)
         .catch(error => console.error("Error saving reminder to Firebase:", error));
     }
 
-    // Send notification if applicable
     sendReminderNotification(newReminder);
   };
 
@@ -397,7 +391,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const today = new Date();
     const todayDayIndex = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
     
-    // Convert day codes to day indices (0-6)
     const dayIndices = days.map(day => {
       switch (day) {
         case 'M': return 1;
@@ -409,7 +402,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     });
     
-    // Find the next occurrence
     let daysUntilNext = 7;
     for (const dayIndex of dayIndices) {
       const difference = (dayIndex - todayDayIndex + 7) % 7;
@@ -418,7 +410,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }
     
-    // If no next day found in the current week, use the first day of next week
     if (daysUntilNext === 7) {
       daysUntilNext = (dayIndices[0] - todayDayIndex + 7) % 7;
     }
@@ -434,7 +425,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const todayDayCode = getTodayDayCode();
     
     if (!periodId) {
-      // Check if the school day has ended
       const [hourStr, minuteStr] = schoolSetup.schoolHours.endTime.split(':');
       const [minutes, meridian] = minuteStr.split(' ');
       
@@ -494,7 +484,6 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
   
   const saveSchoolSetup = (setup: SchoolSetup) => {
-    // Ensure notification preferences
     if (!setup.notificationPreferences) {
       setup.notificationPreferences = schoolSetup?.notificationPreferences || getDefaultNotificationPreferences();
     }
@@ -502,7 +491,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSchoolSetup(setup);
     
     if (isOnline && user) {
-      FirebaseService.saveSchoolSetup(user.uid, setup)
+      FirebaseService.saveSchoolSetup(user.id, setup)
         .catch(error => console.error("Error saving school setup to Firebase:", error));
     }
   };
@@ -580,9 +569,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     saveSchoolSetup(updatedSchoolSetup);
     
-    // Send test notification if requested
     if (preferences.email.enabled) {
-      // This would normally trigger an API call to send a test email
       console.log(`Test email notification would be sent to ${preferences.email.address}`);
     }
   };
@@ -601,17 +588,14 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       getPriorityValue(reminder.priority) >= getPriorityValue(notificationPreferences.text.minPriority);
     
     if (shouldSendEmail) {
-      // In a real app, this would call an API to send an email
       console.log(`Email notification for "${reminder.title}" would be sent to ${notificationPreferences.email.address}`);
     }
     
     if (shouldSendPush) {
-      // In a real app, this would trigger a push notification
       console.log(`Push notification for "${reminder.title}" would be sent`);
     }
     
     if (shouldSendText && notificationPreferences.text.phoneNumber) {
-      // In a real app, this would call an API to send an SMS
       console.log(`Text notification for "${reminder.title}" would be sent to ${notificationPreferences.text.phoneNumber}`);
     }
   };

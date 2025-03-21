@@ -1,5 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Reminder, SchoolSetup } from "@/context/ReminderContext";
+import { Json } from "@/integrations/supabase/types";
 
 // NOTE: This file is kept for backward compatibility, but now uses Supabase
 // instead of Firebase. This will help minimize changes across the codebase.
@@ -330,13 +332,13 @@ export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
       title: item.title,
       notes: item.notes,
       category: item.category,
-      priority: item.priority,
+      priority: item.priority as Reminder['priority'],
       completed: item.completed || false,
       periodId: item.period_id,
-      type: item.type,
-      timing: item.timing,
-      days: item.days,
-      recurrence: item.recurrence,
+      type: item.type as Reminder['type'],
+      timing: item.timing as Reminder['timing'],
+      days: item.days as Reminder['days'],
+      recurrence: item.recurrence as Reminder['recurrence'],
       termId: item.term_id,
       dueDate: item.due_date,
       createdAt: new Date(item.created_at)
@@ -363,7 +365,7 @@ export const saveSchoolSetup = async (userId: string, setup: SchoolSetup) => {
       // Update existing setup
       const { error } = await supabase
         .from('school_setup')
-        .update({ data: setup })
+        .update({ data: setup as unknown as Json })
         .eq('id', data.id);
       
       if (error) throw error;
@@ -374,7 +376,7 @@ export const saveSchoolSetup = async (userId: string, setup: SchoolSetup) => {
         .insert({
           id: crypto.randomUUID(),
           user_id: userId,
-          data: setup
+          data: setup as unknown as Json
         });
       
       if (error) throw error;
@@ -395,7 +397,7 @@ export const getSchoolSetup = async (userId: string): Promise<SchoolSetup | null
     
     if (error) throw error;
     
-    return data ? data.data : null;
+    return data ? data.data as unknown as SchoolSetup : null;
   } catch (error) {
     console.error("Error getting school setup:", error);
     throw error;
