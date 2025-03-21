@@ -43,7 +43,7 @@ const TemplateLibrary = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>(['All']);
   const [creatorProfiles, setCreatorProfiles] = useState<Record<string, TeacherProfile>>({});
   
   useEffect(() => {
@@ -57,8 +57,7 @@ const TemplateLibrary = () => {
     try {
       setLoading(true);
       
-      // Use RPC call or a view instead of direct table access for now
-      // This is a workaround until the table is properly created
+      // Use RPC call for public templates
       const { data, error } = await supabase.rpc('get_public_templates');
       
       if (error) {
@@ -70,16 +69,20 @@ const TemplateLibrary = () => {
         return;
       }
       
-      if (data) {
-        setTemplates(data as ReminderTemplate[]);
+      if (data && Array.isArray(data)) {
+        // Cast data to ReminderTemplate array
+        const typedData = data as unknown as ReminderTemplate[];
+        setTemplates(typedData);
         
         // Extract unique categories
-        const uniqueCategories = [...new Set(data.map((template: any) => template.category))];
+        const uniqueCategories = [...new Set(typedData.map(template => template.category))];
         setCategories(['All', ...uniqueCategories.filter(Boolean)]);
         
         // Fetch creator profiles
-        const creatorIds = [...new Set(data.map((template: any) => template.created_by))];
+        const creatorIds = [...new Set(typedData.map(template => template.created_by))];
         await fetchCreatorProfiles(creatorIds);
+      } else {
+        setTemplates([]);
       }
     } catch (error: any) {
       toast.error(`Error loading templates: ${error.message}`);
@@ -95,7 +98,7 @@ const TemplateLibrary = () => {
     if (!user) return;
     
     try {
-      // Use RPC call or a view instead of direct table access for now
+      // Use RPC call for my templates
       const { data, error } = await supabase.rpc('get_my_templates');
       
       if (error) {
@@ -105,8 +108,12 @@ const TemplateLibrary = () => {
         return;
       }
       
-      if (data) {
-        setMyTemplates(data as ReminderTemplate[]);
+      if (data && Array.isArray(data)) {
+        // Cast data to ReminderTemplate array
+        const typedData = data as unknown as ReminderTemplate[];
+        setMyTemplates(typedData);
+      } else {
+        setMyTemplates([]);
       }
     } catch (error: any) {
       toast.error(`Error loading your templates: ${error.message}`);
@@ -115,6 +122,8 @@ const TemplateLibrary = () => {
   };
   
   const fetchCreatorProfiles = async (creatorIds: string[]) => {
+    if (!creatorIds.length) return;
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -129,7 +138,12 @@ const TemplateLibrary = () => {
       if (data) {
         const profiles: Record<string, TeacherProfile> = {};
         data.forEach(profile => {
-          profiles[profile.id] = profile as TeacherProfile;
+          profiles[profile.id] = {
+            id: profile.id,
+            display_name: profile.display_name || 'Unknown Teacher',
+            avatar_url: profile.avatar_url || undefined,
+            school: profile.school || undefined
+          };
         });
         setCreatorProfiles(profiles);
       }
@@ -140,13 +154,19 @@ const TemplateLibrary = () => {
   
   const handleDownloadTemplate = async (template: ReminderTemplate) => {
     try {
-      // Temporarily mock this functionality until reminder_templates table is created
+      // Increment download count
+      const { error } = await supabase
+        .rpc('increment_template_downloads', { template_id: template.id });
+      
+      if (error) {
+        console.error('Error incrementing download count:', error);
+      }
+      
       toast.success(`Template "${template.title}" added to your reminders!`);
       
       // In a complete implementation, we would:
-      // 1. Increment download count
-      // 2. Create a reminder from the template
-      // 3. Update the local state
+      // 1. Create a reminder from the template
+      // 2. Update the local state
     } catch (error: any) {
       toast.error(`Error using template: ${error.message}`);
     }
@@ -154,16 +174,26 @@ const TemplateLibrary = () => {
   
   const handleShareTemplate = async (template: ReminderTemplate) => {
     try {
-      // Temporarily mock this functionality until reminder_templates table is created
-      toast.success(
-        template.is_public 
-          ? `Template "${template.title}" is now private` 
-          : `Template "${template.title}" is now public`
-      );
+      const newPublicStatus = !template.is_public;
       
-      // In a complete implementation, we would:
-      // 1. Update the is_public status
-      // 2. Refresh the templates
+      // Update the template's public status
+      const { error } = await supabase
+        .from('reminder_templates')
+        .update({ is_public: newPublicStatus })
+        .eq('id', template.id);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setMyTemplates(myTemplates.map(t => 
+        t.id === template.id ? {...t, is_public: newPublicStatus} : t
+      ));
+      
+      toast.success(
+        newPublicStatus
+          ? `Template "${template.title}" is now public` 
+          : `Template "${template.title}" is now private`
+      );
     } catch (error: any) {
       toast.error(`Error updating template: ${error.message}`);
     }
@@ -271,7 +301,7 @@ const TemplateLibrary = () => {
                         <CardContent>
                           <p className="text-sm text-muted-foreground mb-4">{template.description}</p>
                           <div className="flex flex-wrap gap-2 mb-3">
-                            {template.tags?.map(tag => (
+                            {template.tags && template.tags.map(tag => (
                               <Badge key={tag} variant="secondary" className="text-xs">
                                 {tag}
                               </Badge>
@@ -328,7 +358,7 @@ const TemplateLibrary = () => {
                     <CardContent>
                       <p className="text-sm text-muted-foreground mb-4">{template.description}</p>
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {template.tags?.map(tag => (
+                        {template.tags && template.tags.map(tag => (
                           <Badge key={tag} variant="secondary" className="text-xs">
                             {tag}
                           </Badge>

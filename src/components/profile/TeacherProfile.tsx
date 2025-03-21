@@ -14,11 +14,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 interface TeacherProfileData {
   id: string;
   display_name: string;
-  school: string;
+  school: string | null;
   grade_levels: string[];
   subjects: string[];
-  bio: string;
-  avatar_url: string;
+  bio: string | null;
+  avatar_url: string | null;
   share_templates: boolean;
 }
 
@@ -212,7 +212,7 @@ const TeacherProfile = () => {
           {/* Avatar Section */}
           <div className="flex items-center space-x-4">
             <Avatar className="w-20 h-20">
-              <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+              <AvatarImage src={profile.avatar_url || ''} alt={profile.display_name} />
               <AvatarFallback>{profile.display_name?.slice(0, 2).toUpperCase() || 'TR'}</AvatarFallback>
             </Avatar>
             <div>
@@ -241,7 +241,7 @@ const TeacherProfile = () => {
               <Label htmlFor="school">School</Label>
               <Input 
                 id="school" 
-                value={profile.school} 
+                value={profile.school || ''} 
                 onChange={(e) => setProfile({...profile, school: e.target.value})}
                 placeholder="Your school or institution"
               />
@@ -313,7 +313,7 @@ const TeacherProfile = () => {
             <Label htmlFor="bio">Professional Bio</Label>
             <Textarea 
               id="bio" 
-              value={profile.bio} 
+              value={profile.bio || ''} 
               onChange={(e) => setProfile({...profile, bio: e.target.value})}
               placeholder="A brief description of your teaching experience and interests"
               rows={4}
