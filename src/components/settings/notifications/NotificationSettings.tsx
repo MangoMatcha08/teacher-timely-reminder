@@ -73,27 +73,17 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onSave }) =
     }
   };
   
-  const sendTestNotification = () => {
+  const onSendTest = () => {
     setSendingTestEmail(true);
     
-    // Simulate sending test email
+    // Actual sending will happen in the EmailNotification component
+    // We'll clear the loading state after a short delay if the
+    // actual send function doesn't do it
     setTimeout(() => {
-      setSendingTestEmail(false);
-      if (formState.email.enabled && formState.email.address) {
-        console.log(`Email notification for "Test Notification" would be sent to ${formState.email.address}`);
-        toast.success(`Test notification sent to ${formState.email.address}`, {
-          description: "Check your inbox for the test email.",
-          action: {
-            label: "Dismiss",
-            onClick: () => {}
-          }
-        });
-      } else {
-        toast.error("Email notifications are not enabled", {
-          description: "Enable email notifications and provide a valid email address first."
-        });
+      if (sendingTestEmail) {
+        setSendingTestEmail(false);
       }
-    }, 1500);
+    }, 5000);
   };
   
   return (
@@ -115,7 +105,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onSave }) =
             onEmailChange={(address) => handleChange(['email', 'address'], address)}
             minPriority={formState.email.minPriority}
             onPriorityChange={(priority) => handleChange(['email', 'minPriority'], priority)}
-            onSendTest={sendTestNotification}
+            onSendTest={onSendTest}
             isSending={sendingTestEmail}
           />
           

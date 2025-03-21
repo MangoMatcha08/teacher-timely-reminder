@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import Button from '@/components/shared/Button';
 import NotificationTypeBase from './NotificationTypeBase';
 import { ReminderPriority } from '@/context/ReminderContext';
+import { toast } from 'sonner';
+import { sendTestEmailNotification } from '@/services/notificationService';
 
 interface EmailNotificationProps {
   isEnabled: boolean;
@@ -27,6 +29,34 @@ const EmailNotification: React.FC<EmailNotificationProps> = ({
   onSendTest,
   isSending
 }) => {
+  const handleSendTestEmail = async () => {
+    if (!emailAddress || !emailAddress.includes('@')) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    
+    onSendTest(); // This will set isSending to true
+    
+    try {
+      const success = await sendTestEmailNotification(emailAddress);
+      
+      if (success) {
+        toast.success(`Test notification sent to ${emailAddress}`, {
+          description: "Check your inbox for the test email.",
+          action: {
+            label: "Dismiss",
+            onClick: () => {}
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      toast.error("Failed to send test email", {
+        description: "Please check your connection and try again later."
+      });
+    }
+  };
+  
   return (
     <NotificationTypeBase
       isEnabled={isEnabled}
@@ -54,7 +84,7 @@ const EmailNotification: React.FC<EmailNotificationProps> = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={onSendTest}
+          onClick={handleSendTestEmail}
           disabled={isSending || !emailAddress}
           className="flex items-center gap-1"
         >
