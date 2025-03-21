@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -21,7 +22,7 @@ type AuthFormData = z.infer<typeof authSchema>;
 const AuthScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
-  const { login, register, loginWithGoogle, loginWithTestAccount, resetOnboarding } = useAuth();
+  const { login, register, loginWithGoogle, loginWithTestAccount, resetOnboarding, isOffline } = useAuth();
   const navigate = useNavigate();
 
   const { 
@@ -115,6 +116,13 @@ const AuthScreen: React.FC = () => {
           <p className="text-muted-foreground">
             {isLoginMode ? "Sign in to manage your classroom reminders" : "Create an account to get started"}
           </p>
+          {isOffline && (
+            <div className="mt-2 bg-amber-50 border border-amber-200 rounded-md p-3">
+              <p className="text-sm text-amber-700">
+                Network connection issues detected. You can still sign in with a test account.
+              </p>
+            </div>
+          )}
         </div>
 
         <Card className="animate-scale-in">
@@ -131,7 +139,7 @@ const AuthScreen: React.FC = () => {
                   placeholder="you@school.edu"
                   className={errors.email ? "border-destructive" : ""}
                   {...registerForm("email")}
-                  disabled={isLoading}
+                  disabled={isLoading || isOffline}
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-destructive">
@@ -148,7 +156,7 @@ const AuthScreen: React.FC = () => {
                   placeholder="••••••••"
                   className={errors.password ? "border-destructive" : ""}
                   {...registerForm("password")}
-                  disabled={isLoading}
+                  disabled={isLoading || isOffline}
                 />
                 {errors.password && (
                   <p className="mt-1 text-sm text-destructive">
@@ -162,6 +170,7 @@ const AuthScreen: React.FC = () => {
                 variant="primary"
                 className="w-full"
                 isLoading={isLoading}
+                disabled={isOffline}
               >
                 {isLoginMode ? "Sign In" : "Create Account"}
               </Button>
@@ -172,6 +181,7 @@ const AuthScreen: React.FC = () => {
                 type="button"
                 onClick={toggleAuthMode}
                 className="text-teacher-blue hover:underline text-sm"
+                disabled={isOffline}
               >
                 {isLoginMode 
                   ? "Don't have an account? Create one" 
@@ -196,7 +206,7 @@ const AuthScreen: React.FC = () => {
                     variant="outline"
                     className="w-full"
                     onClick={handleGoogleLogin}
-                    disabled={isLoading}
+                    disabled={isLoading || isOffline}
                   >
                     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                       <path

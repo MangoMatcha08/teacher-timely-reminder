@@ -1,7 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { handleNetworkError } from "@/services/utils/serviceUtils";
 
 interface AuthContextType {
   user: User | null;
@@ -9,6 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isInitialized: boolean;
   hasCompletedOnboarding: boolean;
+  isOffline: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string) => Promise<User>;
   loginWithGoogle: () => Promise<void>;
@@ -24,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isInitialized: false,
   hasCompletedOnboarding: false,
+  isOffline: false,
   login: async () => {
     throw new Error("Function not implemented");
   },
@@ -54,47 +58,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          const userId = session.user.id;
-          if (userId.startsWith("test-user-")) {
-            const testUserOnboarding = localStorage.getItem("testUserOnboarding");
-            setHasCompletedOnboarding(testUserOnboarding !== "reset");
-          } else {
-            const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
-            setHasCompletedOnboarding(!!onboardingCompleted);
+    const initializeAuth = async () => {
+      try {
+        // Set up the auth state change listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            setSession(session);
+            setUser(session?.user ?? null);
+            
+            if (session?.user) {
+              const userId = session.user.id;
+              if (userId.startsWith("test-user-")) {
+                const testUserOnboarding = localStorage.getItem("testUserOnboarding");
+                setHasCompletedOnboarding(testUserOnboarding !== "reset");
+              } else {
+                const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
+                setHasCompletedOnboarding(!!onboardingCompleted);
+              }
+            }
           }
-        }
-      }
-    );
+        );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const userId = session.user.id;
-        if (userId.startsWith("test-user-")) {
-          const testUserOnboarding = localStorage.getItem("testUserOnboarding");
-          setHasCompletedOnboarding(testUserOnboarding !== "reset");
-        } else {
-          const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
-          setHasCompletedOnboarding(!!onboardingCompleted);
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            const userId = session.user.id;
+            if (userId.startsWith("test-user-")) {
+              const testUserOnboarding = localStorage.getItem("testUserOnboarding");
+              setHasCompletedOnboarding(testUserOnboarding !== "reset");
+            } else {
+              const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
+              setHasCompletedOnboarding(!!onboardingCompleted);
+            }
+          }
+          setIsOffline(false);
+        } catch (error: any) {
+          console.error("Error getting session:", error);
+          const isNetworkError = handleNetworkError(error, 'retrieving authentication session');
+          setIsOffline(isNetworkError);
+        } finally {
+          setIsInitialized(true);
         }
-      }
-      
-      setIsInitialized(true);
-    });
 
-    return () => {
-      subscription.unsubscribe();
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error: any) {
+        console.error("Error setting up auth state listener:", error);
+        const isNetworkError = handleNetworkError(error, 'initializing authentication');
+        setIsOffline(isNetworkError);
+        setIsInitialized(true);
+      }
     };
+
+    initializeAuth();
   }, []);
 
   const handleLogin = async (email: string, password: string) => {
@@ -115,10 +138,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       toast.success("Logged in successfully!");
+      setIsOffline(false);
       return data.user;
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error(error.message || "Login failed. Please check your connection and try again.");
+      const isNetworkError = handleNetworkError(error, 'login');
+      if (!isNetworkError) {
+        toast.error(error.message || "Login failed. Please check your credentials and try again.");
+      }
+      setIsOffline(isNetworkError);
       throw error;
     }
   };
@@ -141,10 +169,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       toast.success("Account created successfully!");
+      setIsOffline(false);
       return data.user;
     } catch (error: any) {
       console.error("Registration error:", error);
-      toast.error(error.message || "Registration failed. Please check your connection and try again.");
+      const isNetworkError = handleNetworkError(error, 'registration');
+      if (!isNetworkError) {
+        toast.error(error.message || "Registration failed. Please try again.");
+      }
+      setIsOffline(isNetworkError);
       throw error;
     }
   };
@@ -167,16 +200,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
+      setIsOffline(false);
       // The redirect happens automatically, no need to return anything
     } catch (error: any) {
       console.error("Google login error:", error);
-      toast.error(error.message || "Google sign-in failed. Please check your connection and try again.");
+      const isNetworkError = handleNetworkError(error, 'Google sign-in');
+      if (!isNetworkError) {
+        toast.error(error.message || "Google sign-in failed. Please try again.");
+      }
+      setIsOffline(isNetworkError);
       throw error;
     }
   };
 
   const handleTestAccountLogin = async () => {
     try {
+      // Create a test account that works offline
       const testUserId = `test-user-${Date.now()}`;
       
       const testUser = {
@@ -207,6 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } as Session);
       setHasCompletedOnboarding(true);
       setIsAuthenticated(true);
+      setIsOffline(false);
       
       toast.success("Logged in with test account!");
       console.log("Test user created:", testUser);
@@ -240,7 +280,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success("Logged out successfully");
     } catch (error: any) {
       console.error("Logout error:", error);
-      toast.error(error.message || "Logout failed. Please try again.");
+      const isNetworkError = handleNetworkError(error, 'logout');
+      if (!isNetworkError) {
+        toast.error(error.message || "Logout failed. Please try again.");
+      }
       throw error;
     }
   };
@@ -280,6 +323,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         isInitialized,
         hasCompletedOnboarding,
+        isOffline,
         login: handleLogin,
         register: handleRegister,
         loginWithGoogle: handleGoogleLogin,
