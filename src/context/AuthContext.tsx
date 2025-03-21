@@ -1,17 +1,18 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { login, register, logout, signInWithGoogle, loginWithTestAccount } from "@/services/firebase";
+import { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
   hasCompletedOnboarding: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string) => Promise<User>;
-  loginWithGoogle: () => Promise<User>;
+  loginWithGoogle: () => Promise<void>;
   loginWithTestAccount: () => Promise<User>;
   logout: () => Promise<void>;
   setCompleteOnboarding: () => void;
@@ -20,6 +21,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  session: null,
   isAuthenticated: false,
   isInitialized: false,
   hasCompletedOnboarding: false,
@@ -50,15 +52,38 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const userId = session.user.id;
+          if (userId.startsWith("test-user-")) {
+            const testUserOnboarding = localStorage.getItem("testUserOnboarding");
+            setHasCompletedOnboarding(testUserOnboarding !== "reset");
+          } else {
+            const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
+            setHasCompletedOnboarding(!!onboardingCompleted);
+          }
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
       
-      if (user) {
-        if (user.uid.startsWith("test-user-")) {
+      if (session?.user) {
+        const userId = session.user.id;
+        if (userId.startsWith("test-user-")) {
           const testUserOnboarding = localStorage.getItem("testUserOnboarding");
           setHasCompletedOnboarding(testUserOnboarding !== "reset");
         } else {
@@ -70,21 +95,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsInitialized(true);
     });
 
-    return () => unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogin = async (email: string, password: string) => {
     try {
-      const user = await login(email, password);
-      setUser(user);
-      return user;
-    } catch (error: any) {
-      const errorMsg = error.code === "auth/invalid-credential" 
-        ? "Invalid email or password" 
-        : error.code === "auth/api-key-not-valid" || error.code === "auth/app-not-authorized"
-        ? "Firebase authentication is unavailable. Please use the test account or try again later."
-        : error.message || "Login failed";
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
+      if (error) throw error;
+      
+      return data.user;
+    } catch (error: any) {
+      const errorMsg = error.message || "Login failed";
       toast.error(errorMsg);
       throw error;
     }
@@ -92,16 +119,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleRegister = async (email: string, password: string) => {
     try {
-      const user = await register(email, password);
-      setUser(user);
-      return user;
-    } catch (error: any) {
-      const errorMsg = error.code === "auth/email-already-in-use" 
-        ? "Email is already in use" 
-        : error.code === "auth/api-key-not-valid" || error.code === "auth/app-not-authorized"
-        ? "Firebase authentication is unavailable. Please use the test account or try again later."
-        : error.message || "Registration failed";
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
       
+      if (error) throw error;
+      
+      return data.user;
+    } catch (error: any) {
+      const errorMsg = error.message || "Registration failed";
       toast.error(errorMsg);
       throw error;
     }
@@ -109,14 +136,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleGoogleLogin = async () => {
     try {
-      const user = await signInWithGoogle();
-      setUser(user);
-      return user;
-    } catch (error: any) {
-      const errorMsg = error.code === "auth/api-key-not-valid" || error.code === "auth/app-not-authorized"
-        ? "Firebase authentication is unavailable. Please use the test account or try again later."
-        : error.message || "Google sign-in failed";
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/auth'
+        }
+      });
       
+      if (error) throw error;
+    } catch (error: any) {
+      const errorMsg = error.message || "Google sign-in failed";
       toast.error(errorMsg);
       throw error;
     }
@@ -124,18 +153,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleTestAccountLogin = async () => {
     try {
-      const testUser = await loginWithTestAccount();
-      setUser(testUser);
+      // Create a fake email for the test account
+      const testEmail = `test${Date.now()}@teacherreminder.app`;
+      const testPassword = "test123456";
       
-      const testUserOnboarding = localStorage.getItem("testUserOnboarding");
-      if (testUserOnboarding === "reset") {
-        setHasCompletedOnboarding(false);
-      } else {
-        setHasCompletedOnboarding(true);
-        localStorage.setItem("testUserOnboarding", "completed");
-      }
+      // Sign up with the fake email (or sign in if it already exists)
+      const { data, error } = await supabase.auth.signUp({
+        email: testEmail,
+        password: testPassword,
+        options: {
+          data: {
+            name: "Test Teacher"
+          }
+        }
+      });
       
-      return testUser;
+      if (error) throw error;
+      
+      // Mark this as a test user
+      localStorage.setItem("testUserOnboarding", "completed");
+      setHasCompletedOnboarding(true);
+      
+      return data.user;
     } catch (error: any) {
       toast.error(error.message || "Test account login failed");
       throw error;
@@ -144,8 +183,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleLogout = async () => {
     try {
-      await logout();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       setUser(null);
+      setSession(null);
       setHasCompletedOnboarding(false);
     } catch (error: any) {
       toast.error(error.message || "Logout failed");
@@ -154,7 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const completeOnboarding = () => {
-    if (user?.uid.startsWith("test-user-")) {
+    if (user?.id.startsWith("test-user-")) {
       localStorage.setItem("testUserOnboarding", "completed");
     } else {
       localStorage.setItem("hasCompletedOnboarding", "true");
@@ -163,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const resetOnboardingData = () => {
-    if (user?.uid.startsWith("test-user-")) {
+    if (user?.id.startsWith("test-user-")) {
       localStorage.setItem("testUserOnboarding", "reset");
       setHasCompletedOnboarding(false);
       toast.success("Onboarding has been reset. Log out and back in to see changes.");
@@ -178,6 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
+        session,
         isAuthenticated: !!user,
         isInitialized,
         hasCompletedOnboarding,

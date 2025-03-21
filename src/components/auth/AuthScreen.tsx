@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -59,11 +60,9 @@ const AuthScreen: React.FC = () => {
     try {
       setIsLoading(true);
       await loginWithGoogle();
-      toast.success("Signed in with Google!");
-      navigate("/onboarding");
+      // The redirect will happen automatically in Supabase OAuth
     } catch (error) {
       // Error is already displayed in a toast from AuthContext
-    } finally {
       setIsLoading(false);
     }
   };

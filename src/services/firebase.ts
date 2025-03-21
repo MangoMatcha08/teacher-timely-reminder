@@ -1,103 +1,85 @@
+import { supabase } from "@/integrations/supabase/client";
+import { Reminder, SchoolSetup } from "@/context/ReminderContext";
 
-import { firestore, auth, googleProvider } from "@/lib/firebase";
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, setDoc, getDoc } from "firebase/firestore";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User, signInWithPopup } from "firebase/auth";
-import { Reminder, SchoolSetup, DayOfWeek, ReminderType, ReminderTiming, Period, SchoolHours, Term } from "@/context/ReminderContext";
+// NOTE: This file is kept for backward compatibility, but now uses Supabase
+// instead of Firebase. This will help minimize changes across the codebase.
 
 // Authentication functions
 export const register = async (email: string, password: string) => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    console.log("Registration successful:", userCredential.user.uid);
-    return userCredential.user;
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    
+    if (error) throw error;
+    
+    return data.user;
   } catch (error: any) {
     console.error("Register error:", error);
-    
-    if (error.code === 'auth/email-already-in-use') {
-      throw new Error("This email is already registered. Please sign in instead.");
-    } else if (error.code === 'auth/invalid-email') {
-      throw new Error("Invalid email format. Please check your email address.");
-    } else if (error.code === 'auth/weak-password') {
-      throw new Error("Password is too weak. Please use a stronger password.");
-    } else if (error.code === 'auth/network-request-failed') {
-      throw new Error("Network error. Please check your internet connection.");
-    } else if (error.code?.includes('api-key')) {
-      throw new Error("Firebase authentication error. Please try again later or use the test account.");
-    }
-    
-    throw new Error("Registration failed. Please try again later or use the test account.");
+    throw error;
   }
 };
 
 export const login = async (email: string, password: string) => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    console.log("Login successful:", userCredential.user.uid);
-    return userCredential.user;
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error) throw error;
+    
+    return data.user;
   } catch (error: any) {
     console.error("Login error:", error);
-    
-    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-      throw new Error("Invalid email or password. Please try again.");
-    } else if (error.code === 'auth/invalid-email') {
-      throw new Error("Invalid email format. Please check your email address.");
-    } else if (error.code === 'auth/user-disabled') {
-      throw new Error("This account has been disabled. Please contact support.");
-    } else if (error.code === 'auth/too-many-requests') {
-      throw new Error("Too many failed login attempts. Please try again later.");
-    } else if (error.code === 'auth/network-request-failed') {
-      throw new Error("Network error. Please check your internet connection.");
-    } else if (error.code?.includes('api-key')) {
-      throw new Error("Firebase authentication error. Please try again later or use the test account.");
-    }
-    
-    throw new Error("Login failed. Please try again later or use the test account.");
+    throw error;
   }
 };
 
 export const signInWithGoogle = async () => {
   try {
-    const userCredential = await signInWithPopup(auth, googleProvider);
-    console.log("Google sign-in successful:", userCredential.user.uid);
-    return userCredential.user;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/auth'
+      }
+    });
+    
+    if (error) throw error;
+    
+    // Note: With OAuth, we don't get the user object directly as it's a redirect flow
+    // The user will be available in the onAuthStateChange listener
+    return null as any; // Keeping compatibility with the original function signature
   } catch (error: any) {
     console.error("Google sign-in error:", error);
-    throw new Error("Failed to sign in with Google. Please try again later or use the test account.");
+    throw error;
   }
 };
 
-// Simulated test account login for demo purposes
+// Simulated test account login
 export const loginWithTestAccount = async () => {
   try {
-    const testUserId = "test-user-" + Date.now().toString();
+    const testEmail = `test${Date.now()}@teacherreminder.app`;
+    const testPassword = "test123456";
     
-    const testUser = {
-      uid: testUserId,
-      email: "test@teacherreminder.app",
-      displayName: "Test Teacher",
-      emailVerified: true,
-      isAnonymous: false,
-      metadata: {
-        creationTime: new Date().toISOString(),
-        lastSignInTime: new Date().toISOString()
-      },
-      providerData: [],
-      refreshToken: "test-refresh-token",
-      tenantId: null,
-      delete: () => Promise.resolve(),
-      getIdToken: () => Promise.resolve("test-id-token"),
-      getIdTokenResult: () => Promise.resolve({
-        token: "test-id-token",
-        signInProvider: "password",
-        expirationTime: new Date(Date.now() + 3600000).toISOString(),
-        issuedAtTime: new Date().toISOString(),
-        claims: {}
-      }),
-      reload: () => Promise.resolve(),
-      toJSON: () => ({})
-    } as unknown as User;
+    const { data, error } = await supabase.auth.signUp({
+      email: testEmail,
+      password: testPassword,
+      options: {
+        data: {
+          name: "Test Teacher"
+        }
+      }
+    });
     
-    const defaultPeriods: Period[] = [
+    if (error) throw error;
+    
+    // Create default data for the test user
+    const userId = data.user.id;
+    
+    // Creating a default school setup for the test account
+    const defaultPeriods = [
       {
         id: "period-1",
         name: "Period 1",
@@ -144,7 +126,7 @@ export const loginWithTestAccount = async () => {
       }
     ];
 
-    const defaultTerm: Term = {
+    const defaultTerm = {
       id: "term-default",
       name: "Current Term",
       startDate: new Date().toISOString(),
@@ -152,14 +134,14 @@ export const loginWithTestAccount = async () => {
       schoolYear: "2023-2024"
     };
 
-    const schoolHours: SchoolHours = {
+    const schoolHours = {
       startTime: "7:45 AM",
       endTime: "3:15 PM",
       teacherArrivalTime: "7:30 AM"
     };
 
-    // Create and save the school setup first
-    const schoolSetup: SchoolSetup = {
+    // Create and save the school setup
+    const schoolSetup = {
       termId: defaultTerm.id,
       terms: [defaultTerm],
       schoolDays: ["M", "T", "W", "Th", "F"],
@@ -171,112 +153,117 @@ export const loginWithTestAccount = async () => {
       }
     };
     
-    // Store the school setup in local storage instead of trying to use Firestore
-    localStorage.setItem(`schoolSetup_${testUserId}`, JSON.stringify(schoolSetup));
+    // Save school setup to Supabase
+    const { error: setupError } = await supabase
+      .from('school_setup')
+      .insert({
+        id: crypto.randomUUID(),
+        user_id: userId,
+        data: schoolSetup
+      });
     
-    // Create some sample reminders for the test account
-    const sampleReminders: Reminder[] = [
+    if (setupError) console.error("Error creating school setup:", setupError);
+    
+    // Create some sample reminders
+    const sampleReminders = [
       {
-        id: "reminder-1",
+        id: crypto.randomUUID(),
         title: "Collect Math Homework",
         notes: "Collect homework from Period 1",
         category: "Materials/Set up",
         priority: "Medium",
         completed: false,
-        periodId: "period-1",
+        period_id: "period-1",
         type: "Prepare Materials",
         timing: "During Period",
         days: ["M", "W", "F"],
         recurrence: "Weekly",
-        termId: defaultTerm.id,
-        createdAt: new Date()
+        term_id: defaultTerm.id,
+        user_id: userId,
+        created_at: new Date().toISOString()
       },
       {
-        id: "reminder-2",
+        id: crypto.randomUUID(),
         title: "Science Project Due",
         notes: "Final project presentations",
         category: "Instruction",
         priority: "High",
         completed: false,
-        periodId: "period-3",
+        period_id: "period-3",
         type: "Grade",
         timing: "End of Period",
         days: ["T"],
         recurrence: "Once",
-        termId: defaultTerm.id,
-        createdAt: new Date()
+        term_id: defaultTerm.id,
+        user_id: userId,
+        created_at: new Date().toISOString()
       },
       {
-        id: "reminder-3",
+        id: crypto.randomUUID(),
         title: "Parent Conference",
         notes: "Meeting with Alex's parents",
         category: "Student support",
         priority: "High",
         completed: false,
-        periodId: "period-4",
+        period_id: "period-4",
         type: "Call Home",
         timing: "After School",
         days: ["Th"],
         recurrence: "Once",
-        termId: defaultTerm.id,
-        createdAt: new Date()
+        term_id: defaultTerm.id,
+        user_id: userId,
+        created_at: new Date().toISOString()
       },
     ];
     
-    // Store reminders in local storage instead of trying to use Firestore
-    localStorage.setItem(`reminders_${testUserId}`, JSON.stringify(sampleReminders));
+    // Insert sample reminders
+    for (const reminder of sampleReminders) {
+      const { error: reminderError } = await supabase
+        .from('reminders')
+        .insert(reminder);
+      
+      if (reminderError) console.error("Error creating reminder:", reminderError);
+    }
     
-    // Return the test user
-    return testUser;
+    return data.user;
   } catch (error) {
     console.error("Error creating test account:", error);
-    throw new Error("Failed to create test account. Please try again.");
+    throw error;
   }
 };
 
 export const logout = async () => {
   try {
-    await signOut(auth);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   } catch (error) {
     console.error("Logout error:", error);
-    throw new Error("Logout failed. Please try again.");
+    throw error;
   }
 };
-
-// Firestore collections
-const REMINDERS_COLLECTION = "reminders";
-const SCHOOL_SETUP_COLLECTION = "schoolSetup";
 
 // Reminders functions
 export const saveReminder = async (reminder: Reminder, userId: string) => {
   try {
-    // Check if we're using a test account
-    if (userId.startsWith("test-user-")) {
-      // Get existing reminders from localStorage
-      const existingRemindersStr = localStorage.getItem(`reminders_${userId}`);
-      const existingReminders: Reminder[] = existingRemindersStr ? JSON.parse(existingRemindersStr) : [];
-      
-      // Add the new reminder with a generated ID
-      const newReminder = {
-        ...reminder,
-        id: `reminder-${Date.now()}`,
-        createdAt: new Date()
-      };
-      
-      existingReminders.push(newReminder);
-      
-      // Save back to localStorage
-      localStorage.setItem(`reminders_${userId}`, JSON.stringify(existingReminders));
-      return;
-    }
+    const { error } = await supabase
+      .from('reminders')
+      .insert({
+        title: reminder.title,
+        notes: reminder.notes,
+        category: reminder.category,
+        priority: reminder.priority,
+        completed: reminder.completed,
+        period_id: reminder.periodId,
+        type: reminder.type,
+        timing: reminder.timing,
+        days: reminder.days,
+        recurrence: reminder.recurrence,
+        term_id: reminder.termId,
+        user_id: userId,
+        due_date: reminder.dueDate
+      });
     
-    // Regular Firestore storage for non-test accounts
-    const reminderRef = collection(firestore, REMINDERS_COLLECTION);
-    await addDoc(reminderRef, {
-      ...reminder,
-      userId,
-      createdAt: new Date().toISOString(),
-    });
+    if (error) throw error;
   } catch (error) {
     console.error("Error saving reminder:", error);
     throw error;
@@ -285,8 +272,30 @@ export const saveReminder = async (reminder: Reminder, userId: string) => {
 
 export const updateReminder = async (reminderId: string, reminderData: Partial<Reminder>) => {
   try {
-    const reminderRef = doc(firestore, REMINDERS_COLLECTION, reminderId);
-    await updateDoc(reminderRef, { ...reminderData });
+    const updateData: any = { ...reminderData };
+    
+    // Convert fields to snake_case as needed for Supabase
+    if (reminderData.periodId !== undefined) {
+      updateData.period_id = reminderData.periodId;
+      delete updateData.periodId;
+    }
+    
+    if (reminderData.termId !== undefined) {
+      updateData.term_id = reminderData.termId;
+      delete updateData.termId;
+    }
+    
+    if (reminderData.dueDate !== undefined) {
+      updateData.due_date = reminderData.dueDate;
+      delete updateData.dueDate;
+    }
+    
+    const { error } = await supabase
+      .from('reminders')
+      .update(updateData)
+      .eq('id', reminderId);
+    
+    if (error) throw error;
   } catch (error) {
     console.error("Error updating reminder:", error);
     throw error;
@@ -295,8 +304,12 @@ export const updateReminder = async (reminderId: string, reminderData: Partial<R
 
 export const deleteReminder = async (reminderId: string) => {
   try {
-    const reminderRef = doc(firestore, REMINDERS_COLLECTION, reminderId);
-    await deleteDoc(reminderRef);
+    const { error } = await supabase
+      .from('reminders')
+      .delete()
+      .eq('id', reminderId);
+    
+    if (error) throw error;
   } catch (error) {
     console.error("Error deleting reminder:", error);
     throw error;
@@ -305,25 +318,29 @@ export const deleteReminder = async (reminderId: string) => {
 
 export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
   try {
-    // Check if we're using a test account
-    if (userId.startsWith("test-user-")) {
-      const remindersStr = localStorage.getItem(`reminders_${userId}`);
-      return remindersStr ? JSON.parse(remindersStr) : [];
-    }
+    const { data, error } = await supabase
+      .from('reminders')
+      .select('*')
+      .eq('user_id', userId);
     
-    // Regular Firestore retrieval for non-test accounts
-    const remindersRef = collection(firestore, REMINDERS_COLLECTION);
-    const q = query(remindersRef, where("userId", "==", userId));
-    const querySnapshot = await getDocs(q);
+    if (error) throw error;
     
-    return querySnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        ...data,
-        id: doc.id,
-        createdAt: new Date(data.createdAt)
-      } as Reminder;
-    });
+    return data.map(item => ({
+      id: item.id,
+      title: item.title,
+      notes: item.notes,
+      category: item.category,
+      priority: item.priority,
+      completed: item.completed || false,
+      periodId: item.period_id,
+      type: item.type,
+      timing: item.timing,
+      days: item.days,
+      recurrence: item.recurrence,
+      termId: item.term_id,
+      dueDate: item.due_date,
+      createdAt: new Date(item.created_at)
+    }));
   } catch (error) {
     console.error("Error getting reminders:", error);
     throw error;
@@ -333,15 +350,35 @@ export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
 // School setup functions
 export const saveSchoolSetup = async (userId: string, setup: SchoolSetup) => {
   try {
-    // Check if we're using a test account
-    if (userId.startsWith("test-user-")) {
-      localStorage.setItem(`schoolSetup_${userId}`, JSON.stringify(setup));
-      return;
-    }
+    // Check if a setup already exists
+    const { data, error: fetchError } = await supabase
+      .from('school_setup')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
     
-    // Regular Firestore storage for non-test accounts
-    const setupRef = doc(firestore, SCHOOL_SETUP_COLLECTION, userId);
-    await setDoc(setupRef, { ...setup, updatedAt: new Date().toISOString() });
+    if (fetchError) throw fetchError;
+    
+    if (data) {
+      // Update existing setup
+      const { error } = await supabase
+        .from('school_setup')
+        .update({ data: setup })
+        .eq('id', data.id);
+      
+      if (error) throw error;
+    } else {
+      // Create new setup
+      const { error } = await supabase
+        .from('school_setup')
+        .insert({
+          id: crypto.randomUUID(),
+          user_id: userId,
+          data: setup
+        });
+      
+      if (error) throw error;
+    }
   } catch (error) {
     console.error("Error saving school setup:", error);
     throw error;
@@ -350,20 +387,15 @@ export const saveSchoolSetup = async (userId: string, setup: SchoolSetup) => {
 
 export const getSchoolSetup = async (userId: string): Promise<SchoolSetup | null> => {
   try {
-    // Check if we're using a test account
-    if (userId.startsWith("test-user-")) {
-      const setupStr = localStorage.getItem(`schoolSetup_${userId}`);
-      return setupStr ? JSON.parse(setupStr) : null;
-    }
+    const { data, error } = await supabase
+      .from('school_setup')
+      .select('data')
+      .eq('user_id', userId)
+      .maybeSingle();
     
-    // Regular Firestore retrieval for non-test accounts
-    const setupRef = doc(firestore, SCHOOL_SETUP_COLLECTION, userId);
-    const docSnap = await getDoc(setupRef);
+    if (error) throw error;
     
-    if (docSnap.exists()) {
-      return docSnap.data() as SchoolSetup;
-    }
-    return null;
+    return data ? data.data : null;
   } catch (error) {
     console.error("Error getting school setup:", error);
     throw error;
