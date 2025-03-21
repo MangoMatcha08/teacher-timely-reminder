@@ -7,12 +7,12 @@ import Layout from "@/components/shared/Layout";
 import { toast } from "sonner";
 
 const CreateReminder = () => {
-  const { isAuthenticated, isInitialized, hasCompletedOnboarding, isOfflineMode } = useAuth();
+  const { isAuthenticated, isInitialized, hasCompletedOnboarding, isOffline } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
     if (isInitialized) {
-      if (!isAuthenticated && !isOfflineMode) {
+      if (!isAuthenticated && !isOffline) {
         navigate("/auth");
         toast.error("Please sign in to create reminders");
       } else if (!hasCompletedOnboarding) {
@@ -20,7 +20,7 @@ const CreateReminder = () => {
         toast.info("Please complete onboarding first");
       }
     }
-  }, [isAuthenticated, isInitialized, hasCompletedOnboarding, isOfflineMode, navigate]);
+  }, [isAuthenticated, isInitialized, hasCompletedOnboarding, isOffline, navigate]);
   
   if (!isInitialized) {
     // Show loading state
@@ -35,7 +35,7 @@ const CreateReminder = () => {
   }
   
   // We'll allow creating reminders in offline mode too
-  if (!isAuthenticated && !isOfflineMode) {
+  if (!isAuthenticated && !isOffline) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center max-w-md text-center">
