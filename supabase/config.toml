@@ -41,5 +41,4 @@ enable_confirmations = false
 file_size_limit = "50MiB"
 
 [functions]
-# This was incorrectly formatted before - functions should be a section with properties
 port = 54321

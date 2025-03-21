@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useReminders } from '@/context/ReminderContext';
@@ -155,15 +154,14 @@ const TemplateLibrary = () => {
   
   const handleDownloadTemplate = async (template: ReminderTemplate) => {
     try {
-      // Increment download count - using fetch directly since this is not in the types
-      await fetch(`${supabase.functions.getURL()}/rpc/increment_template_downloads`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabase.supabaseKey || ''
-        },
-        body: JSON.stringify({ template_id: template.id })
+      // Increment download count using direct RPC call
+      const { error } = await supabase.rpc('increment_template_downloads', {
+        template_id: template.id
       });
+      
+      if (error) {
+        throw error;
+      }
       
       toast.success(`Template "${template.title}" added to your reminders!`);
       
@@ -179,18 +177,15 @@ const TemplateLibrary = () => {
     try {
       const newPublicStatus = !template.is_public;
       
-      // Update the template's public status using direct fetch since this is not in the types
-      await fetch(`${supabase.functions.getURL()}/rpc/update_template_public_status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabase.supabaseKey || ''
-        },
-        body: JSON.stringify({ 
-          template_id: template.id, 
-          is_public_status: newPublicStatus 
-        })
+      // Update the template's public status using RPC
+      const { error } = await supabase.rpc('update_template_public_status', { 
+        template_id: template.id, 
+        is_public_status: newPublicStatus 
       });
+      
+      if (error) {
+        throw error;
+      }
       
       // Update local state
       setMyTemplates(myTemplates.map(t => 
