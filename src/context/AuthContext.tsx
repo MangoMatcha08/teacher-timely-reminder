@@ -107,12 +107,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        toast.error(error.message || "Login failed");
+        throw error;
+      }
       
+      if (!data.user) {
+        toast.error("Login failed: No user returned");
+        throw new Error("No user returned");
+      }
+      
+      toast.success("Logged in successfully!");
       return data.user;
     } catch (error: any) {
-      const errorMsg = error.message || "Login failed";
-      toast.error(errorMsg);
+      console.error("Login error:", error);
+      toast.error(error.message || "Login failed. Please check your connection and try again.");
       throw error;
     }
   };
@@ -124,12 +133,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        toast.error(error.message || "Registration failed");
+        throw error;
+      }
       
+      if (!data.user) {
+        toast.error("Registration failed: No user returned");
+        throw new Error("No user returned");
+      }
+      
+      toast.success("Account created successfully!");
       return data.user;
     } catch (error: any) {
-      const errorMsg = error.message || "Registration failed";
-      toast.error(errorMsg);
+      console.error("Registration error:", error);
+      toast.error(error.message || "Registration failed. Please check your connection and try again.");
       throw error;
     }
   };
@@ -147,41 +165,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        toast.error(error.message || "Google sign-in failed");
+        throw error;
+      }
       
       // The redirect happens automatically, no need to return anything
     } catch (error: any) {
-      const errorMsg = error.message || "Google sign-in failed";
-      toast.error(errorMsg);
+      console.error("Google login error:", error);
+      toast.error(error.message || "Google sign-in failed. Please check your connection and try again.");
       throw error;
     }
   };
 
   const handleTestAccountLogin = async () => {
     try {
-      // Create a fake email for the test account
-      const testEmail = `test${Date.now()}@teacherreminder.app`;
-      const testPassword = "test123456";
+      // Create a test user in the local browser only - no server authentication
+      // This is for testing purposes only
+      const testUserId = `test-user-${Date.now()}`;
+      const testUser = {
+        id: testUserId,
+        email: `test${Date.now()}@teacherreminder.app`,
+        user_metadata: { name: "Test Teacher" }
+      } as User;
       
-      // Sign up with the fake email (or sign in if it already exists)
-      const { data, error } = await supabase.auth.signUp({
-        email: testEmail,
-        password: testPassword,
-        options: {
-          data: {
-            name: "Test Teacher"
-          }
-        }
-      });
-      
-      if (error) throw error;
-      
-      // Mark this as a test user
+      // Store the test user in local storage
       localStorage.setItem("testUserOnboarding", "completed");
-      setHasCompletedOnboarding(true);
       
-      return data.user;
+      // Manually set the user and session state
+      setUser(testUser);
+      setSession({ user: testUser } as Session);
+      setHasCompletedOnboarding(true);
+      setIsAuthenticated(true);
+      
+      toast.success("Logged in with test account!");
+      return testUser;
     } catch (error: any) {
+      console.error("Test account login error:", error);
       toast.error(error.message || "Test account login failed");
       throw error;
     }
@@ -189,14 +209,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleLogout = async () => {
     try {
+      // Check if this is a test user
+      if (user?.id.startsWith("test-user-")) {
+        // For test users, just clear the state without calling Supabase
+        setUser(null);
+        setSession(null);
+        setHasCompletedOnboarding(false);
+        toast.success("Logged out successfully");
+        return;
+      }
+      
+      // For real users, call Supabase auth
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        toast.error(error.message || "Logout failed");
+        throw error;
+      }
       
       setUser(null);
       setSession(null);
       setHasCompletedOnboarding(false);
+      toast.success("Logged out successfully");
     } catch (error: any) {
-      toast.error(error.message || "Logout failed");
+      console.error("Logout error:", error);
+      toast.error(error.message || "Logout failed. Please try again.");
       throw error;
     }
   };
@@ -219,6 +255,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem("hasCompletedOnboarding");
       setHasCompletedOnboarding(false);
       toast.success("Onboarding data has been reset");
+    }
+  };
+
+  // Add setIsAuthenticated function
+  const setIsAuthenticated = (value: boolean) => {
+    if (value && !user) {
+      console.warn("Trying to set isAuthenticated to true without a user");
     }
   };
 

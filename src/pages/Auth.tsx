@@ -12,11 +12,14 @@ const Auth = () => {
   
   useEffect(() => {
     if (isInitialized && isAuthenticated) {
-      if (hasCompletedOnboarding) {
-        navigate("/dashboard");
-      } else {
-        navigate("/onboarding");
-      }
+      // Add a small delay to ensure all state is properly updated
+      setTimeout(() => {
+        if (hasCompletedOnboarding) {
+          navigate("/dashboard");
+        } else {
+          navigate("/onboarding");
+        }
+      }, 100);
     }
   }, [isAuthenticated, isInitialized, hasCompletedOnboarding, navigate]);
   

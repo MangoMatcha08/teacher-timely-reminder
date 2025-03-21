@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -43,14 +42,14 @@ const AuthScreen: React.FC = () => {
       
       if (isLoginMode) {
         await login(data.email, data.password);
-        toast.success("Signed in successfully!");
+        navigate("/onboarding");
       } else {
         await register(data.email, data.password);
-        toast.success("Account created successfully!");
+        navigate("/onboarding");
       }
-      navigate("/onboarding");
     } catch (error) {
-      // Error is already displayed in a toast from AuthContext
+      // Error already displayed in toast from AuthContext
+      console.error("Auth form submission error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +61,9 @@ const AuthScreen: React.FC = () => {
       await loginWithGoogle();
       // The redirect will happen automatically in Supabase OAuth
     } catch (error) {
-      // Error is already displayed in a toast from AuthContext
+      // Error already displayed in toast from AuthContext
+      console.error("Google login error:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -72,9 +73,9 @@ const AuthScreen: React.FC = () => {
       setIsLoading(true);
       // For now, just use the test account login
       await loginWithTestAccount();
-      toast.success("Signed in with Clever!");
       navigate("/dashboard");
     } catch (error) {
+      console.error("Clever login error:", error);
       toast.error("Failed to sign in with Clever. Please try again.");
     } finally {
       setIsLoading(false);
@@ -85,11 +86,13 @@ const AuthScreen: React.FC = () => {
     try {
       setIsLoading(true);
       await loginWithTestAccount();
-      toast.success("Logged in with test account!");
+      
+      // Use a small delay to allow state to update
       setTimeout(() => {
         navigate("/dashboard");
-      }, 500);
+      }, 100);
     } catch (error) {
+      console.error("Test account login error:", error);
       toast.error("Failed to sign in with test account. Please try again.");
     } finally {
       setIsLoading(false);
@@ -98,7 +101,6 @@ const AuthScreen: React.FC = () => {
 
   const handleResetOnboarding = () => {
     resetOnboarding();
-    toast.success("Onboarding data has been reset for testing!");
   };
 
   const toggleAuthMode = () => {
