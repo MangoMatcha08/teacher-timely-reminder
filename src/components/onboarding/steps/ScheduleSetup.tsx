@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import Button from "@/components/shared/Button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 
 interface ScheduleSetupProps {
@@ -146,83 +147,85 @@ const ScheduleSetup: React.FC<ScheduleSetupProps> = ({
           if (!open) setEditingPeriodId(null);
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>
               {editingPeriod ? `Customize ${editingPeriod.name} Schedule` : 'Customize Schedule'}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="py-2 space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Enable custom schedules for specific days that differ from the default.
-            </p>
-            
-            {editingPeriod && selectedDays.map((day) => {
-              const isCustom = hasCustomSchedule(editingPeriod.id, day);
-              const dayLabel = days.find(d => d.value === day)?.label;
-              const schedule = editingPeriod.schedules.find(s => s.dayOfWeek === day);
+          <ScrollArea className="max-h-[70vh] pr-3">
+            <div className="py-2 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Enable custom schedules for specific days that differ from the default.
+              </p>
               
-              return (
-                <div key={`${editingPeriod.id}-${day}-schedule`} 
-                    className="border rounded-md bg-white overflow-hidden">
-                  <div className="flex items-center justify-between border-b px-4 py-2 bg-gray-50">
-                    <div className="flex items-center">
-                      <div className="flex items-center justify-center w-6 h-6 bg-teacher-blue text-white rounded-full mr-2">
-                        {dayLabel}
+              {editingPeriod && selectedDays.map((day) => {
+                const isCustom = hasCustomSchedule(editingPeriod.id, day);
+                const dayLabel = days.find(d => d.value === day)?.label;
+                const schedule = editingPeriod.schedules.find(s => s.dayOfWeek === day);
+                
+                return (
+                  <div key={`${editingPeriod.id}-${day}-schedule`} 
+                      className="border rounded-md bg-white overflow-hidden">
+                    <div className="flex items-center justify-between border-b px-4 py-2 bg-gray-50">
+                      <div className="flex items-center">
+                        <div className="flex items-center justify-center w-6 h-6 bg-teacher-blue text-white rounded-full mr-2">
+                          {dayLabel}
+                        </div>
+                        <h5 className="text-sm font-medium">
+                          {dayLabel === 'M' ? 'Monday' : 
+                           dayLabel === 'T' ? 'Tuesday' : 
+                           dayLabel === 'W' ? 'Wednesday' : 
+                           dayLabel === 'Th' ? 'Thursday' : 'Friday'} Schedule
+                        </h5>
                       </div>
-                      <h5 className="text-sm font-medium">
-                        {dayLabel === 'M' ? 'Monday' : 
-                         dayLabel === 'T' ? 'Tuesday' : 
-                         dayLabel === 'W' ? 'Wednesday' : 
-                         dayLabel === 'Th' ? 'Thursday' : 'Friday'} Schedule
-                      </h5>
+                      
+                      <div className="flex items-center gap-2">
+                        <div className="text-xs text-muted-foreground mr-2">
+                          Custom
+                        </div>
+                        <Switch
+                          checked={isCustom}
+                          onCheckedChange={(checked) => {
+                            toggleCustomSchedule(editingPeriod.id, day, checked);
+                          }}
+                        />
+                      </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      <div className="text-xs text-muted-foreground mr-2">
-                        Custom
+                    <div className={cn("p-3", !isCustom && "opacity-50")}>
+                      <div className="grid grid-cols-2 gap-4">
+                        <TimeInput
+                          label="Start Time"
+                          value={schedule?.startTime || "9:00 AM"}
+                          onChange={(time) => handleScheduleStartTimeChange(editingPeriod.id, day, time)}
+                          id={`period-${editingPeriod.id}-${day}-start`}
+                          disabled={!isCustom}
+                        />
+                        
+                        <TimeInput
+                          label="End Time"
+                          value={schedule?.endTime || "9:50 AM"}
+                          onChange={(time) => handleScheduleEndTimeChange(editingPeriod.id, day, time)}
+                          id={`period-${editingPeriod.id}-${day}-end`}
+                          disabled={!isCustom}
+                        />
                       </div>
-                      <Switch
-                        checked={isCustom}
-                        onCheckedChange={(checked) => {
-                          toggleCustomSchedule(editingPeriod.id, day, checked);
-                        }}
-                      />
                     </div>
                   </div>
-                  
-                  <div className={cn("p-3", !isCustom && "opacity-50")}>
-                    <div className="grid grid-cols-2 gap-4">
-                      <TimeInput
-                        label="Start Time"
-                        value={schedule?.startTime || "9:00 AM"}
-                        onChange={(time) => handleScheduleStartTimeChange(editingPeriod.id, day, time)}
-                        id={`period-${editingPeriod.id}-${day}-start`}
-                        disabled={!isCustom}
-                      />
-                      
-                      <TimeInput
-                        label="End Time"
-                        value={schedule?.endTime || "9:50 AM"}
-                        onChange={(time) => handleScheduleEndTimeChange(editingPeriod.id, day, time)}
-                        id={`period-${editingPeriod.id}-${day}-end`}
-                        disabled={!isCustom}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            
-            <Button 
-              variant="primary" 
-              className="w-full mt-4" 
-              onClick={() => setCustomScheduleDialogOpen(false)}
-            >
-              Done
-            </Button>
-          </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+          
+          <Button 
+            variant="primary" 
+            className="w-full mt-4" 
+            onClick={() => setCustomScheduleDialogOpen(false)}
+          >
+            Done
+          </Button>
         </DialogContent>
       </Dialog>
     </div>

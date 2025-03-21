@@ -10,7 +10,7 @@ interface TimeInputProps {
   className?: string;
   error?: string;
   compact?: boolean;
-  disabled?: boolean; // Added the disabled prop
+  disabled?: boolean;
 }
 
 const TimeInput: React.FC<TimeInputProps> = ({
@@ -21,7 +21,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
   className,
   error,
   compact = false,
-  disabled = false, // Default to false
+  disabled = false,
 }) => {
   const [hours, setHours] = useState("12");
   const [minutes, setMinutes] = useState("00");
@@ -78,13 +78,6 @@ const TimeInput: React.FC<TimeInputProps> = ({
     // Format to string
     h = num.toString();
     
-    // Auto-switch to PM for afternoon hours (12 should be PM)
-    if (num === 12 || (num >= 1 && num <= 5)) {
-      setPeriod("PM");
-    } else if (num >= 7 && num <= 11) {
-      setPeriod("AM");
-    }
-    
     setHours(h);
     updateTime(h, minutes, period);
   };
@@ -93,14 +86,13 @@ const TimeInput: React.FC<TimeInputProps> = ({
   const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled) return; // Don't update if disabled
     
-    const m = e.target.value.replace(/\D/g, "");
+    let m = e.target.value.replace(/\D/g, "");
     
     // Always update the internal state
     setMinutes(m);
     
-    // Always update the parent component with the current value
-    // This ensures we can type new values after deleting
-    updateTime(hours, m, period);
+    // We'll validate on blur, for now just update the time
+    updateTime(hours, m || "00", period);
   };
 
   // Handle minutes blur to format properly when focus leaves

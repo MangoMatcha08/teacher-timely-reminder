@@ -469,7 +469,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
     
     if (isOnline && user) {
-      FirebaseService.updateReminder(id, reminderData)
+      FirebaseService.updateReminder(id, reminderData, user.id)
         .catch(error => console.error("Error updating reminder in Firebase:", error));
     }
   };
@@ -478,7 +478,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setReminders((prev) => prev.filter((reminder) => reminder.id !== id));
     
     if (isOnline && user) {
-      FirebaseService.deleteReminder(id)
+      FirebaseService.deleteReminder(id, user.id)
         .catch(error => console.error("Error deleting reminder from Firebase:", error));
     }
   };
@@ -503,7 +503,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           const completed = !reminder.completed;
           
           if (isOnline && user) {
-            FirebaseService.updateReminder(id, { completed })
+            FirebaseService.updateReminder(id, { completed }, user.id)
               .catch(error => console.error("Error updating reminder in Firebase:", error));
           }
           
@@ -520,7 +520,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const updatedReminders = prev.map(reminder => {
         if (ids.includes(reminder.id!)) {
           if (isOnline && user) {
-            FirebaseService.updateReminder(reminder.id!, { completed: true })
+            FirebaseService.updateReminder(reminder.id!, { completed: true }, user.id)
               .catch(error => console.error("Error updating reminder in Firebase:", error));
           }
           

@@ -5,7 +5,7 @@ import { useReminders, NotificationPreferences, ReminderPriority } from '@/conte
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Mail, AlertTriangle, Phone, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Bell, Mail, AlertTriangle, Phone, AlertCircle, CheckCircle2, Send } from 'lucide-react';
 import Button from '@/components/shared/Button';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 const NotificationSettings: React.FC = () => {
   const { schoolSetup, updateNotificationPreferences } = useReminders();
   const [showTextNoticeDialog, setShowTextNoticeDialog] = useState(false);
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
   
   const defaultPrefs = {
     email: {
@@ -64,6 +65,29 @@ const NotificationSettings: React.FC = () => {
     
     updateNotificationPreferences(formState);
     toast.success("Notification settings saved");
+  };
+  
+  const sendTestNotification = () => {
+    setSendingTestEmail(true);
+    
+    // Simulate sending test email
+    setTimeout(() => {
+      setSendingTestEmail(false);
+      if (formState.email.enabled && formState.email.address) {
+        console.log(`Email notification for "Test Notification" would be sent to ${formState.email.address}`);
+        toast.success(`Test notification sent to ${formState.email.address}`, {
+          description: "Check your inbox for the test email.",
+          action: {
+            label: "Dismiss",
+            onClick: () => {}
+          }
+        });
+      } else {
+        toast.error("Email notifications are not enabled", {
+          description: "Enable email notifications and provide a valid email address first."
+        });
+      }
+    }, 1500);
   };
   
   const priorityOptions: ReminderPriority[] = ["Low", "Medium", "High"];
@@ -130,6 +154,28 @@ const NotificationSettings: React.FC = () => {
                   <div className="text-xs text-muted-foreground mt-1">
                     You will receive email notifications for reminders with this priority or higher.
                   </div>
+                </div>
+                
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={sendTestNotification}
+                    disabled={sendingTestEmail || !formState.email.address}
+                    className="flex items-center gap-1"
+                  >
+                    {sendingTestEmail ? (
+                      <>
+                        <div className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin mr-1"></div>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-3 w-3 mr-1" />
+                        Send Test Notification
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             )}

@@ -139,11 +139,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/auth'
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          redirectTo: `${window.location.origin}/auth`
         }
       });
       
       if (error) throw error;
+      
+      // The redirect happens automatically, no need to return anything
     } catch (error: any) {
       const errorMsg = error.message || "Google sign-in failed";
       toast.error(errorMsg);
