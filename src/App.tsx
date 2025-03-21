@@ -11,6 +11,9 @@ import CreateReminder from './pages/CreateReminder'
 import { Toaster } from '@/components/ui/sonner'
 import Schedule from './pages/Schedule'
 import Settings from './pages/Settings'
+import TemplateLibrary from './pages/TemplateLibrary'
+import ProfilePage from './pages/ProfilePage'
+import Analytics from './pages/Analytics'
 
 function App() {
   return (
@@ -25,6 +28,9 @@ function App() {
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/create-reminder" element={<CreateReminder />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/templates" element={<TemplateLibrary />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
