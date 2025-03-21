@@ -11,3 +11,13 @@ export const getUserDisplayName = (user: any): string => {
   // Fallback to email or default
   return user?.email || 'Teacher';
 }
+
+// Export the Dashboard component
+export const Dashboard = () => {
+  // Component implementation would be here
+  return (
+    <div>
+      {/* Dashboard content */}
+    </div>
+  );
+};

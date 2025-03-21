@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import DashboardComponent from "@/components/dashboard/Dashboard";
+import { Dashboard as DashboardComponent } from "@/components/dashboard/Dashboard";
 import Layout from "@/components/shared/Layout";
 
 const Dashboard = () => {
