@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchIcon, Filter, Share2, Star, Clock, Download } from 'lucide-react';
+import { Json } from '@/services/utils/serviceUtils';
 
 interface ReminderTemplate {
   id: string;
@@ -70,8 +71,8 @@ const TemplateLibrary = () => {
       }
       
       if (data && Array.isArray(data)) {
-        // Cast data to ReminderTemplate array
-        const typedData = data as ReminderTemplate[];
+        // Cast data to ReminderTemplate array with explicit type assertion
+        const typedData = data.map(item => item as unknown as ReminderTemplate);
         setTemplates(typedData);
         
         // Extract unique categories
@@ -109,8 +110,8 @@ const TemplateLibrary = () => {
       }
       
       if (data && Array.isArray(data)) {
-        // Cast data to ReminderTemplate array
-        const typedData = data as ReminderTemplate[];
+        // Cast data to ReminderTemplate array with explicit type assertion
+        const typedData = data.map(item => item as unknown as ReminderTemplate);
         setMyTemplates(typedData);
       } else {
         setMyTemplates([]);
@@ -154,13 +155,15 @@ const TemplateLibrary = () => {
   
   const handleDownloadTemplate = async (template: ReminderTemplate) => {
     try {
-      // Increment download count
-      const { error } = await supabase
-        .rpc('increment_template_downloads', { template_id: template.id });
-      
-      if (error) {
-        console.error('Error incrementing download count:', error);
-      }
+      // Increment download count - using fetch directly since this is not in the types
+      await fetch(`${supabase.functions.getURL()}/rpc/increment_template_downloads`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabase.supabaseKey || ''
+        },
+        body: JSON.stringify({ template_id: template.id })
+      });
       
       toast.success(`Template "${template.title}" added to your reminders!`);
       
@@ -176,13 +179,18 @@ const TemplateLibrary = () => {
     try {
       const newPublicStatus = !template.is_public;
       
-      // Update the template's public status using RPC to avoid type errors
-      const { error } = await supabase.rpc('update_template_public_status', {
-        template_id: template.id,
-        is_public_status: newPublicStatus
+      // Update the template's public status using direct fetch since this is not in the types
+      await fetch(`${supabase.functions.getURL()}/rpc/update_template_public_status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabase.supabaseKey || ''
+        },
+        body: JSON.stringify({ 
+          template_id: template.id, 
+          is_public_status: newPublicStatus 
+        })
       });
-      
-      if (error) throw error;
       
       // Update local state
       setMyTemplates(myTemplates.map(t => 
