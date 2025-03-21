@@ -1,11 +1,10 @@
-
 import React from "react";
 import { useReminders } from "@/context/ReminderContext";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/shared/Card";
 import Button from "@/components/shared/Button";
 import { ArrowLeft, Calendar, Edit, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import NotificationSettings from "./NotificationSettings";
+import NotificationSettings from "./notifications/NotificationSettings";
 
 interface SettingsProps {
   onResetOnboarding: () => void;

@@ -1,9 +1,9 @@
 
 import React from "react";
-import { FieldError } from "react-hook-form";
+import { FieldError, FieldErrorsImpl, Merge } from "react-hook-form";
 
 interface FormErrorProps {
-  error?: FieldError;
+  error?: FieldError | Merge<FieldError, FieldErrorsImpl<any>>;
 }
 
 export const FormError: React.FC<FormErrorProps> = ({ error }) => {
