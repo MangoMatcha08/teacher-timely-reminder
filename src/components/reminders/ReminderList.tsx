@@ -8,12 +8,11 @@ import { format } from 'date-fns';
 import { Clock, Undo2, Tag, Calendar, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getPriorityIcon } from "@/components/reminders/quick-reminder/PriorityIcons";
 
 const ReminderList = () => {
   const { reminders, schoolSetup, toggleReminderComplete } = useReminders();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [recentlyCompleted, setRecentlyCompleted] = useState<string[]>([]);
-  const [fadeOutItems, setFadeOutItems] = useState<Record<string, boolean>>({});
   
   // Handle category change
   const handleCategoryChange = (value: string) => {
@@ -24,44 +23,23 @@ const ReminderList = () => {
     }
   };
   
-  // Get reminders for display, including fading completed ones
+  // Get reminders for display, including completed ones
   const filteredReminders = reminders.filter(reminder => {
     if (selectedCategory && reminder.category !== selectedCategory) {
       return false;
     }
-    // Show all non-completed and recently completed (for fade-out animation)
-    return !reminder.completed || recentlyCompleted.includes(reminder.id!);
+    return true; // Show all reminders, including completed ones
   });
   
-  // Handle completion with fade effect
+  // Handle completion with undo option
   const handleComplete = (id: string) => {
-    // Start fade out animation
-    setFadeOutItems(prev => ({ ...prev, [id]: true }));
-    
-    // Add to recently completed
-    setRecentlyCompleted(prev => [...prev, id]);
-    
     // Toggle the reminder in context
     toggleReminderComplete(id);
-    
-    // Remove fade out class and item from recently completed after animation
-    setTimeout(() => {
-      setFadeOutItems(prev => {
-        const newState = { ...prev };
-        delete newState[id];
-        return newState;
-      });
-      
-      // After 4 seconds, remove from recently completed
-      setTimeout(() => {
-        setRecentlyCompleted(prev => prev.filter(itemId => itemId !== id));
-      }, 500);
-    }, 3000);
     
     // Show undo toast
     toast({
       title: "Reminder completed",
-      description: "This reminder will be hidden soon.",
+      description: "You can undo this action if needed.",
       action: (
         <button
           onClick={() => undoComplete(id)}
@@ -76,13 +54,6 @@ const ReminderList = () => {
   
   // Undo completion
   const undoComplete = (id: string) => {
-    // Remove fade out effect
-    setFadeOutItems(prev => {
-      const newState = { ...prev };
-      delete newState[id];
-      return newState;
-    });
-    
     // Toggle the reminder back to incomplete
     toggleReminderComplete(id);
     
@@ -101,6 +72,10 @@ const ReminderList = () => {
       </div>
     );
   }
+  
+  // Separate incomplete and completed reminders
+  const incompleteReminders = filteredReminders.filter(r => !r.completed);
+  const completedReminders = filteredReminders.filter(r => r.completed);
   
   return (
     <div className="space-y-4">
@@ -125,25 +100,22 @@ const ReminderList = () => {
         </Select>
       </div>
       
+      {/* Active Reminders */}
       <div className="space-y-2">
-        {filteredReminders.map((reminder) => {
+        {incompleteReminders.map((reminder) => {
           const isPastDue = reminder.dueDate && new Date(reminder.dueDate) < new Date() && !reminder.completed;
           
           return (
             <Card 
               key={reminder.id} 
               className={cn(
-                "border transition-all duration-1000 hover:shadow-md", 
-                fadeOutItems[reminder.id!] ? "opacity-30 scale-95" : "opacity-100 scale-100",
+                "border transition-all duration-300 hover:shadow-md", 
                 isPastDue ? "border-l-4 border-l-red-400" : "border-l-4 border-l-transparent"
               )}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div className="flex items-center">
-                  <CardTitle className={cn(
-                    "text-sm font-medium", 
-                    reminder.completed ? "text-gray-400 line-through" : "text-gray-800"
-                  )}>
+                  <CardTitle className="text-sm font-medium text-gray-800">
                     {reminder.title}
                   </CardTitle>
                   {isPastDue && (
@@ -153,11 +125,18 @@ const ReminderList = () => {
                     </span>
                   )}
                 </div>
-                {reminder.category && (
-                  <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
-                    {reminder.category}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {reminder.priority && (
+                    <span className="flex items-center">
+                      {getPriorityIcon(reminder.priority)}
+                    </span>
+                  )}
+                  {reminder.category && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
+                      {reminder.category}
+                    </span>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="pl-2 pb-2">
                 <div className="flex items-center justify-between">
@@ -166,21 +145,13 @@ const ReminderList = () => {
                       id={`reminder-${reminder.id}`}
                       checked={reminder.completed}
                       onCheckedChange={() => handleComplete(reminder.id!)}
-                      className={cn(
-                        "transition-colors",
-                        reminder.completed 
-                          ? "border-green-500 data-[state=checked]:bg-green-500 data-[state=checked]:text-primary-foreground" 
-                          : "border-gray-300 data-[state=checked]:bg-teacher-blue"
-                      )}
+                      className="border-gray-300 data-[state=checked]:bg-teacher-blue"
                     />
                     <label
                       htmlFor={`reminder-${reminder.id}`}
-                      className={cn(
-                        "text-sm font-medium leading-none peer-disabled:cursor-not-allowed transition-colors",
-                        reminder.completed ? "text-green-600" : "text-gray-700 hover:text-teacher-blue"
-                      )}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed text-gray-700 hover:text-teacher-blue"
                     >
-                      {reminder.completed ? "Completed" : "Mark Complete"}
+                      Mark Complete
                     </label>
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center">
@@ -193,6 +164,75 @@ const ReminderList = () => {
           );
         })}
       </div>
+      
+      {/* Completed Reminders Section */}
+      {completedReminders.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
+            Completed Reminders
+            <span className="ml-2 bg-green-100 text-green-800 text-xs font-medium py-0.5 px-2 rounded-full">
+              {completedReminders.length}
+            </span>
+          </h3>
+          <div className="space-y-2">
+            {completedReminders.map((reminder) => (
+              <Card 
+                key={reminder.id} 
+                className="border border-gray-200 bg-gray-50 hover:bg-white transition-colors"
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <div className="flex items-center">
+                    <CardTitle className="text-sm font-medium text-gray-400 line-through">
+                      {reminder.title}
+                    </CardTitle>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {reminder.priority && (
+                      <span className="flex items-center opacity-50">
+                        {getPriorityIcon(reminder.priority)}
+                      </span>
+                    )}
+                    {reminder.category && (
+                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-400">
+                        {reminder.category}
+                      </span>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="pl-2 pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`reminder-completed-${reminder.id}`}
+                        checked={true}
+                        onCheckedChange={() => handleComplete(reminder.id!)}
+                        className="border-green-300 data-[state=checked]:bg-green-500"
+                      />
+                      <label
+                        htmlFor={`reminder-completed-${reminder.id}`}
+                        className="text-sm font-medium leading-none text-green-600 flex items-center"
+                      >
+                        Completed
+                        <button 
+                          onClick={() => undoComplete(reminder.id!)}
+                          className="ml-2 text-xs text-blue-500 hover:text-blue-700 flex items-center"
+                        >
+                          <Undo2 className="h-3 w-3 mr-0.5" />
+                          Undo
+                        </button>
+                      </label>
+                    </div>
+                    <div className="text-xs text-gray-400 flex items-center">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {reminder.dueDate ? format(new Date(reminder.dueDate), 'MMM d, yyyy') : 'No due date'}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

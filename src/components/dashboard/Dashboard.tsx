@@ -76,20 +76,20 @@ export const Dashboard = () => {
         onQuickAddClick={() => setIsQuickReminderOpen(true)}
       />
       
+      {/* Today's Reminders - Moved above Today's Schedule */}
+      <TodayReminders 
+        todaysReminders={todaysReminders}
+        handleCheckReminder={handleCheckReminder}
+        handleEditReminder={handleEditReminder}
+        schoolSetup={schoolSetup}
+      />
+      
       {/* Today's Schedule */}
       <TodaySchedule 
         remindersByPeriod={remindersByPeriod}
         handleCheckReminder={handleCheckReminder}
         handleEditReminder={handleEditReminder}
         todayCode={todayCode}
-      />
-      
-      {/* Today's Reminders Summary */}
-      <TodayReminders 
-        todaysReminders={todaysReminders}
-        handleCheckReminder={handleCheckReminder}
-        handleEditReminder={handleEditReminder}
-        schoolSetup={schoolSetup}
       />
       
       {/* Quick Reminder Creator */}

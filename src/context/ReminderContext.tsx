@@ -14,6 +14,7 @@ export type Period = {
   id: string;
   name: string;
   schedules: PeriodSchedule[];
+  isPrepPeriod?: boolean; // Added prep period flag
 };
 
 export type ReminderType = "Call Home" | "Email" | "Talk to Student" | "Prepare Materials" | "Grade" | "Other" | "_none";

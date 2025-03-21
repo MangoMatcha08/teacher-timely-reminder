@@ -2,6 +2,7 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
 import { FormError } from "./FormError";
+import { Coffee } from "lucide-react";
 
 // Helper function to get the schedule time for display purposes
 const getPeriodScheduleDisplay = (period: any) => {
@@ -26,6 +27,8 @@ const PeriodSelect: React.FC<PeriodSelectProps> = ({ show }) => {
   } = useFormContext();
 
   if (!show) return null;
+  
+  const periods = watch("schoolSetup")?.periods || [];
 
   return (
     <div>
@@ -43,9 +46,9 @@ const PeriodSelect: React.FC<PeriodSelectProps> = ({ show }) => {
         {...register("periodId")}
       >
         <option value="">Select a period</option>
-        {watch("schoolSetup")?.periods.map((period: any) => (
+        {periods.map((period: any) => (
           <option key={period.id} value={period.id}>
-            {period.name} ({getPeriodScheduleDisplay(period)})
+            {period.name} {period.isPrepPeriod ? "🏮 (Prep)" : ""} ({getPeriodScheduleDisplay(period)})
           </option>
         ))}
       </select>
