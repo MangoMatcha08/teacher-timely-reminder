@@ -41,4 +41,7 @@ enable_confirmations = false
 file_size_limit = "50MiB"
 
 [functions]
+# This section was incorrectly formatted - functions should be a map with properties
+# The port value needs to be properly formatted as part of the section
+enabled = true
 port = 54321

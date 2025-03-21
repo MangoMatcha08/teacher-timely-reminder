@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useReminders } from '@/context/ReminderContext';
@@ -154,10 +155,11 @@ const TemplateLibrary = () => {
   
   const handleDownloadTemplate = async (template: ReminderTemplate) => {
     try {
-      // Increment download count using direct RPC call
-      const { error } = await supabase.rpc('increment_template_downloads', {
-        template_id: template.id
-      });
+      // Use a direct query instead of RPC since it's not in the TypeScript types
+      const { error } = await supabase
+        .from('reminder_templates')
+        .update({ download_count: (template.download_count || 0) + 1 })
+        .eq('id', template.id);
       
       if (error) {
         throw error;
@@ -177,11 +179,12 @@ const TemplateLibrary = () => {
     try {
       const newPublicStatus = !template.is_public;
       
-      // Update the template's public status using RPC
-      const { error } = await supabase.rpc('update_template_public_status', { 
-        template_id: template.id, 
-        is_public_status: newPublicStatus 
-      });
+      // Use a direct query instead of RPC since it's not in the TypeScript types
+      const { error } = await supabase
+        .from('reminder_templates')
+        .update({ is_public: newPublicStatus })
+        .eq('id', template.id)
+        .eq('created_by', user?.id || '');
       
       if (error) {
         throw error;
