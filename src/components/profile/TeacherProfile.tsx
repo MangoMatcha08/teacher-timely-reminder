@@ -63,12 +63,16 @@ const TeacherProfile = () => {
       }
       
       if (data) {
+        // Convert null arrays to empty arrays
+        const grade_levels = data.grade_levels || [];
+        const subjects = data.subjects || [];
+        
         setProfile({
           id: data.id,
           display_name: data.display_name || '',
           school: data.school || '',
-          grade_levels: data.grade_levels || [],
-          subjects: data.subjects || [],
+          grade_levels: grade_levels,
+          subjects: subjects,
           bio: data.bio || '',
           avatar_url: data.avatar_url || '',
           share_templates: data.share_templates || false

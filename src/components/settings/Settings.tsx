@@ -31,6 +31,11 @@ const Settings: React.FC<SettingsProps> = ({ onResetOnboarding, onModifySettings
     }
   };
   
+  const handleSaveNotifications = () => {
+    // Handle saving notification settings
+    console.log('Saving notification settings');
+  };
+  
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold tracking-tight mb-6">Settings</h1>
@@ -97,7 +102,7 @@ const Settings: React.FC<SettingsProps> = ({ onResetOnboarding, onModifySettings
         </TabsContent>
         
         <TabsContent value="notifications">
-          <NotificationSettings />
+          <NotificationSettings onSave={handleSaveNotifications} />
         </TabsContent>
         
         <TabsContent value="data">
