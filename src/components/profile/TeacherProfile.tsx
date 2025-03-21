@@ -54,7 +54,7 @@ const TeacherProfile = () => {
       // Fetch existing profile
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, display_name, school, grade_levels, subjects, bio, avatar_url, share_templates')
         .eq('id', user?.id)
         .single();
       

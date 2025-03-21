@@ -71,7 +71,7 @@ const TemplateLibrary = () => {
       
       if (data && Array.isArray(data)) {
         // Cast data to ReminderTemplate array
-        const typedData = data as unknown as ReminderTemplate[];
+        const typedData = data as ReminderTemplate[];
         setTemplates(typedData);
         
         // Extract unique categories
@@ -110,7 +110,7 @@ const TemplateLibrary = () => {
       
       if (data && Array.isArray(data)) {
         // Cast data to ReminderTemplate array
-        const typedData = data as unknown as ReminderTemplate[];
+        const typedData = data as ReminderTemplate[];
         setMyTemplates(typedData);
       } else {
         setMyTemplates([]);
@@ -176,11 +176,11 @@ const TemplateLibrary = () => {
     try {
       const newPublicStatus = !template.is_public;
       
-      // Update the template's public status
-      const { error } = await supabase
-        .from('reminder_templates')
-        .update({ is_public: newPublicStatus })
-        .eq('id', template.id);
+      // Update the template's public status using RPC to avoid type errors
+      const { error } = await supabase.rpc('update_template_public_status', {
+        template_id: template.id,
+        is_public_status: newPublicStatus
+      });
       
       if (error) throw error;
       

@@ -11,21 +11,90 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           created_at: string | null
           display_name: string | null
+          grade_levels: string[] | null
           id: string
+          school: string | null
+          share_templates: boolean | null
+          subjects: string[] | null
           updated_at: string | null
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           display_name?: string | null
+          grade_levels?: string[] | null
           id: string
+          school?: string | null
+          share_templates?: boolean | null
+          subjects?: string[] | null
           updated_at?: string | null
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           display_name?: string | null
+          grade_levels?: string[] | null
           id?: string
+          school?: string | null
+          share_templates?: boolean | null
+          subjects?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reminder_templates: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string
+          creator_name: string | null
+          description: string | null
+          download_count: number | null
+          id: string
+          is_featured: boolean | null
+          is_public: boolean | null
+          tags: string[] | null
+          timing: string
+          title: string
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by: string
+          creator_name?: string | null
+          description?: string | null
+          download_count?: number | null
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          tags?: string[] | null
+          timing: string
+          title: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string
+          creator_name?: string | null
+          description?: string | null
+          download_count?: number | null
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          tags?: string[] | null
+          timing?: string
+          title?: string
+          type?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -116,7 +185,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_templates: {
+        Args: Record<PropertyKey, never>
+        Returns: Json[]
+      }
+      get_public_templates: {
+        Args: Record<PropertyKey, never>
+        Returns: Json[]
+      }
     }
     Enums: {
       [_ in never]: never
