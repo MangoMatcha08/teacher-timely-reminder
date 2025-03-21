@@ -132,7 +132,7 @@ const getMockReminders = (): Reminder[] => {
       priority: 'High',
       completed: false,
       periodId: 'period-1',
-      type: 'Task',
+      type: 'Prepare Materials',
       timing: 'During Period',
       days: ['M', 'W', 'F'],
       recurrence: 'Weekly',
@@ -149,7 +149,7 @@ const getMockReminders = (): Reminder[] => {
       priority: 'Medium',
       completed: false,
       periodId: 'period-2',
-      type: 'Task',
+      type: 'Grade',
       timing: 'After School',
       days: ['T', 'Th'],
       recurrence: 'Weekly',
@@ -166,10 +166,10 @@ const getMockReminders = (): Reminder[] => {
       priority: 'Low',
       completed: true,
       periodId: 'period-3',
-      type: 'Meeting',
+      type: 'Other',
       timing: 'After School',
       days: ['W'],
-      recurrence: 'Monthly',
+      recurrence: 'Weekly',
       termId: 'term_default',
       dueDate: today.toISOString(),
       createdAt: new Date(),
@@ -344,7 +344,8 @@ const getMockSchoolSetup = (): SchoolSetup => {
     schoolDays: ["M", "T", "W", "Th", "F"],
     schoolHours: {
       startTime: "8:00 AM",
-      endTime: "3:00 PM"
+      endTime: "3:00 PM",
+      teacherArrivalTime: "7:30 AM"
     },
     categories: [
       "Instruction",
@@ -361,32 +362,27 @@ const getMockSchoolSetup = (): SchoolSetup => {
           {
             dayOfWeek: "M",
             startTime: "8:00 AM",
-            endTime: "8:50 AM",
-            isCustom: false
+            endTime: "8:50 AM"
           },
           {
             dayOfWeek: "T",
             startTime: "8:00 AM",
-            endTime: "8:50 AM",
-            isCustom: false
+            endTime: "8:50 AM"
           },
           {
             dayOfWeek: "W",
             startTime: "8:00 AM",
-            endTime: "8:30 AM",
-            isCustom: true
+            endTime: "8:30 AM"
           },
           {
             dayOfWeek: "Th",
             startTime: "8:00 AM",
-            endTime: "8:50 AM",
-            isCustom: false
+            endTime: "8:50 AM"
           },
           {
             dayOfWeek: "F",
             startTime: "8:00 AM",
-            endTime: "8:50 AM",
-            isCustom: false
+            endTime: "8:50 AM"
           }
         ],
         isPrepPeriod: false
@@ -398,32 +394,27 @@ const getMockSchoolSetup = (): SchoolSetup => {
           {
             dayOfWeek: "M",
             startTime: "9:00 AM",
-            endTime: "9:50 AM",
-            isCustom: false
+            endTime: "9:50 AM"
           },
           {
             dayOfWeek: "T",
             startTime: "9:00 AM",
-            endTime: "9:50 AM",
-            isCustom: false
+            endTime: "9:50 AM"
           },
           {
             dayOfWeek: "W",
             startTime: "8:35 AM",
-            endTime: "9:05 AM",
-            isCustom: true
+            endTime: "9:05 AM"
           },
           {
             dayOfWeek: "Th",
             startTime: "9:00 AM",
-            endTime: "9:50 AM",
-            isCustom: false
+            endTime: "9:50 AM"
           },
           {
             dayOfWeek: "F",
             startTime: "9:00 AM",
-            endTime: "9:50 AM",
-            isCustom: false
+            endTime: "9:50 AM"
           }
         ],
         isPrepPeriod: true
@@ -435,35 +426,40 @@ const getMockSchoolSetup = (): SchoolSetup => {
           {
             dayOfWeek: "M",
             startTime: "10:00 AM",
-            endTime: "10:50 AM",
-            isCustom: false
+            endTime: "10:50 AM"
           },
           {
             dayOfWeek: "T",
             startTime: "10:00 AM",
-            endTime: "10:50 AM",
-            isCustom: false
+            endTime: "10:50 AM"
           },
           {
             dayOfWeek: "W",
             startTime: "9:10 AM",
-            endTime: "9:40 AM",
-            isCustom: true
+            endTime: "9:40 AM"
           },
           {
             dayOfWeek: "Th",
             startTime: "10:00 AM",
-            endTime: "10:50 AM",
-            isCustom: false
+            endTime: "10:50 AM"
           },
           {
             dayOfWeek: "F",
             startTime: "10:00 AM",
-            endTime: "10:50 AM",
-            isCustom: false
+            endTime: "10:50 AM"
           }
         ],
         isPrepPeriod: false
+      }
+    ],
+    termId: "term_default",
+    terms: [
+      {
+        id: "term_default",
+        name: "Current Term",
+        startDate: new Date().toISOString(),
+        endDate: new Date(new Date().setMonth(new Date().getMonth() + 4)).toISOString(),
+        schoolYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
       }
     ]
   };

@@ -8,6 +8,7 @@ export type PeriodSchedule = {
   dayOfWeek: DayOfWeek;
   startTime: string;
   endTime: string;
+  isCustom?: boolean; // Added optional isCustom property
 };
 
 export type Period = {
