@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,7 +56,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -76,7 +74,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -180,25 +177,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleTestAccountLogin = async () => {
     try {
-      // Create a test user in the local browser only - no server authentication
-      // This is for testing purposes only
       const testUserId = `test-user-${Date.now()}`;
+      
       const testUser = {
         id: testUserId,
         email: `test${Date.now()}@teacherreminder.app`,
-        user_metadata: { name: "Test Teacher" }
+        user_metadata: { name: "Test Teacher" },
+        app_metadata: {},
+        aud: "authenticated",
+        created_at: new Date().toISOString(),
+        confirmed_at: new Date().toISOString(),
+        confirmation_sent_at: new Date().toISOString(),
+        recovery_sent_at: null,
+        last_sign_in_at: new Date().toISOString(),
+        role: 'authenticated',
+        updated_at: new Date().toISOString()
       } as User;
       
-      // Store the test user in local storage
       localStorage.setItem("testUserOnboarding", "completed");
       
-      // Manually set the user and session state
       setUser(testUser);
-      setSession({ user: testUser } as Session);
+      setSession({ 
+        access_token: `fake-token-${Date.now()}`,
+        token_type: 'bearer',
+        user: testUser,
+        expires_at: Date.now() + 3600,
+        expires_in: 3600,
+        refresh_token: `fake-refresh-${Date.now()}`
+      } as Session);
       setHasCompletedOnboarding(true);
       setIsAuthenticated(true);
       
       toast.success("Logged in with test account!");
+      console.log("Test user created:", testUser);
       return testUser;
     } catch (error: any) {
       console.error("Test account login error:", error);
@@ -209,9 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleLogout = async () => {
     try {
-      // Check if this is a test user
       if (user?.id.startsWith("test-user-")) {
-        // For test users, just clear the state without calling Supabase
         setUser(null);
         setSession(null);
         setHasCompletedOnboarding(false);
@@ -219,7 +228,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // For real users, call Supabase auth
       const { error } = await supabase.auth.signOut();
       if (error) {
         toast.error(error.message || "Logout failed");
@@ -258,7 +266,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Add setIsAuthenticated function
   const setIsAuthenticated = (value: boolean) => {
     if (value && !user) {
       console.warn("Trying to set isAuthenticated to true without a user");
