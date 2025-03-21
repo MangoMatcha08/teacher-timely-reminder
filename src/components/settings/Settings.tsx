@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useReminders } from "@/context/ReminderContext";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/shared/Card";
@@ -5,6 +6,7 @@ import Button from "@/components/shared/Button";
 import { ArrowLeft, Calendar, Edit, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import NotificationSettings from "./notifications/NotificationSettings";
+import { toast } from "sonner";
 
 interface SettingsProps {
   onResetOnboarding: () => void;
@@ -19,6 +21,10 @@ const Settings: React.FC<SettingsProps> = ({ onResetOnboarding, onModifySettings
     if (window.confirm("Are you sure you want to restart the onboarding process? This will reset all your settings.")) {
       onResetOnboarding();
     }
+  };
+  
+  const handleSaveNotifications = () => {
+    toast.success("Notification settings saved successfully");
   };
   
   const currentTerm = schoolSetup?.terms.find(term => term.id === schoolSetup.termId);
@@ -39,7 +45,7 @@ const Settings: React.FC<SettingsProps> = ({ onResetOnboarding, onModifySettings
       <h1 className="text-xl font-bold">Settings</h1>
       
       {/* Notification Settings */}
-      <NotificationSettings />
+      <NotificationSettings onSave={handleSaveNotifications} />
       
       {/* School Schedule Card */}
       <Card>

@@ -11,7 +11,7 @@ export const FormError: React.FC<FormErrorProps> = ({ error }) => {
   
   return (
     <p className="mt-1 text-sm text-destructive">
-      {error.message}
+      {error.message?.toString()}
     </p>
   );
 };
