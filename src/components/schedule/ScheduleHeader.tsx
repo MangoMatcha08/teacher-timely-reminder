@@ -1,28 +1,22 @@
 
 import React from "react";
-import Button from "@/components/shared/Button";
-import { Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Calendar } from "lucide-react";
 
 interface ScheduleHeaderProps {
   title: string;
+  date?: string;
 }
 
-const ScheduleHeader = ({ title }: ScheduleHeaderProps) => {
-  const navigate = useNavigate();
-  
+const ScheduleHeader = ({ title, date }: ScheduleHeaderProps) => {
   return (
-    <div className="flex justify-between items-center">
-      <h1 className="text-xl font-bold">{title}</h1>
-      <div className="flex gap-2">
-        <Button 
-          onClick={() => navigate("/create-reminder")}
-          className="h-8 text-sm"
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Add a Detailed Reminder
-        </Button>
-      </div>
+    <div className="flex flex-col mb-4">
+      <h1 className="text-2xl font-bold text-gray-800 mb-1">{title}</h1>
+      {date && (
+        <div className="flex items-center text-sm text-gray-500">
+          <Calendar className="h-4 w-4 mr-1" />
+          <span>{date}</span>
+        </div>
+      )}
     </div>
   );
 };
