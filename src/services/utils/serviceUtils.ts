@@ -16,14 +16,18 @@ export const handleNetworkError = (error: any, operation: string) => {
   
   // Check if it's a network error
   if (
-    (error.message && error.message.includes('Failed to fetch')) || 
-    (error.message && error.message.includes('Network Error')) ||
-    (error.message && error.message.includes('network request failed')) ||
-    (!navigator.onLine)
+    (error.message && (
+      error.message.includes('Failed to fetch') || 
+      error.message.includes('Network Error') ||
+      error.message.includes('network request failed')
+    )) || 
+    (!navigator.onLine) ||
+    (error.status === 0) ||  // Status 0 often indicates network error
+    (error.__isAuthError && error.status === 0) // Supabase auth error with status 0
   ) {
     // Show user-friendly error message
     toast.error(`Network error: Can't connect to server`, {
-      description: "Unable to connect to the authentication service. Using offline mode.",
+      description: "Using offline mode. This could be due to network issues or a firewall blocking connections.",
     });
     return true; // Indicate this is a network error
   }

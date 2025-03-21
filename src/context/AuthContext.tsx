@@ -59,10 +59,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [initTimeout, setInitTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        // Set a timeout to transition to offline mode if auth initialization takes too long
+        const timeout = setTimeout(() => {
+          console.log("Auth initialization timed out - switching to offline mode");
+          setIsOffline(true);
+          setIsInitialized(true);
+          toast.error("Connection timeout. Using offline mode.");
+        }, 5000); // 5 seconds timeout
+        
+        setInitTimeout(timeout);
+        
         // Set up the auth state change listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, session) => {
@@ -84,6 +95,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         try {
           const { data: { session } } = await supabase.auth.getSession();
+          
+          // Clear the timeout since we got a response
+          if (initTimeout) {
+            clearTimeout(initTimeout);
+            setInitTimeout(null);
+          }
+          
           setSession(session);
           setUser(session?.user ?? null);
           
@@ -103,21 +121,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const isNetworkError = handleNetworkError(error, 'retrieving authentication session');
           setIsOffline(isNetworkError);
         } finally {
+          // Clear the timeout if it's still active
+          if (initTimeout) {
+            clearTimeout(initTimeout);
+            setInitTimeout(null);
+          }
           setIsInitialized(true);
         }
 
         return () => {
           subscription.unsubscribe();
+          // Clear timeout on cleanup
+          if (initTimeout) {
+            clearTimeout(initTimeout);
+            setInitTimeout(null);
+          }
         };
       } catch (error: any) {
         console.error("Error setting up auth state listener:", error);
         const isNetworkError = handleNetworkError(error, 'initializing authentication');
         setIsOffline(isNetworkError);
         setIsInitialized(true);
+        
+        // Clear the timeout if it's still active
+        if (initTimeout) {
+          clearTimeout(initTimeout);
+          setInitTimeout(null);
+        }
       }
     };
 
     initializeAuth();
+    
+    // Check network status
+    const handleConnectionChange = () => {
+      const isOnline = navigator.onLine;
+      console.log("Network status changed:", isOnline ? "online" : "offline");
+      
+      if (!isOnline) {
+        setIsOffline(true);
+        toast.error("Network disconnected. Using offline mode.");
+      }
+    };
+    
+    window.addEventListener('online', handleConnectionChange);
+    window.addEventListener('offline', handleConnectionChange);
+    
+    // Initial check
+    if (!navigator.onLine) {
+      console.log("Initial network status: offline");
+      setIsOffline(true);
+    }
+    
+    return () => {
+      window.removeEventListener('online', handleConnectionChange);
+      window.removeEventListener('offline', handleConnectionChange);
+      
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
+    };
   }, []);
 
   const handleLogin = async (email: string, password: string) => {

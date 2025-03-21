@@ -6,6 +6,7 @@ import AuthScreen from "@/components/auth/AuthScreen";
 import Button from "@/components/shared/Button";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlertTriangle } from "lucide-react";
 
 const Auth = () => {
   const { isAuthenticated, isInitialized, hasCompletedOnboarding, resetOnboarding, isOffline } = useAuth();
@@ -36,7 +37,8 @@ const Auth = () => {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 rounded-full border-4 border-teacher-blue border-t-transparent animate-spin mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">Initializing authentication...</p>
+          <p className="text-xs text-muted-foreground mt-2">If this takes too long, offline mode will be enabled automatically.</p>
         </div>
       </div>
     );
@@ -46,13 +48,21 @@ const Auth = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
+          <div className="flex items-center justify-center mb-4 text-amber-500">
+            <AlertTriangle size={28} />
+          </div>
           <h2 className="text-2xl font-bold mb-4 text-center">Network Error</h2>
           <div className="mb-6">
             <p className="text-center text-muted-foreground mb-4">
-              Unable to connect to the authentication service.
+              Unable to connect to the authentication service. This could be due to:
             </p>
+            <ul className="list-disc pl-8 text-sm text-muted-foreground space-y-1 mb-4">
+              <li>Your internet connection is offline</li>
+              <li>A firewall is blocking access to the authentication service</li>
+              <li>The authentication service is temporarily unavailable</li>
+            </ul>
             <p className="text-center text-muted-foreground mb-4">
-              Please check your internet connection and try again.
+              You can continue in offline mode with a test account.
             </p>
           </div>
           <div className="space-y-3">
@@ -73,8 +83,11 @@ const Auth = () => {
             <Button 
               variant="ghost" 
               onClick={() => {
+                const { loginWithTestAccount } = useAuth();
                 toast.success("Using demo mode with test account");
-                navigate("/auth");
+                loginWithTestAccount().then(() => {
+                  navigate("/dashboard");
+                });
               }} 
               className="w-full"
             >
