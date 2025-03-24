@@ -1,38 +1,4 @@
 
-export interface SchoolSetup {
-  id?: string;
-  userId: string;
-  schoolName: string;
-  schoolYear: string;
-  terms: Term[];
-  periods: Period[];
-  days: DayOfWeek[];
-  categories: string[];
-  notificationPreferences?: NotificationPreferences;
-}
-
-export interface Term {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-}
-
-export interface Period {
-  id: string;
-  name: string;
-  startTime: string;
-  endTime: string;
-  subject?: string;
-  location?: string;
-  schedule?: PeriodSchedule[];
-}
-
-export interface PeriodSchedule {
-  dayCode: string; // e.g., 'M', 'T', 'W', etc.
-  enabled: boolean;
-}
-
 export enum DayOfWeek {
   Monday = 'M',
   Tuesday = 'T',
@@ -43,6 +9,46 @@ export enum DayOfWeek {
   Sunday = 'Su'
 }
 
+export interface SchoolSetup {
+  id?: string;
+  userId: string;
+  schoolName: string;
+  schoolYear: string;
+  terms: Term[];
+  periods: Period[];
+  days: DayOfWeek[];
+  categories: string[];
+  notificationPreferences?: NotificationPreferences;
+  termId?: string;
+  schoolDays?: DayOfWeek[];
+}
+
+export interface Term {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  schoolYear?: string;
+}
+
+export interface Period {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  subject?: string;
+  location?: string;
+  schedule?: PeriodSchedule[];
+  schedules?: PeriodSchedule[];
+  isPrepPeriod?: boolean;
+}
+
+export interface PeriodSchedule {
+  dayCode: string; // e.g., 'M', 'T', 'W', etc.
+  enabled: boolean;
+  dayOfWeek?: string;
+}
+
 export interface Reminder {
   id: string;
   userId: string;
@@ -50,22 +56,31 @@ export interface Reminder {
   description?: string;
   periodId: string;
   dueDate?: string;
-  timing: ReminderTiming;
-  type: ReminderType;
-  priority: ReminderPriority;
+  timing: ReminderTiming | string;
+  type: ReminderType | string;
+  priority: ReminderPriority | string;
   category?: string;
   completed: boolean;
-  recurrence?: RecurrencePattern;
+  recurrence?: RecurrencePattern | string;
   recurringDays?: DayOfWeek[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  days?: DayOfWeek[];
+  notes?: string;
+  termId?: string;
 }
 
 export enum ReminderTiming {
   BeforeClass = 'before-class',
   DuringClass = 'during-class',
   AfterClass = 'after-class',
-  SpecificTime = 'specific-time'
+  SpecificTime = 'specific-time',
+  BeforeSchool = 'Before School',
+  AfterSchool = 'After School',
+  DuringPeriod = 'During Period',
+  StartOfPeriod = 'Start of Period',
+  EndOfPeriod = 'End of Period',
+  FifteenMinutesIntoPeriod = '15 Minutes Into Period'
 }
 
 export enum ReminderType {
@@ -73,21 +88,28 @@ export enum ReminderType {
   Assignment = 'assignment',
   Exam = 'exam',
   Meeting = 'meeting',
-  Other = 'other'
+  Other = 'Other',
+  CallHome = 'Call Home',
+  Email = 'Email',
+  TalkToStudent = 'Talk to Student',
+  PrepareMaterials = 'Prepare Materials',
+  Grade = 'Grade'
 }
 
 export enum ReminderPriority {
-  Low = 'low',
-  Medium = 'medium',
-  High = 'high'
+  Low = 'Low',
+  Medium = 'Medium',
+  High = 'High'
 }
 
 export enum RecurrencePattern {
   None = 'none',
-  Daily = 'daily',
-  Weekly = 'weekly',
+  Daily = 'Daily',
+  Weekly = 'Weekly',
   BiWeekly = 'bi-weekly',
-  Monthly = 'monthly'
+  Monthly = 'monthly',
+  Once = 'Once',
+  SpecificDays = 'Specific Days'
 }
 
 export interface NotificationPreferences {
