@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,10 +7,10 @@ import { toast } from 'sonner';
 import { 
   getUserReminders, 
   saveReminder, 
-  updateReminder, 
-  deleteReminder,
+  updateReminder as updateReminderService, 
+  deleteReminder as deleteReminderService,
   getSchoolSetup,
-  saveSchoolSetup 
+  saveSchoolSetup as saveSchoolSetupService 
 } from '@/services/firebase';
 
 export type DayOfWeek = "M" | "T" | "W" | "Th" | "F";
@@ -358,7 +359,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       if (schoolSetup) {
         try {
-          await saveSchoolSetup(schoolSetup, user.id);
+          await saveSchoolSetupService(schoolSetup, user.id);
         } catch (error) {
           console.error("Error saving school setup to Firebase:", error);
         }
@@ -491,9 +492,9 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       )
     );
     
-    if (isOnline && user) {
+    if (isOnline && user && id) {
       try {
-        updateReminder(id, reminderData, user.id);
+        updateReminderService(id, reminderData, user.id);
       } catch (error) {
         console.error("Error updating reminder in Firebase:", error);
       }
@@ -503,9 +504,9 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const deleteReminderFunction = (id: string) => {
     setReminders((prev) => prev.filter((reminder) => reminder.id !== id));
     
-    if (isOnline && user) {
+    if (isOnline && user && id) {
       try {
-        deleteReminder(id, user.id);
+        deleteReminderService(id, user.id);
       } catch (error) {
         console.error("Error deleting reminder from Firebase:", error);
       }
@@ -521,7 +522,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     if (isOnline && user) {
       try {
-        saveSchoolSetup(setup, user.id);
+        saveSchoolSetupService(setup, user.id);
       } catch (error) {
         console.error("Error saving school setup to Firebase:", error);
       }
@@ -536,7 +537,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           
           if (isOnline && user) {
             try {
-              updateReminder(id, { completed }, user.id);
+              updateReminderService(id, { completed }, user.id);
             } catch (error) {
               console.error("Error updating reminder in Firebase:", error);
             }
@@ -556,7 +557,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (ids.includes(reminder.id!)) {
           if (isOnline && user) {
             try {
-              updateReminder(reminder.id!, { completed: true }, user.id);
+              updateReminderService(reminder.id!, { completed: true }, user.id);
             } catch (error) {
               console.error("Error updating reminder in Firebase:", error);
             }
@@ -605,7 +606,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       notificationPreferences: preferences
     };
     
-    saveSchoolSetup(updatedSchoolSetup);
+    saveSchoolSetupFunction(updatedSchoolSetup);
     
     if (preferences.email.enabled) {
       console.log(`Test email notification would be sent to ${preferences.email.address}`);
