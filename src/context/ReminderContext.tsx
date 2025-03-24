@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { useAuth } from "./AuthContext";
-import * as FirebaseService from "@/services/firebase";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from '@/context/auth';
+import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 
 export type DayOfWeek = "M" | "T" | "W" | "Th" | "F";
 
@@ -369,7 +371,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const newReminder: Reminder = {
       ...reminderData,
       days: adjustedDays,
-      id: `rem_${Math.random().toString(36).substring(2, 9)}`,
+      id: `rem_${uuidv4()}`,
       createdAt: new Date(),
       completed: false,
       termId: schoolSetup?.termId || "term_default",

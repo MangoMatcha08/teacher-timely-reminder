@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/shared/Layout";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth";
 import { useReminders } from "@/context/ReminderContext";
 import ScheduleHeader from "@/components/schedule/ScheduleHeader";
 import ScheduleFilters from "@/components/schedule/ScheduleFilters";

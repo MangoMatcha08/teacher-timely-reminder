@@ -1,5 +1,6 @@
 
 import { toast } from "sonner";
+import { User } from "@supabase/supabase-js";
 
 // Helper function to manage test user onboarding state
 export const manageTestUserOnboarding = (userId: string): boolean => {

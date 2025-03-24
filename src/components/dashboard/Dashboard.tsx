@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { useReminders, Reminder } from '@/context/ReminderContext';
 import { toast } from 'sonner';
 import QuickReminderCreator from '@/components/dashboard/QuickReminderCreator';
