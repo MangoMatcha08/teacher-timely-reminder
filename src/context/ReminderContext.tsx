@@ -349,11 +349,19 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setSyncStatus('pending');
       
       for (const reminder of reminders) {
-        await saveReminder(reminder, user.id);
+        try {
+          await saveReminder(reminder, user.id);
+        } catch (error) {
+          console.error("Error saving reminder to Firebase:", error);
+        }
       }
       
       if (schoolSetup) {
-        await saveSchoolSetup(user.id, schoolSetup);
+        try {
+          await saveSchoolSetup(schoolSetup, user.id);
+        } catch (error) {
+          console.error("Error saving school setup to Firebase:", error);
+        }
       }
       
       setSyncStatus('synced');
@@ -390,8 +398,11 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setReminders((prev) => [...prev, newReminder]);
     
     if (isOnline && user) {
-      saveReminder(newReminder, user.id)
-        .catch(error => console.error("Error saving reminder to Firebase:", error));
+      try {
+        saveReminder(newReminder, user.id);
+      } catch (error) {
+        console.error("Error saving reminder to Firebase:", error);
+      }
     }
 
     sendReminderNotification(newReminder);
@@ -473,7 +484,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return currentDate > endTimeDate;
   };
   
-  const updateReminder = (id: string, reminderData: Partial<Reminder>) => {
+  const updateReminderFunction = (id: string, reminderData: Partial<Reminder>) => {
     setReminders((prev) =>
       prev.map((reminder) =>
         reminder.id === id ? { ...reminder, ...reminderData } : reminder
@@ -481,21 +492,27 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
     
     if (isOnline && user) {
-      updateReminder(id, reminderData, user.id)
-        .catch(error => console.error("Error updating reminder in Firebase:", error));
+      try {
+        updateReminder(id, reminderData, user.id);
+      } catch (error) {
+        console.error("Error updating reminder in Firebase:", error);
+      }
     }
   };
   
-  const deleteReminder = (id: string) => {
+  const deleteReminderFunction = (id: string) => {
     setReminders((prev) => prev.filter((reminder) => reminder.id !== id));
     
     if (isOnline && user) {
-      deleteReminder(id, user.id)
-        .catch(error => console.error("Error deleting reminder from Firebase:", error));
+      try {
+        deleteReminder(id, user.id);
+      } catch (error) {
+        console.error("Error deleting reminder from Firebase:", error);
+      }
     }
   };
   
-  const saveSchoolSetup = (setup: SchoolSetup) => {
+  const saveSchoolSetupFunction = (setup: SchoolSetup) => {
     if (!setup.notificationPreferences) {
       setup.notificationPreferences = schoolSetup?.notificationPreferences || getDefaultNotificationPreferences();
     }
@@ -503,8 +520,11 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSchoolSetup(setup);
     
     if (isOnline && user) {
-      saveSchoolSetup(user.id, setup)
-        .catch(error => console.error("Error saving school setup to Firebase:", error));
+      try {
+        saveSchoolSetup(setup, user.id);
+      } catch (error) {
+        console.error("Error saving school setup to Firebase:", error);
+      }
     }
   };
   
@@ -515,8 +535,11 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           const completed = !reminder.completed;
           
           if (isOnline && user) {
-            updateReminder(id, { completed }, user.id)
-              .catch(error => console.error("Error updating reminder in Firebase:", error));
+            try {
+              updateReminder(id, { completed }, user.id);
+            } catch (error) {
+              console.error("Error updating reminder in Firebase:", error);
+            }
           }
           
           return { ...reminder, completed, isPastDue: completed ? false : reminder.isPastDue };
@@ -532,8 +555,11 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const updatedReminders = prev.map(reminder => {
         if (ids.includes(reminder.id!)) {
           if (isOnline && user) {
-            updateReminder(reminder.id!, { completed: true }, user.id)
-              .catch(error => console.error("Error updating reminder in Firebase:", error));
+            try {
+              updateReminder(reminder.id!, { completed: true }, user.id);
+            } catch (error) {
+              console.error("Error updating reminder in Firebase:", error);
+            }
           }
           
           return { ...reminder, completed: true, isPastDue: false };
@@ -646,9 +672,9 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         reminders,
         schoolSetup,
         createReminder,
-        updateReminder,
-        deleteReminder,
-        saveSchoolSetup,
+        updateReminder: updateReminderFunction,
+        deleteReminder: deleteReminderFunction,
+        saveSchoolSetup: saveSchoolSetupFunction,
         todaysReminders,
         pastDueReminders,
         toggleReminderComplete,
