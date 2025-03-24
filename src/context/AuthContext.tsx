@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,8 +52,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-// Define AuthProvider as a function component with proper type annotations
-const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -65,17 +63,15 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Set a timeout to transition to offline mode if auth initialization takes too long
         const timeout = setTimeout(() => {
           console.log("Auth initialization timed out - switching to offline mode");
           setIsOffline(true);
           setIsInitialized(true);
           toast.error("Connection timeout. Using offline mode.");
-        }, 5000); // 5 seconds timeout
+        }, 5000);
         
         setInitTimeout(timeout);
         
-        // Set up the auth state change listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, session) => {
             setSession(session);
@@ -97,7 +93,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           
-          // Clear the timeout since we got a response
           if (initTimeout) {
             clearTimeout(initTimeout);
             setInitTimeout(null);
@@ -122,7 +117,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const isNetworkError = handleNetworkError(error, 'retrieving authentication session');
           setIsOffline(isNetworkError);
         } finally {
-          // Clear the timeout if it's still active
           if (initTimeout) {
             clearTimeout(initTimeout);
             setInitTimeout(null);
@@ -132,7 +126,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         return () => {
           subscription.unsubscribe();
-          // Clear timeout on cleanup
           if (initTimeout) {
             clearTimeout(initTimeout);
             setInitTimeout(null);
@@ -144,7 +137,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsOffline(isNetworkError);
         setIsInitialized(true);
         
-        // Clear the timeout if it's still active
         if (initTimeout) {
           clearTimeout(initTimeout);
           setInitTimeout(null);
@@ -154,7 +146,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initializeAuth();
     
-    // Check network status
     const handleConnectionChange = () => {
       const isOnline = navigator.onLine;
       console.log("Network status changed:", isOnline ? "online" : "offline");
@@ -168,7 +159,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     window.addEventListener('online', handleConnectionChange);
     window.addEventListener('offline', handleConnectionChange);
     
-    // Initial check
     if (!navigator.onLine) {
       console.log("Initial network status: offline");
       setIsOffline(true);
@@ -265,7 +255,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       setIsOffline(false);
-      // The redirect happens automatically, no need to return anything
     } catch (error: any) {
       console.error("Google login error:", error);
       const isNetworkError = handleNetworkError(error, 'Google sign-in');
@@ -279,7 +268,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const handleTestAccountLogin = async () => {
     try {
-      // Create a test account that works offline
       const testUserId = `test-user-${Date.now()}`;
       
       const testUser = {
