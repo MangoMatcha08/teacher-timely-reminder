@@ -18,28 +18,26 @@ import Analytics from './pages/Analytics';
 
 function App() {
   return (
-    <React.StrictMode>
-      <BrowserRouter>
-        <AuthProvider>
-          <ReminderProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/create-reminder" element={<CreateReminder />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/templates" element={<TemplateLibrary />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </ReminderProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </React.StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <ReminderProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/schedule" element={<Schedule />} />
+            <Route path="/create-reminder" element={<CreateReminder />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/templates" element={<TemplateLibrary />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+        </ReminderProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
