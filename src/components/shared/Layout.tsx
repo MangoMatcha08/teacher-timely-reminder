@@ -1,9 +1,8 @@
-
 import React from "react";
 import Button from "./Button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, Home, Calendar, Settings, Menu, X, Plus, Bell, BarChart3, ListChecks } from "lucide-react";
-import { useReminders } from "@/context/ReminderContext";
+import { useReminder } from "@/context/ReminderContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileSync from "./MobileSync";
 
@@ -17,7 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const { completedTasks, totalTasks } = useReminders();
+  const { completedTasks, totalTasks } = useReminder();
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(prev => !prev);
@@ -35,7 +34,6 @@ const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 py-2 sticky top-0 z-40">
         <div className="container mx-auto px-3 flex items-center justify-between">
           <div className="flex items-center">
@@ -109,7 +107,6 @@ const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
         </div>
       </header>
       
-      {/* Mobile Menu */}
       {isMobile && mobileMenuOpen && (
         <div className="bg-white border-b border-gray-200 shadow-md py-1.5 animate-fade-in">
           <div className="container mx-auto px-3 flex flex-col space-y-1.5">
@@ -160,7 +157,6 @@ const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
         </div>
       )}
       
-      {/* Task Progress Bar */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="container mx-auto px-3 py-1.5">
           <div className="flex items-center justify-between">
@@ -186,12 +182,10 @@ const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
         </div>
       </div>
       
-      {/* Main Content */}
       <main className="flex-1 container mx-auto px-3 py-4 pb-20 md:pb-4">
         {children}
       </main>
       
-      {/* Mobile Navigation Tabs */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
           <div className="grid grid-cols-3 h-16">
@@ -222,7 +216,6 @@ const Layout: React.FC<LayoutProps> = ({ children, pageTitle }) => {
         </div>
       )}
       
-      {/* Footer */}
       <footer className="bg-white shadow-sm border-t border-gray-200 py-3 mt-auto hidden md:block">
         <div className="container mx-auto px-3 text-center text-xs text-gray-500">
           © {new Date().getFullYear()} Teacher Reminder App • Stay organized, teach better

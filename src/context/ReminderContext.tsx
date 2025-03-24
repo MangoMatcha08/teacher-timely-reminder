@@ -1,5 +1,6 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { SchoolSetup } from '@/types';
+import { SchoolSetup, NotificationPreferences } from '@/types';
 import { schoolSetupService } from '@/services/schoolSetupService';
 
 interface ReminderContextType {
@@ -10,6 +11,15 @@ interface ReminderContextType {
   fetchSchoolSetup: (userId: string) => Promise<void>;
   saveSchoolSetup: (schoolSetup: SchoolSetup, userId: string) => Promise<boolean>;
   updateSchoolSetup: (userId: string, schoolSetup: SchoolSetup) => Promise<boolean>;
+  updateNotificationPreferences: (prefs: NotificationPreferences) => void;
+  isOnline: boolean;
+  syncWithCloud: () => Promise<void>;
+  completedTasks: number;
+  totalTasks: number;
+  todaysReminders: any[];
+  pastDueReminders: any[];
+  toggleReminderComplete: (id: string) => void;
+  reminders: any[];
 }
 
 const ReminderContext = createContext<ReminderContextType | undefined>(undefined);
@@ -18,6 +28,14 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [schoolSetup, setSchoolSetup] = useState<SchoolSetup | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [reminders, setReminders] = useState<any[]>([]);
+  
+  // Mock data for demonstration
+  const completedTasks = 3;
+  const totalTasks = 10;
+  const todaysReminders: any[] = [];
+  const pastDueReminders: any[] = [];
 
   const fetchSchoolSetup = async (userId: string) => {
     setIsLoading(true);
@@ -53,6 +71,43 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return false;
     }
   };
+  
+  const updateNotificationPreferences = (prefs: NotificationPreferences) => {
+    if (!schoolSetup) return;
+    
+    setSchoolSetup(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        notificationPreferences: prefs
+      };
+    });
+  };
+  
+  const syncWithCloud = async () => {
+    // Mock implementation
+    console.log("Syncing with cloud...");
+    return Promise.resolve();
+  };
+  
+  const toggleReminderComplete = (id: string) => {
+    // Mock implementation
+    console.log(`Toggling reminder ${id} complete status`);
+  };
+
+  // Effect to listen for online/offline events
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const value: ReminderContextType = {
     schoolSetup,
@@ -62,6 +117,15 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     fetchSchoolSetup,
     saveSchoolSetup,
     updateSchoolSetup,
+    updateNotificationPreferences,
+    isOnline,
+    syncWithCloud,
+    completedTasks,
+    totalTasks,
+    todaysReminders,
+    pastDueReminders,
+    toggleReminderComplete,
+    reminders,
   };
 
   return (
@@ -78,3 +142,9 @@ export const useReminder = (): ReminderContextType => {
   }
   return context;
 };
+
+// Add this line to maintain compatibility with components that use useReminders
+export const useReminders = useReminder;
+
+// Export types from types.ts to maintain backward compatibility
+export * from '@/types';

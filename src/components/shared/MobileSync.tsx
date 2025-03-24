@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useReminders } from '@/context/ReminderContext';
+import { useReminder } from '@/context/ReminderContext';
 import { useAuth } from '@/context/auth';
 import Button from './Button';
 import { Check, RefreshCw, Wifi, WifiOff } from 'lucide-react';
@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const MobileSync: React.FC = () => {
-  const { isOnline, syncWithCloud } = useReminders();
+  const { isOnline, syncWithCloud } = useReminder();
   const { isAuthenticated } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
   
