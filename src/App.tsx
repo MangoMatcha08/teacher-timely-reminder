@@ -1,19 +1,20 @@
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Dashboard from './pages/Dashboard'
-import Auth from './pages/Auth'
-import Onboarding from './pages/Onboarding'
-import NotFound from './pages/NotFound'
-import Index from './pages/Index'
-import { ReminderProvider } from './context/ReminderContext'
-import { AuthProvider } from './context/auth'
-import CreateReminder from './pages/CreateReminder'
-import { Toaster } from '@/components/ui/sonner'
-import Schedule from './pages/Schedule'
-import Settings from './pages/Settings'
-import TemplateLibrary from './pages/TemplateLibrary'
-import ProfilePage from './pages/ProfilePage'
-import Analytics from './pages/Analytics'
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Dashboard from './pages/Dashboard';
+import Auth from './pages/Auth';
+import Onboarding from './pages/Onboarding';
+import NotFound from './pages/NotFound';
+import Index from './pages/Index';
+import { ReminderProvider } from './context/ReminderContext';
+import { AuthProvider } from './context/auth';
+import CreateReminder from './pages/CreateReminder';
+import { Toaster } from '@/components/ui/sonner';
+import Schedule from './pages/Schedule';
+import Settings from './pages/Settings';
+import TemplateLibrary from './pages/TemplateLibrary';
+import ProfilePage from './pages/ProfilePage';
+import Analytics from './pages/Analytics';
 
 function App() {
   return (
@@ -37,7 +38,7 @@ function App() {
         </ReminderProvider>
       </AuthProvider>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
