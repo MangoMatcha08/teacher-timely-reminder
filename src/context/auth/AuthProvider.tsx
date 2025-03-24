@@ -1,56 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { handleNetworkError } from "@/services/utils/serviceUtils";
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  isAuthenticated: boolean;
-  isInitialized: boolean;
-  hasCompletedOnboarding: boolean;
-  isOffline: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  register: (email: string, password: string) => Promise<User>;
-  loginWithGoogle: () => Promise<void>;
-  loginWithTestAccount: () => Promise<User>;
-  logout: () => Promise<void>;
-  setCompleteOnboarding: () => void;
-  resetOnboarding: () => void;
-}
-
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  session: null,
-  isAuthenticated: false,
-  isInitialized: false,
-  hasCompletedOnboarding: false,
-  isOffline: false,
-  login: async () => {
-    throw new Error("Function not implemented");
-  },
-  register: async () => {
-    throw new Error("Function not implemented");
-  },
-  loginWithGoogle: async () => {
-    throw new Error("Function not implemented");
-  },
-  loginWithTestAccount: async () => {
-    throw new Error("Function not implemented");
-  },
-  logout: async () => {
-    throw new Error("Function not implemented");
-  },
-  setCompleteOnboarding: () => {
-    throw new Error("Function not implemented");
-  },
-  resetOnboarding: () => {
-    throw new Error("Function not implemented");
-  },
-});
-
-export const useAuth = () => useContext(AuthContext);
+import AuthContext from "./AuthContext";
+import { manageTestUserOnboarding, createTestUser } from "./utils";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -78,14 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(session?.user ?? null);
             
             if (session?.user) {
-              const userId = session.user.id;
-              if (userId.startsWith("test-user-")) {
-                const testUserOnboarding = localStorage.getItem("testUserOnboarding");
-                setHasCompletedOnboarding(testUserOnboarding !== "reset");
-              } else {
-                const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
-                setHasCompletedOnboarding(!!onboardingCompleted);
-              }
+              const userHasCompletedOnboarding = manageTestUserOnboarding(session.user.id);
+              setHasCompletedOnboarding(userHasCompletedOnboarding);
             }
           }
         );
@@ -102,14 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            const userId = session.user.id;
-            if (userId.startsWith("test-user-")) {
-              const testUserOnboarding = localStorage.getItem("testUserOnboarding");
-              setHasCompletedOnboarding(testUserOnboarding !== "reset");
-            } else {
-              const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
-              setHasCompletedOnboarding(!!onboardingCompleted);
-            }
+            const userHasCompletedOnboarding = manageTestUserOnboarding(session.user.id);
+            setHasCompletedOnboarding(userHasCompletedOnboarding);
           }
           setIsOffline(false);
         } catch (error: any) {
@@ -268,22 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleTestAccountLogin = async () => {
     try {
-      const testUserId = `test-user-${Date.now()}`;
-      
-      const testUser = {
-        id: testUserId,
-        email: `test${Date.now()}@teacherreminder.app`,
-        user_metadata: { name: "Test Teacher" },
-        app_metadata: {},
-        aud: "authenticated",
-        created_at: new Date().toISOString(),
-        confirmed_at: new Date().toISOString(),
-        confirmation_sent_at: new Date().toISOString(),
-        recovery_sent_at: null,
-        last_sign_in_at: new Date().toISOString(),
-        role: 'authenticated',
-        updated_at: new Date().toISOString()
-      } as User;
+      const testUser = createTestUser(Date.now());
       
       localStorage.setItem("testUserOnboarding", "completed");
       
@@ -297,7 +225,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refresh_token: `fake-refresh-${Date.now()}`
       } as Session);
       setHasCompletedOnboarding(true);
-      setIsAuthenticated(true);
       setIsOffline(false);
       
       toast.success("Logged in with test account!");
@@ -361,12 +288,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const setIsAuthenticated = (value: boolean) => {
-    if (value && !user) {
-      console.warn("Trying to set isAuthenticated to true without a user");
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -389,3 +310,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
+
+export default AuthProvider;

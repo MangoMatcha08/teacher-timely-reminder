@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useReminders } from '@/context/ReminderContext';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import Button from './Button';
 import { Check, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';

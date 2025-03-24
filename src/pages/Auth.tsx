@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth";
 import AuthScreen from "@/components/auth/AuthScreen";
 import Button from "@/components/shared/Button";
 import { toast } from "sonner";

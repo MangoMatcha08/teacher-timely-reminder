@@ -2,7 +2,7 @@
 import React from 'react';
 import Layout from '@/components/shared/Layout';
 import TeacherProfile from '@/components/profile/TeacherProfile';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { Button } from '@/components/ui/button';
 
 const ProfilePage = () => {

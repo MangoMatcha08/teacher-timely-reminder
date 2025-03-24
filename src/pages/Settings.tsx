@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth";
 import SettingsComponent from "@/components/settings/Settings";
 import Layout from "@/components/shared/Layout";
 
