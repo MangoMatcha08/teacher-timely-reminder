@@ -1,5 +1,5 @@
 
-import React, { StrictMode } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Auth from './pages/Auth';
@@ -7,7 +7,7 @@ import Onboarding from './pages/Onboarding';
 import NotFound from './pages/NotFound';
 import Index from './pages/Index';
 import { ReminderProvider } from './context/ReminderContext';
-import { AuthProvider } from './context/auth';
+import { AuthProvider } from './context/AuthContext';
 import CreateReminder from './pages/CreateReminder';
 import { Toaster } from '@/components/ui/sonner';
 import Schedule from './pages/Schedule';
@@ -18,7 +18,7 @@ import Analytics from './pages/Analytics';
 
 function App() {
   return (
-    <StrictMode>
+    <React.StrictMode>
       <BrowserRouter>
         <AuthProvider>
           <ReminderProvider>
@@ -39,7 +39,7 @@ function App() {
           </ReminderProvider>
         </AuthProvider>
       </BrowserRouter>
-    </StrictMode>
+    </React.StrictMode>
   );
 }
 
