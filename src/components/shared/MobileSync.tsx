@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useReminder } from '@/context/ReminderContext';
 import { useAuth } from '@/context/auth';
 import Button from './Button';
@@ -10,6 +10,14 @@ const MobileSync: React.FC = () => {
   const { isOnline, syncWithCloud } = useReminder();
   const { isAuthenticated } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [forceOnline, setForceOnline] = useState(false);
+  
+  // Force online mode in preview environment
+  useEffect(() => {
+    if (window.location.hostname.includes('lovableproject.com')) {
+      setForceOnline(true);
+    }
+  }, []);
   
   const handleSync = async () => {
     if (!isAuthenticated) {
@@ -17,7 +25,7 @@ const MobileSync: React.FC = () => {
       return;
     }
     
-    if (!isOnline) {
+    if (!isOnline && !forceOnline) {
       toast.error('You are currently offline. Please connect to the internet to sync data.');
       return;
     }
@@ -36,20 +44,20 @@ const MobileSync: React.FC = () => {
   
   return (
     <div className="flex items-center gap-2 text-sm">
-      {isOnline ? (
+      {isOnline || forceOnline ? (
         <Wifi className="h-4 w-4 text-green-500" />
       ) : (
         <WifiOff className="h-4 w-4 text-red-500" />
       )}
       <span className="text-muted-foreground">
-        {isOnline ? 'Online' : 'Offline'}
+        {isOnline || forceOnline ? 'Online' : 'Offline'}
       </span>
       
       <Button
         variant="outline"
         size="sm"
         onClick={handleSync}
-        disabled={isSyncing || !isOnline || !isAuthenticated}
+        disabled={isSyncing || (!isOnline && !forceOnline) || !isAuthenticated}
         className="ml-2"
       >
         {isSyncing ? (

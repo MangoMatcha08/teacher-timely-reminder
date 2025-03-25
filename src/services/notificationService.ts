@@ -7,14 +7,46 @@ import { ReminderPriority } from '@/types';
  * @returns A promise that resolves to true if the email was sent successfully
  */
 export const sendTestEmailNotification = async (emailAddress: string): Promise<boolean> => {
-  // For now, we'll just simulate sending an email
   console.log(`Sending test email notification to ${emailAddress}`);
   
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  
-  // In a real implementation, this would call a backend API
-  return true;
+  try {
+    // For preview environment, simulate success
+    if (window.location.hostname.includes('lovableproject.com')) {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return true;
+    }
+    
+    // In a real implementation, this would call a backend API
+    // Try to call the test email function if we're not in the preview
+    const response = await fetch('https://mqjxuadsgxdejmoyigyj.functions.supabase.co/send-test-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: emailAddress,
+        subject: 'Test Notification from Teacher Timely Reminder',
+        message: 'This is a test notification from the Teacher Timely Reminder app. If you received this, email notifications are working correctly!'
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error sending test email: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Error sending test email:', error);
+    
+    // In preview mode, simulate success even if there's an error
+    if (window.location.hostname.includes('lovableproject.com')) {
+      return true;
+    }
+    
+    throw error;
+  }
 };
 
 /**

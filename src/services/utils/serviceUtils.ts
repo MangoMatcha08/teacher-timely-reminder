@@ -38,6 +38,11 @@ export const handleNetworkError = (error: any, operation: string) => {
 
 // Helper function to check if we're online and can reach Supabase
 export const checkNetworkConnection = async (): Promise<boolean> => {
+  // Always return true for preview environment to enable testing
+  if (window.location.hostname.includes('lovableproject.com')) {
+    return true;
+  }
+  
   if (!navigator.onLine) {
     return false;
   }

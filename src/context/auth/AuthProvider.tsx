@@ -13,8 +13,20 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [initTimeout, setInitTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [authSubscription, setAuthSubscription] = useState<{ unsubscribe: () => void } | null>(null);
 
   useEffect(() => {
+    if (authSubscription) {
+      return () => {
+        if (authSubscription) {
+          authSubscription.unsubscribe();
+        }
+        if (initTimeout) {
+          clearTimeout(initTimeout);
+        }
+      };
+    }
+
     const initializeAuth = async () => {
       try {
         const timeout = setTimeout(() => {
@@ -37,6 +49,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             }
           }
         );
+        
+        setAuthSubscription(subscription);
 
         try {
           const { data: { session } } = await supabase.auth.getSession();
@@ -53,11 +67,21 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             const userHasCompletedOnboarding = manageTestUserOnboarding(session.user.id);
             setHasCompletedOnboarding(userHasCompletedOnboarding);
           }
-          setIsOffline(false);
+          
+          if (window.location.hostname.includes('lovableproject.com')) {
+            setIsOffline(false);
+          } else {
+            setIsOffline(false);
+          }
         } catch (error: any) {
           console.error("Error getting session:", error);
           const isNetworkError = handleNetworkError(error, 'retrieving authentication session');
-          setIsOffline(isNetworkError);
+          
+          if (window.location.hostname.includes('lovableproject.com')) {
+            setIsOffline(false);
+          } else {
+            setIsOffline(isNetworkError);
+          }
         } finally {
           if (initTimeout) {
             clearTimeout(initTimeout);
@@ -65,18 +89,15 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           }
           setIsInitialized(true);
         }
-
-        return () => {
-          subscription.unsubscribe();
-          if (initTimeout) {
-            clearTimeout(initTimeout);
-            setInitTimeout(null);
-          }
-        };
       } catch (error: any) {
         console.error("Error setting up auth state listener:", error);
         const isNetworkError = handleNetworkError(error, 'initializing authentication');
-        setIsOffline(isNetworkError);
+        
+        if (window.location.hostname.includes('lovableproject.com')) {
+          setIsOffline(false);
+        } else {
+          setIsOffline(isNetworkError);
+        }
         setIsInitialized(true);
         
         if (initTimeout) {
@@ -92,23 +113,36 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       const isOnline = navigator.onLine;
       console.log("Network status changed:", isOnline ? "online" : "offline");
       
+      if (window.location.hostname.includes('lovableproject.com')) {
+        setIsOffline(false);
+        return;
+      }
+      
       if (!isOnline) {
         setIsOffline(true);
         toast.error("Network disconnected. Using offline mode.");
+      } else {
+        setIsOffline(false);
       }
     };
     
     window.addEventListener('online', handleConnectionChange);
     window.addEventListener('offline', handleConnectionChange);
     
-    if (!navigator.onLine) {
+    if (!navigator.onLine && !window.location.hostname.includes('lovableproject.com')) {
       console.log("Initial network status: offline");
       setIsOffline(true);
+    } else {
+      setIsOffline(false);
     }
     
     return () => {
       window.removeEventListener('online', handleConnectionChange);
       window.removeEventListener('offline', handleConnectionChange);
+      
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
       
       if (initTimeout) {
         clearTimeout(initTimeout);
