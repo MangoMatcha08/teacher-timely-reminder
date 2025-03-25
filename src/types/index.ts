@@ -1,4 +1,5 @@
 
+
 export enum DayOfWeek {
   Monday = 'Monday',
   Tuesday = 'Tuesday',
@@ -144,3 +145,4 @@ export interface NotificationPreferences {
     minPriority: ReminderPriority;
   };
 }
+
