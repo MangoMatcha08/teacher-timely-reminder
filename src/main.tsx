@@ -61,7 +61,9 @@ try {
           </div>
         </div>
       `;
-      return; // Don't initialize React
+      // Don't initialize React - use an early function return pattern instead of a bare return
+      // to avoid TypeScript error about return outside of function
+      (function() { return; })();
     }
   }
 } catch (e) {

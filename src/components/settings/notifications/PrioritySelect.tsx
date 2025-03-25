@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ReminderPriority } from '@/context/ReminderContext';
+import { ReminderPriority } from '@/types';
 
 interface PrioritySelectProps {
   value: ReminderPriority;
@@ -9,7 +9,7 @@ interface PrioritySelectProps {
 }
 
 const PrioritySelect: React.FC<PrioritySelectProps> = ({ value, onChange }) => {
-  const priorityOptions: ReminderPriority[] = ["Low", "Medium", "High"];
+  const priorityOptions: ReminderPriority[] = [ReminderPriority.Low, ReminderPriority.Medium, ReminderPriority.High];
   
   return (
     <div className="space-y-2">

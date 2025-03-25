@@ -5,6 +5,7 @@ import { useReminders, NotificationPreferences } from '@/context/ReminderContext
 import { Bell, CheckCircle2 } from 'lucide-react';
 import Button from '@/components/shared/Button';
 import { toast } from 'sonner';
+import { ReminderPriority } from '@/types';
 
 import EmailNotification from './EmailNotification';
 import PushNotification from './PushNotification';
@@ -21,16 +22,16 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onSave }) =
     email: {
       enabled: true,
       address: "zhom08@gmail.com",
-      minPriority: "Medium" as const
+      minPriority: ReminderPriority.Medium
     },
     push: {
       enabled: false,
-      minPriority: "High" as const
+      minPriority: ReminderPriority.High
     },
     text: {
       enabled: false,
       phoneNumber: "",
-      minPriority: "High" as const
+      minPriority: ReminderPriority.High
     }
   };
   
