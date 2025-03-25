@@ -34,19 +34,21 @@ export interface Term {
 export interface Period {
   id: string;
   name: string;
-  startTime: string;
-  endTime: string;
+  startTime?: string;
+  endTime?: string;
   subject?: string;
   location?: string;
+  schedules: PeriodSchedule[];
   schedule?: PeriodSchedule[];
-  schedules?: PeriodSchedule[];
   isPrepPeriod?: boolean;
 }
 
 export interface PeriodSchedule {
-  dayCode: string; // e.g., 'M', 'T', 'W', etc.
-  enabled: boolean;
-  dayOfWeek?: string;
+  dayOfWeek: DayOfWeek;
+  dayCode?: string;
+  enabled?: boolean;
+  startTime: string;
+  endTime: string;
 }
 
 export interface Reminder {
@@ -68,6 +70,7 @@ export interface Reminder {
   days?: DayOfWeek[];
   notes?: string;
   termId?: string;
+  isPastDue?: boolean;
 }
 
 export enum ReminderTiming {
@@ -93,7 +96,8 @@ export enum ReminderType {
   Email = 'Email',
   TalkToStudent = 'Talk to Student',
   PrepareMaterials = 'Prepare Materials',
-  Grade = 'Grade'
+  Grade = 'Grade',
+  _none = '_none'
 }
 
 export enum ReminderPriority {

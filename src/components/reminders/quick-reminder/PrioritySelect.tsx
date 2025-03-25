@@ -2,7 +2,7 @@
 import React from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
-import { ReminderPriority } from "@/context/ReminderContext";
+import { ReminderPriority } from "@/types";
 import { getPriorityIcon } from "./PriorityIcons";
 import {
   Select,
@@ -40,19 +40,19 @@ const PrioritySelect: React.FC = () => {
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Low">
+              <SelectItem value={ReminderPriority.Low}>
                 <div className="flex items-center gap-2">
                   <ArrowDown className="h-4 w-4 text-green-500" />
                   <span>Low</span>
                 </div>
               </SelectItem>
-              <SelectItem value="Medium">
+              <SelectItem value={ReminderPriority.Medium}>
                 <div className="flex items-center gap-2">
                   <Minus className="h-4 w-4 text-amber-500" />
                   <span>Medium</span>
                 </div>
               </SelectItem>
-              <SelectItem value="High">
+              <SelectItem value={ReminderPriority.High}>
                 <div className="flex items-center gap-2">
                   <ArrowUp className="h-4 w-4 text-red-500" />
                   <span>High</span>

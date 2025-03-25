@@ -1,7 +1,5 @@
 
-import { Period as ContextPeriod, Reminder as ContextReminder, SchoolSetup as ContextSchoolSetup } from "@/context/ReminderContext";
+import { Period, Reminder, SchoolSetup } from "@/types";
 
 // Export the types from the context directly to avoid duplication and type mismatches
-export type Period = ContextPeriod;
-export type Reminder = ContextReminder;
-export type SchoolSetup = ContextSchoolSetup;
+export type { Period, Reminder, SchoolSetup };

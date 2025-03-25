@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Reminder, ReminderPriority, ReminderType, ReminderTiming, DayOfWeek, RecurrencePattern } from '@/context/ReminderContext';
+import { Reminder, ReminderPriority, ReminderType, ReminderTiming, DayOfWeek, RecurrencePattern } from '@/types';
 import { handleNetworkError } from './utils/serviceUtils';
 import { getMockReminders } from './mocks/mockData';
 
@@ -39,6 +39,8 @@ export const parseReminderFromStorage = (data: any): Reminder => {
     termId: data.term_id,
     dueDate: data.due_date,
     createdAt: new Date(data.created_at),
+    updatedAt: new Date(data.created_at),
+    userId: data.user_id,
     isPastDue: false // we'll calculate this elsewhere
   };
 };

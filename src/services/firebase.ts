@@ -10,10 +10,9 @@ export {
   deleteReminder
 } from './reminderService';
 
-// Re-export everything from schoolSetupService
+// Re-export from schoolSetupService
 export {
-  getSchoolSetup,
-  saveSchoolSetup
+  schoolSetupService
 } from './schoolSetupService';
 
 // Note: Mock data functionality is now in './mocks/mockData.ts'

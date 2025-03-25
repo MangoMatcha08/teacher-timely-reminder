@@ -1,9 +1,12 @@
-import { DayOfWeek, Period, PeriodSchedule, Term } from "@/context/ReminderContext";
+
+import { DayOfWeek, Period, PeriodSchedule, Term } from "@/types";
 
 export const createInitialSchedule = (day: DayOfWeek, startTime = "9:00 AM", endTime = "9:50 AM"): PeriodSchedule => ({
   dayOfWeek: day,
   startTime,
   endTime,
+  enabled: true,
+  dayCode: day
 });
 
 export const createDefaultTerm = (schoolYear: string, termType: string, termName: string): Term => {

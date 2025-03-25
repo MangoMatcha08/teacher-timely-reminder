@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import { ReminderTiming } from "@/context/ReminderContext";
+import { ReminderTiming } from "@/types";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -18,9 +18,9 @@ const TimingSelect: React.FC = () => {
   } = useFormContext();
   
   const reminderTimings: ReminderTiming[] = [
-    "Before School",
-    "After School",
-    "During Period"
+    ReminderTiming.BeforeSchool,
+    ReminderTiming.AfterSchool,
+    ReminderTiming.DuringPeriod
   ];
 
   return (

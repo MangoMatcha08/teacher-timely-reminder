@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { ReminderPriority } from '@/context/ReminderContext';
+import { ReminderPriority } from '@/types';
 
 export interface NotificationTypeProps {
   isEnabled: boolean;

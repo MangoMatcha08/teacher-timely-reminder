@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { DayOfWeek, Period } from "@/context/ReminderContext";
+import { DayOfWeek, Period } from "@/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import TimeInput from "@/components/shared/TimeInput";
 import { ChevronDown, Calendar, Clock, Coffee } from "lucide-react";
@@ -35,11 +35,11 @@ const ScheduleSetup: React.FC<ScheduleSetupProps> = ({
   applyScheduleToAllDays
 }) => {
   const days: { label: string; value: DayOfWeek }[] = [
-    { label: "M", value: "M" },
-    { label: "T", value: "T" },
-    { label: "W", value: "W" },
-    { label: "Th", value: "Th" },
-    { label: "F", value: "F" },
+    { label: "M", value: DayOfWeek.Monday },
+    { label: "T", value: DayOfWeek.Tuesday },
+    { label: "W", value: DayOfWeek.Wednesday },
+    { label: "Th", value: DayOfWeek.Thursday },
+    { label: "F", value: DayOfWeek.Friday },
   ];
   
   const [dayCustomScheduleDialogOpen, setDayCustomScheduleDialogOpen] = useState(false);
@@ -139,11 +139,15 @@ const ScheduleSetup: React.FC<ScheduleSetupProps> = ({
             
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {selectedDays.map(day => {
-                const dayLabel = days.find(d => d.value === day)?.label;
-                const dayName = dayLabel === 'M' ? 'Monday' : 
-                                dayLabel === 'T' ? 'Tuesday' : 
-                                dayLabel === 'W' ? 'Wednesday' : 
-                                dayLabel === 'Th' ? 'Thursday' : 'Friday';
+                const dayLabel = day === DayOfWeek.Monday ? 'M' : 
+                                day === DayOfWeek.Tuesday ? 'T' : 
+                                day === DayOfWeek.Wednesday ? 'W' : 
+                                day === DayOfWeek.Thursday ? 'Th' : 'F';
+                
+                const dayName = day === DayOfWeek.Monday ? 'Monday' : 
+                                day === DayOfWeek.Tuesday ? 'Tuesday' : 
+                                day === DayOfWeek.Wednesday ? 'Wednesday' : 
+                                day === DayOfWeek.Thursday ? 'Thursday' : 'Friday';
                 
                 return (
                   <Button
@@ -179,10 +183,10 @@ const ScheduleSetup: React.FC<ScheduleSetupProps> = ({
           <DialogHeader>
             <DialogTitle>
               {editingDay && `Customize ${
-                editingDay === 'M' ? 'Monday' : 
-                editingDay === 'T' ? 'Tuesday' : 
-                editingDay === 'W' ? 'Wednesday' : 
-                editingDay === 'Th' ? 'Thursday' : 'Friday'
+                editingDay === DayOfWeek.Monday ? 'Monday' : 
+                editingDay === DayOfWeek.Tuesday ? 'Tuesday' : 
+                editingDay === DayOfWeek.Wednesday ? 'Wednesday' : 
+                editingDay === DayOfWeek.Thursday ? 'Thursday' : 'Friday'
               } Schedule`}
             </DialogTitle>
           </DialogHeader>

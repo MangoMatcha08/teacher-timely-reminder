@@ -1,5 +1,5 @@
 
-import { DayOfWeek } from '@/context/ReminderContext';
+import { DayOfWeek } from '@/types';
 
 // Create a utility function for getting user display name
 export const getUserDisplayName = (user: any): string => {
@@ -13,9 +13,9 @@ export const getUserDisplayName = (user: any): string => {
 
 // Helper to get current day code
 export const getCurrentDayCode = (): DayOfWeek => {
-  const days: DayOfWeek[] = ["M", "T", "W", "Th", "F"];
+  const days: DayOfWeek[] = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday];
   const dayIndex = new Date().getDay() - 1; // 0 = Sunday, so -1 gives Monday as 0
-  return dayIndex >= 0 && dayIndex < 5 ? days[dayIndex] : "M"; // Default to Monday if weekend
+  return dayIndex >= 0 && dayIndex < 5 ? days[dayIndex] : DayOfWeek.Monday; // Default to Monday if weekend
 };
 
 // Helper to organize reminders by period

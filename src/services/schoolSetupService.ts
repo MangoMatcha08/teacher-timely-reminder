@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { SchoolSetup } from '@/types';
+import { SchoolSetup, DayOfWeek } from '@/types';
 import { toast } from 'sonner';
 
 class SchoolSetupService {
@@ -27,10 +27,11 @@ class SchoolSetupService {
             startTime: '08:00',
             endTime: '08:50',
             subject: 'Math',
-            location: 'Room 101'
+            location: 'Room 101',
+            schedules: []
           }
         ],
-        days: ['M', 'T', 'W', 'Th', 'F'],
+        days: [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday],
         categories: ['Homework', 'Exam', 'Project']
       };
     } catch (error) {
