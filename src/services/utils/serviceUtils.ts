@@ -12,7 +12,23 @@ export type Json =
 
 // Helper function to check if we're in the preview environment
 export const isPreviewEnvironment = (): boolean => {
-  return window.location.hostname.includes('lovableproject.com');
+  // Check for lovableproject.com domains (Lovable preview environment)
+  if (window.location.hostname.includes('lovableproject.com')) {
+    return true;
+  }
+  
+  // Check for localhost 
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return true;
+  }
+  
+  // Check for other preview environments
+  if (window.location.hostname.includes('vercel.app') || 
+      window.location.hostname.includes('netlify.app')) {
+    return true;
+  }
+  
+  return false;
 };
 
 // Helper function to handle network errors

@@ -4,6 +4,7 @@ import { SchoolSetup, NotificationPreferences, Reminder, RecurrencePattern, Remi
 import { schoolSetupService } from '@/services/schoolSetupService';
 import { getUserReminders, saveReminder, updateReminder, deleteReminder as deleteReminderApi } from '@/services/reminderService';
 import { v4 as uuidv4 } from 'uuid';
+import { isPreviewEnvironment } from '@/services/utils/serviceUtils';
 
 interface ReminderContextType {
   schoolSetup: SchoolSetup | null;
@@ -33,7 +34,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [schoolSetup, setSchoolSetup] = useState<SchoolSetup | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine || isPreviewEnvironment());
   const [reminders, setReminders] = useState<Reminder[]>([]);
   
   // Mock data for demonstration
@@ -90,6 +91,13 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
   
   const syncWithCloud = async () => {
+    // If in preview environment, simulate successful sync
+    if (isPreviewEnvironment()) {
+      console.log("Preview environment - simulating cloud sync");
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate delay
+      return;
+    }
+    
     // Mock implementation
     console.log("Syncing with cloud...");
     return Promise.resolve();
@@ -126,6 +134,18 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     
     setReminders(prev => [...prev, newReminder]);
+    
+    // Special handling for preview environment
+    if (isPreviewEnvironment()) {
+      console.log("Creating reminder in preview mode:", newReminder);
+      
+      // Simulate successful saving
+      setTimeout(() => {
+        console.log("Reminder successfully saved in preview mode");
+      }, 500);
+      
+      return;
+    }
     
     // Here you would typically also save to backend
     try {
@@ -173,6 +193,12 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Effect to listen for online/offline events
   useEffect(() => {
+    // If in preview environment, always set as online
+    if (isPreviewEnvironment()) {
+      setIsOnline(true);
+      return;
+    }
+    
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     

@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Reminder, ReminderPriority, ReminderType, ReminderTiming, DayOfWeek, RecurrencePattern } from '@/types';
-import { handleNetworkError } from './utils/serviceUtils';
+import { handleNetworkError, isPreviewEnvironment } from './utils/serviceUtils';
 import { getMockReminders } from './mocks/mockData';
 
 // Helper function to convert Reminder types for Supabase
@@ -47,6 +47,12 @@ export const parseReminderFromStorage = (data: any): Reminder => {
 
 // Function to get user's reminders
 export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
+  // In preview mode, always return mock data
+  if (isPreviewEnvironment()) {
+    console.log("Preview environment - returning mock reminders");
+    return getMockReminders();
+  }
+  
   try {
     const { data, error } = await supabase
       .from('reminders')
@@ -57,7 +63,7 @@ export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
       // Check for network error and use fallback data if appropriate
       if (handleNetworkError(error, 'fetching reminders')) {
         // Return mock data in development environment
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === 'development' || isPreviewEnvironment()) {
           console.log("Using mock reminder data due to network error");
           return getMockReminders();
         }
@@ -78,7 +84,7 @@ export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
   } catch (error) {
     if (handleNetworkError(error, 'processing reminders')) {
       // Return mock data in development environment
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === 'development' || isPreviewEnvironment()) {
         console.log("Using mock reminder data due to network error");
         return getMockReminders();
       }
@@ -90,6 +96,16 @@ export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
 
 // Function to save a reminder
 export const saveReminder = async (reminder: Reminder, userId: string): Promise<void> => {
+  // In preview mode, just log and return success
+  if (isPreviewEnvironment()) {
+    console.log("Preview environment - simulating save reminder:", reminder);
+    // Email notification simulation for testing
+    if (reminder.priority === ReminderPriority.High || reminder.priority === 'High') {
+      console.log(`Email notification for "${reminder.title}" would be sent to zhom08@gmail.com`);
+    }
+    return;
+  }
+  
   try {
     const sanitizedReminder = sanitizeReminderForStorage(reminder);
     
@@ -104,7 +120,7 @@ export const saveReminder = async (reminder: Reminder, userId: string): Promise<
     if (error) {
       if (handleNetworkError(error, 'saving reminder')) {
         // For network errors in development, just pretend it worked
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === 'development' || isPreviewEnvironment()) {
           console.log("Pretending to save reminder due to network error");
           return;
         }
@@ -115,7 +131,7 @@ export const saveReminder = async (reminder: Reminder, userId: string): Promise<
   } catch (error) {
     if (handleNetworkError(error, 'processing save reminder')) {
       // For network errors in development, just pretend it worked
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === 'development' || isPreviewEnvironment()) {
         console.log("Pretending to save reminder due to network error");
         return;
       }
@@ -131,6 +147,12 @@ export const updateReminder = async (
   reminderData: Partial<Reminder>,
   userId: string
 ): Promise<void> => {
+  // In preview mode, just log and return success
+  if (isPreviewEnvironment()) {
+    console.log("Preview environment - simulating update reminder:", id, reminderData);
+    return;
+  }
+  
   try {
     // Convert the partial reminder data to Supabase column format
     const updateData: any = {};
@@ -167,6 +189,12 @@ export const updateReminder = async (
 
 // Function to delete a reminder
 export const deleteReminder = async (id: string, userId: string): Promise<void> => {
+  // In preview mode, just log and return success
+  if (isPreviewEnvironment()) {
+    console.log("Preview environment - simulating delete reminder:", id);
+    return;
+  }
+  
   try {
     const { error } = await supabase
       .from('reminders')

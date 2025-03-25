@@ -5,12 +5,18 @@ import { useAuth } from "@/context/auth";
 import CreateReminderComponent from "@/components/reminders/CreateReminder";
 import Layout from "@/components/shared/Layout";
 import { toast } from "sonner";
+import { isPreviewEnvironment } from "@/services/utils/serviceUtils";
 
 const CreateReminder = () => {
   const { isAuthenticated, isInitialized, hasCompletedOnboarding, isOffline } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
+    // Skip auth checks in preview environment to allow creating reminders
+    if (isPreviewEnvironment()) {
+      return;
+    }
+    
     if (isInitialized) {
       if (!isAuthenticated && !isOffline) {
         navigate("/auth");
@@ -22,7 +28,7 @@ const CreateReminder = () => {
     }
   }, [isAuthenticated, isInitialized, hasCompletedOnboarding, isOffline, navigate]);
   
-  if (!isInitialized) {
+  if (!isInitialized && !isPreviewEnvironment()) {
     // Show loading state
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -35,7 +41,8 @@ const CreateReminder = () => {
   }
   
   // We'll allow creating reminders in offline mode too
-  if (!isAuthenticated && !isOffline) {
+  // And always allow in preview environment
+  if (!isAuthenticated && !isOffline && !isPreviewEnvironment()) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center max-w-md text-center">

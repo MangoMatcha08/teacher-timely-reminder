@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,23 +29,23 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
     const initializeAuth = async () => {
       try {
-        // For preview environment, use a shorter timeout
-        const timeoutDuration = isPreviewEnvironment() ? 2000 : 5000;
+        // For preview environment, use a shorter timeout and just create a test user immediately
+        if (isPreviewEnvironment()) {
+          console.log("Preview environment detected - creating test user immediately");
+          handleTestAccountLogin().then(() => {
+            setIsInitialized(true);
+            setIsOffline(false);
+          });
+          return;
+        }
+        
+        const timeoutDuration = 5000;
         
         const timeout = setTimeout(() => {
           console.log("Auth initialization timed out - switching to offline mode");
-          // In preview mode, create a test user automatically
-          if (isPreviewEnvironment()) {
-            console.log("Preview environment detected - creating test user");
-            handleTestAccountLogin().then(() => {
-              setIsInitialized(true);
-              setIsOffline(false);
-            });
-          } else {
-            setIsOffline(true);
-            setIsInitialized(true);
-            toast.error("Connection timeout. Using offline mode.");
-          }
+          setIsOffline(true);
+          setIsInitialized(true);
+          toast.error("Connection timeout. Using offline mode.");
         }, timeoutDuration);
         
         setInitTimeout(timeout);
@@ -85,41 +84,20 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         } catch (error: any) {
           console.error("Error getting session:", error);
           const isNetworkError = handleNetworkError(error, 'retrieving authentication session');
-          
-          if (isPreviewEnvironment()) {
-            console.log("Preview environment detected - switching to test user mode");
-            setIsOffline(false);
-            // Auto-login with test account in preview
-            handleTestAccountLogin().then(() => {
-              setIsInitialized(true);
-            });
-          } else {
-            setIsOffline(isNetworkError);
-          }
+          setIsOffline(isNetworkError);
         } finally {
           if (initTimeout) {
             clearTimeout(initTimeout);
             setInitTimeout(null);
           }
           
-          if (!isPreviewEnvironment() || isInitialized) {
-            setIsInitialized(true);
-          }
+          setIsInitialized(true);
         }
       } catch (error: any) {
         console.error("Error setting up auth state listener:", error);
         const isNetworkError = handleNetworkError(error, 'initializing authentication');
-        
-        if (isPreviewEnvironment()) {
-          setIsOffline(false);
-          // Auto-login with test account in preview
-          handleTestAccountLogin().then(() => {
-            setIsInitialized(true);
-          });
-        } else {
-          setIsOffline(isNetworkError);
-          setIsInitialized(true);
-        }
+        setIsOffline(isNetworkError);
+        setIsInitialized(true);
         
         if (initTimeout) {
           clearTimeout(initTimeout);
@@ -350,7 +328,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         isAuthenticated: !!user,
         isInitialized,
         hasCompletedOnboarding,
-        isOffline,
+        isOffline: isPreviewEnvironment() ? false : isOffline,
         login: handleLogin,
         register: handleRegister,
         loginWithGoogle: handleGoogleLogin,

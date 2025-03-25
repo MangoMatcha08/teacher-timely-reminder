@@ -15,8 +15,8 @@ const MobileSync: React.FC = () => {
   
   // Force online mode in preview environment
   useEffect(() => {
-    // Always set forceOnline to true for preview environments
     if (isPreviewEnvironment()) {
+      console.log("Preview environment detected - forcing online mode");
       setForceOnline(true);
     }
   }, []);
