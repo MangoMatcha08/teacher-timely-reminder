@@ -3,29 +3,12 @@ import React from "react";
 import QuickCreateReminder from "@/components/reminders/QuickCreateReminder";
 
 interface QuickReminderCreatorProps {
-  onComplete?: () => void;
-  onClose?: () => void;
-  isOpen?: boolean;
+  onComplete: () => void;
+  onClose: () => void;
 }
 
-const QuickReminderCreator: React.FC<QuickReminderCreatorProps> = ({ 
-  onComplete = () => {}, 
-  onClose = () => {},
-  isOpen = false
-}) => {
-  const handleClose = () => {
-    onClose();
-  };
-  
-  const handleComplete = () => {
-    onComplete();
-  };
-  
-  if (!isOpen) {
-    return null;
-  }
-  
-  return <QuickCreateReminder onClose={handleClose} onComplete={handleComplete} />;
+const QuickReminderCreator: React.FC<QuickReminderCreatorProps> = ({ onComplete, onClose }) => {
+  return <QuickCreateReminder onClose={onClose} />;
 };
 
 export default QuickReminderCreator;

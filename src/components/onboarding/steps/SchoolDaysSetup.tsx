@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DayOfWeek } from "@/types";
+import { DayOfWeek } from "@/context/ReminderContext";
 import { cn } from "@/lib/utils";
 
 interface SchoolDaysSetupProps {
@@ -13,11 +13,11 @@ const SchoolDaysSetup: React.FC<SchoolDaysSetupProps> = ({
   toggleDay
 }) => {
   const days: { label: string; value: DayOfWeek }[] = [
-    { label: "M", value: DayOfWeek.Monday },
-    { label: "T", value: DayOfWeek.Tuesday },
-    { label: "W", value: DayOfWeek.Wednesday },
-    { label: "Th", value: DayOfWeek.Thursday },
-    { label: "F", value: DayOfWeek.Friday },
+    { label: "M", value: "M" },
+    { label: "T", value: "T" },
+    { label: "W", value: "W" },
+    { label: "Th", value: "Th" },
+    { label: "F", value: "F" },
   ];
 
   return (

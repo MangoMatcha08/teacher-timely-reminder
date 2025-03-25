@@ -2,27 +2,26 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/shared/Layout";
-import { useAuth } from "@/context/auth";
+import { useAuth } from "@/context/AuthContext";
 import { useReminders } from "@/context/ReminderContext";
-import ScheduleHeader from "@/components/schedule/ScheduleHeader";
-import ScheduleFilters from "@/components/schedule/ScheduleFilters";
-import ReminderCardList from "@/components/schedule/ReminderCardList";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Calendar, ListChecks, CalendarDays } from "lucide-react";
-import { format, addDays, startOfWeek } from "date-fns";
-import { useMobileView } from "@/hooks/use-mobile-view";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/shared/Card";
+import Button from "@/components/shared/Button";
+import { Plus, Calendar } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 const Schedule = () => {
   const { isAuthenticated, isInitialized, hasCompletedOnboarding } = useAuth();
   const { reminders, schoolSetup } = useReminders();
   const navigate = useNavigate();
-  const { isMobile } = useMobileView();
   
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [view, setView] = useState<"list" | "today" | "week">("today");
-  const [currentDate] = useState(new Date());
   
   useEffect(() => {
     if (isInitialized) {
@@ -73,33 +72,68 @@ const Schedule = () => {
     return matches;
   });
   
-  const handleViewChange = (newView: string) => {
-    setView(newView as "list" | "today" | "week");
-  };
-  
-  // Generate an array of the week days for display
-  const weekDays = () => {
-    const startDay = startOfWeek(currentDate, { weekStartsOn: 1 }); // Start from Monday
-    return Array.from({ length: 5 }, (_, i) => addDays(startDay, i));
-  };
-  
-  // Get day code from date (M, T, W, Th, F)
-  const getDayCodeFromDate = (date: Date) => {
-    const dayMap: Record<number, string> = {
-      1: "M",
-      2: "T", 
-      3: "W",
-      4: "Th",
-      5: "F"
-    };
-    return dayMap[date.getDay()] || null;
-  };
-  
-  // Format day with date for display
-  const formatDayWithDate = (date: Date) => {
-    const dayCode = getDayCodeFromDate(date);
-    const dateStr = format(date, "MMM d");
-    return `${dayCode} - ${dateStr}`;
+  const renderReminders = () => {
+    if (filteredReminders.length === 0) {
+      return (
+        <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
+          <p className="text-muted-foreground mb-4">No reminders match your filters</p>
+          <Button onClick={() => navigate("/create-reminder")} className="h-8 text-sm">
+            <Plus className="h-3 w-3 mr-1" />
+            Create Reminder
+          </Button>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {filteredReminders.map(reminder => (
+          <Card key={reminder.id} className="overflow-hidden">
+            <CardHeader className="py-2 px-3 bg-gray-50 border-b">
+              <CardTitle className="text-sm font-medium">{reminder.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 text-xs">
+              <div className="flex flex-col space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Type:</span>
+                  <span>{reminder.type}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Timing:</span>
+                  <span>{reminder.timing}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Days:</span>
+                  <span>{reminder.days.join(", ")}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Period:</span>
+                  <span>
+                    {schoolSetup?.periods.find(p => p.id === reminder.periodId)?.name || "N/A"}
+                  </span>
+                </div>
+                {reminder.category && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Category:</span>
+                    <span>{reminder.category}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Priority:</span>
+                  <span>{reminder.priority}</span>
+                </div>
+                {reminder.notes && (
+                  <div className="mt-2 pt-2 border-t">
+                    <p className="text-muted-foreground mb-1">Notes:</p>
+                    <p className="text-xs">{reminder.notes}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   };
   
   if (!isInitialized || !isAuthenticated || !hasCompletedOnboarding) {
@@ -116,187 +150,106 @@ const Schedule = () => {
   return (
     <Layout pageTitle="Schedule">
       <div className="flex flex-col space-y-4">
-        <ScheduleHeader title="Class Schedule" date={format(currentDate, "EEEE, MMMM d, yyyy")} />
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl font-bold">Class Schedule</h1>
+          <Button 
+            onClick={() => navigate("/create-reminder")}
+            className="h-8 text-sm"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            New Reminder
+          </Button>
+        </div>
         
-        <Tabs defaultValue="today" className="w-full" onValueChange={handleViewChange}>
-          <TabsList className={`w-full ${isMobile ? 'grid grid-cols-3' : 'flex'} md:w-auto bg-gray-100 mb-4 rounded-xl p-1`}>
-            <TabsTrigger value="today" className="flex items-center gap-1.5 rounded-lg">
-              <ListChecks className="h-4 w-4" />
-              <span>{isMobile ? "Today" : "Today's Schedule"}</span>
-            </TabsTrigger>
-            <TabsTrigger value="week" className="flex items-center gap-1.5 rounded-lg">
-              <Calendar className="h-4 w-4" />
-              <span>{isMobile ? "Week" : "Weekly Overview"}</span>
-            </TabsTrigger>
-            <TabsTrigger value="list" className="flex items-center gap-1.5 rounded-lg">
-              <CalendarDays className="h-4 w-4" />
-              <span>{isMobile ? "All" : "All Reminders"}</span>
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex flex-wrap gap-2 items-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-8 text-sm">
+                Day <span className="ml-1 hidden sm:inline">
+                  {selectedDay ? `(${selectedDay})` : ""}
+                </span>
+                <Calendar className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              {schoolSetup?.schoolDays.map((day) => (
+                <DropdownMenuItem
+                  key={day}
+                  className="w-full text-left px-3 py-2 text-sm"
+                  onClick={() => setSelectedDay(day)}
+                >
+                  {day}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem
+                className="w-full text-left px-3 py-2 text-sm"
+                onClick={() => setSelectedDay(null)}
+              >
+                All Days
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
-          <TabsContent value="today" className="mt-0">
-            <div className="p-4 bg-teacher-lightBlue rounded-lg border mb-4">
-              <h2 className="text-lg font-medium mb-2">Today's Schedule</h2>
-              <p className="text-sm text-gray-600">
-                {format(currentDate, "EEEE, MMMM d")} - View all your periods and reminders for today.
-              </p>
-            </div>
-            
-            <div className="space-y-3">
-              {schoolSetup?.periods
-                .filter(period => {
-                  const todayCode = getCurrentDayCode();
-                  // This is a simplified check - in a real app, we'd check the period's schedule
-                  return todayCode !== null;
-                })
-                .map(period => {
-                  const scheduleForToday = period.schedules?.find(s => s.dayOfWeek === getCurrentDayCode());
-                  const startTime = scheduleForToday?.startTime || "";
-                  const endTime = scheduleForToday?.endTime || "";
-                  
-                  const periodReminders = reminders.filter(r => 
-                    r.periodId === period.id && 
-                    r.days.includes(getCurrentDayCode() as any) &&
-                    !r.completed
-                  );
-                  
-                  return (
-                    <div key={period.id} className="p-4 bg-white rounded-lg border hover:border-teacher-blue transition-colors shadow-sm">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium flex items-center gap-2">
-                            {period.name}
-                            {period.isPrepPeriod && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                Prep
-                              </span>
-                            )}
-                          </h3>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {startTime} - {endTime}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {periodReminders.length > 0 ? (
-                        <div className="mt-3 space-y-2">
-                          <h4 className="text-xs font-medium text-gray-500">Reminders:</h4>
-                          {periodReminders.map(reminder => (
-                            <div 
-                              key={reminder.id} 
-                              className="flex items-start gap-2 p-2 bg-gray-50 rounded-md"
-                            >
-                              <div>
-                                <div className="text-sm font-medium">{reminder.title}</div>
-                                {reminder.notes && (
-                                  <div className="text-xs text-gray-500 mt-1">{reminder.notes}</div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="mt-3 text-xs text-gray-400">No reminders for this period</div>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-          </TabsContent>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-8 text-sm">
+                Period <span className="ml-1 hidden sm:inline">
+                  {selectedPeriod ? `(${schoolSetup?.periods.find(p => p.id === selectedPeriod)?.name})` : ""}
+                </span>
+                <Calendar className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              {schoolSetup?.periods.map((period) => (
+                <DropdownMenuItem
+                  key={period.id}
+                  className="w-full text-left px-3 py-2 text-sm"
+                  onClick={() => setSelectedPeriod(period.id)}
+                >
+                  {period.name}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem
+                className="w-full text-left px-3 py-2 text-sm"
+                onClick={() => setSelectedPeriod(null)}
+              >
+                All Periods
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
-          <TabsContent value="week" className="mt-0">
-            <div className="p-4 bg-teacher-lightIndigo rounded-lg border mb-4">
-              <h2 className="text-lg font-medium mb-2">Weekly Overview</h2>
-              <p className="text-sm text-gray-600">
-                Week of {format(startOfWeek(currentDate, { weekStartsOn: 1 }), "MMMM d")} to {format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 4), "MMMM d, yyyy")}
-              </p>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <div className={`${isMobile ? 'min-w-[600px]' : 'min-w-[800px]'}`}>
-                <div className="grid grid-cols-6 border rounded-t-lg overflow-hidden">
-                  <div className="p-3 font-medium text-sm text-center bg-gray-50 border-r">
-                    Period
-                  </div>
-                  {weekDays().map(day => (
-                    <div key={format(day, 'yyyy-MM-dd')} className="p-3 font-medium text-sm text-center bg-gray-50 border-r last:border-r-0">
-                      <div>{format(day, 'EEE')}</div>
-                      <div className="text-xs text-gray-500">{format(day, 'MMM d')}</div>
-                    </div>
-                  ))}
-                </div>
-                
-                {schoolSetup?.periods.map((period, index) => (
-                  <div 
-                    key={period.id} 
-                    className={`grid grid-cols-6 border-b border-x last:rounded-b-lg ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
-                  >
-                    <div className="p-3 border-r text-sm">
-                      <div className="font-medium flex items-center gap-1">
-                        {period.name}
-                        {period.isPrepPeriod && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Prep
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {period.schedules?.[0]?.startTime || ""} - {period.schedules?.[0]?.endTime || ""}
-                      </div>
-                    </div>
-                    
-                    {weekDays().map(day => {
-                      const dayCode = getDayCodeFromDate(day) as any;
-                      const dayReminders = reminders.filter(r => 
-                        r.periodId === period.id && 
-                        r.days.includes(dayCode) &&
-                        !r.completed
-                      );
-                      
-                      return (
-                        <div key={`${period.id}-${format(day, 'yyyy-MM-dd')}`} className="p-3 border-r last:border-r-0">
-                          {dayReminders.length > 0 ? (
-                            <div className="space-y-1">
-                              {dayReminders.map(reminder => (
-                                <div key={reminder.id} className="text-xs p-1 bg-teacher-blue/10 rounded">
-                                  {reminder.title}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-xs text-gray-400">
-                              -
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="list" className="mt-0">
-            <ScheduleFilters 
-              selectedDay={selectedDay}
-              setSelectedDay={setSelectedDay}
-              selectedPeriod={selectedPeriod}
-              setSelectedPeriod={setSelectedPeriod}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              schoolSetup={schoolSetup}
-              currentDate={currentDate}
-            />
-            
-            <div className="mt-3">
-              <ReminderCardList 
-                reminders={filteredReminders}
-                schoolSetup={schoolSetup}
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-8 text-sm">
+                Category <span className="ml-1 hidden sm:inline">
+                  {selectedCategory ? `(${selectedCategory})` : ""}
+                </span>
+                <Calendar className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              {schoolSetup?.categories.map((category) => (
+                <DropdownMenuItem
+                  key={category}
+                  className="w-full text-left px-3 py-2 text-sm"
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem
+                className="w-full text-left px-3 py-2 text-sm"
+                onClick={() => setSelectedCategory(null)}
+              >
+                All Categories
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
+        <div className="mt-3">
+          {renderReminders()}
+        </div>
       </div>
     </Layout>
   );

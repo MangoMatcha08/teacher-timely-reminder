@@ -54,7 +54,6 @@ interface OnboardingContextType {
   addCategory: () => void;
   updateCategory: (index: number, value: string) => void;
   removeCategory: (index: number) => void;
-  togglePrepPeriod: (id: string) => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -335,7 +334,9 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const period = periods.find(p => p.id === periodId);
     if (!period) return;
     
-    if (!isCustom) {
+    if (isCustom) {
+      return;
+    } else {
       const firstDay = period.schedules.find(s => s.dayOfWeek !== day)?.dayOfWeek;
       if (!firstDay) return;
       
@@ -394,18 +395,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
   
-  const togglePrepPeriod = (id: string) => {
-    setPeriods(prev => prev.map(period => {
-      if (period.id === id) {
-        return {
-          ...period,
-          isPrepPeriod: !period.isPrepPeriod
-        };
-      }
-      return period;
-    }));
-  };
-  
   const value: OnboardingContextType = {
     currentStep,
     setCurrentStep,
@@ -455,8 +444,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     hasCustomSchedule,
     addCategory,
     updateCategory,
-    removeCategory,
-    togglePrepPeriod
+    removeCategory
   };
   
   return (

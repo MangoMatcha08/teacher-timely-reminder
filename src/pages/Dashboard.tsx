@@ -1,8 +1,8 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/auth";
-import { Dashboard as DashboardComponent } from "@/components/dashboard/Dashboard";
+import { useAuth } from "@/context/AuthContext";
+import DashboardComponent from "@/components/dashboard/Dashboard";
 import Layout from "@/components/shared/Layout";
 
 const Dashboard = () => {
@@ -25,7 +25,7 @@ const Dashboard = () => {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 rounded-full border-4 border-teacher-blue border-t-transparent animate-spin mb-4" />
-          <p className="text-muted-foreground">Loading your dashboard...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );

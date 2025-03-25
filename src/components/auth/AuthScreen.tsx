@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAuth } from "@/context/auth";
+import { useAuth } from "@/context/AuthContext";
 import Button from "@/components/shared/Button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/shared/Card";
 import { Input } from "@/components/ui/input";
@@ -22,7 +21,7 @@ type AuthFormData = z.infer<typeof authSchema>;
 const AuthScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
-  const { login, register, loginWithGoogle, loginWithTestAccount, resetOnboarding, isOffline } = useAuth();
+  const { login, register, loginWithGoogle, loginWithTestAccount, resetOnboarding } = useAuth();
   const navigate = useNavigate();
 
   const { 
@@ -43,14 +42,14 @@ const AuthScreen: React.FC = () => {
       
       if (isLoginMode) {
         await login(data.email, data.password);
-        navigate("/onboarding");
+        toast.success("Signed in successfully!");
       } else {
         await register(data.email, data.password);
-        navigate("/onboarding");
+        toast.success("Account created successfully!");
       }
+      navigate("/onboarding");
     } catch (error) {
-      // Error already displayed in toast from AuthContext
-      console.error("Auth form submission error:", error);
+      // Error is already displayed in a toast from AuthContext
     } finally {
       setIsLoading(false);
     }
@@ -60,10 +59,10 @@ const AuthScreen: React.FC = () => {
     try {
       setIsLoading(true);
       await loginWithGoogle();
-      // The redirect will happen automatically in Supabase OAuth
+      toast.success("Signed in with Google!");
+      navigate("/onboarding");
     } catch (error) {
-      // Error already displayed in toast from AuthContext
-      console.error("Google login error:", error);
+      // Error is already displayed in a toast from AuthContext
     } finally {
       setIsLoading(false);
     }
@@ -74,9 +73,9 @@ const AuthScreen: React.FC = () => {
       setIsLoading(true);
       // For now, just use the test account login
       await loginWithTestAccount();
+      toast.success("Signed in with Clever!");
       navigate("/dashboard");
     } catch (error) {
-      console.error("Clever login error:", error);
       toast.error("Failed to sign in with Clever. Please try again.");
     } finally {
       setIsLoading(false);
@@ -87,13 +86,11 @@ const AuthScreen: React.FC = () => {
     try {
       setIsLoading(true);
       await loginWithTestAccount();
-      
-      // Use a small delay to allow state to update
+      toast.success("Logged in with test account!");
       setTimeout(() => {
         navigate("/dashboard");
-      }, 100);
+      }, 500);
     } catch (error) {
-      console.error("Test account login error:", error);
       toast.error("Failed to sign in with test account. Please try again.");
     } finally {
       setIsLoading(false);
@@ -102,6 +99,7 @@ const AuthScreen: React.FC = () => {
 
   const handleResetOnboarding = () => {
     resetOnboarding();
+    toast.success("Onboarding data has been reset for testing!");
   };
 
   const toggleAuthMode = () => {
@@ -116,13 +114,6 @@ const AuthScreen: React.FC = () => {
           <p className="text-muted-foreground">
             {isLoginMode ? "Sign in to manage your classroom reminders" : "Create an account to get started"}
           </p>
-          {isOffline && (
-            <div className="mt-2 bg-amber-50 border border-amber-200 rounded-md p-3">
-              <p className="text-sm text-amber-700">
-                Network connection issues detected. You can still sign in with a test account.
-              </p>
-            </div>
-          )}
         </div>
 
         <Card className="animate-scale-in">
@@ -139,7 +130,7 @@ const AuthScreen: React.FC = () => {
                   placeholder="you@school.edu"
                   className={errors.email ? "border-destructive" : ""}
                   {...registerForm("email")}
-                  disabled={isLoading || isOffline}
+                  disabled={isLoading}
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-destructive">
@@ -156,7 +147,7 @@ const AuthScreen: React.FC = () => {
                   placeholder="••••••••"
                   className={errors.password ? "border-destructive" : ""}
                   {...registerForm("password")}
-                  disabled={isLoading || isOffline}
+                  disabled={isLoading}
                 />
                 {errors.password && (
                   <p className="mt-1 text-sm text-destructive">
@@ -170,7 +161,6 @@ const AuthScreen: React.FC = () => {
                 variant="primary"
                 className="w-full"
                 isLoading={isLoading}
-                disabled={isOffline}
               >
                 {isLoginMode ? "Sign In" : "Create Account"}
               </Button>
@@ -181,7 +171,6 @@ const AuthScreen: React.FC = () => {
                 type="button"
                 onClick={toggleAuthMode}
                 className="text-teacher-blue hover:underline text-sm"
-                disabled={isOffline}
               >
                 {isLoginMode 
                   ? "Don't have an account? Create one" 
@@ -206,7 +195,7 @@ const AuthScreen: React.FC = () => {
                     variant="outline"
                     className="w-full"
                     onClick={handleGoogleLogin}
-                    disabled={isLoading || isOffline}
+                    disabled={isLoading}
                   >
                     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                       <path

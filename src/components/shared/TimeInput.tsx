@@ -9,8 +9,7 @@ interface TimeInputProps {
   id?: string;
   className?: string;
   error?: string;
-  compact?: boolean;
-  disabled?: boolean;
+  compact?: boolean; // Added the missing compact property
 }
 
 const TimeInput: React.FC<TimeInputProps> = ({
@@ -20,8 +19,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
   id,
   className,
   error,
-  compact = false,
-  disabled = false,
+  compact = false, // Default to false
 }) => {
   const [hours, setHours] = useState("12");
   const [minutes, setMinutes] = useState("00");
@@ -57,8 +55,6 @@ const TimeInput: React.FC<TimeInputProps> = ({
 
   // Handle hours change
   const handleHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (disabled) return; // Don't update if disabled
-    
     let h = e.target.value.replace(/\D/g, "");
     
     // Handle empty input
@@ -78,27 +74,31 @@ const TimeInput: React.FC<TimeInputProps> = ({
     // Format to string
     h = num.toString();
     
+    // Auto-switch to PM for afternoon hours (12 should be PM)
+    if (num === 12 || (num >= 1 && num <= 5)) {
+      setPeriod("PM");
+    } else if (num >= 7 && num <= 11) {
+      setPeriod("AM");
+    }
+    
     setHours(h);
     updateTime(h, minutes, period);
   };
 
   // Handle minutes change
   const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (disabled) return; // Don't update if disabled
-    
-    let m = e.target.value.replace(/\D/g, "");
+    const m = e.target.value.replace(/\D/g, "");
     
     // Always update the internal state
     setMinutes(m);
     
-    // We'll validate on blur, for now just update the time
-    updateTime(hours, m || "00", period);
+    // Always update the parent component with the current value
+    // This ensures we can type new values after deleting
+    updateTime(hours, m, period);
   };
 
   // Handle minutes blur to format properly when focus leaves
   const handleMinutesBlur = () => {
-    if (disabled) return; // Don't update if disabled
-    
     // If minutes is empty or invalid when leaving the field, set it to "00"
     if (minutes === "" || isNaN(parseInt(minutes, 10))) {
       setMinutes("00");
@@ -118,8 +118,6 @@ const TimeInput: React.FC<TimeInputProps> = ({
 
   // Toggle AM/PM
   const togglePeriod = () => {
-    if (disabled) return; // Don't update if disabled
-    
     const newPeriod = period === "AM" ? "PM" : "AM";
     setPeriod(newPeriod);
     updateTime(hours, minutes, newPeriod);
@@ -128,7 +126,6 @@ const TimeInput: React.FC<TimeInputProps> = ({
   // If compact, adjust the styles and layout
   const inputClasses = compact ? "text-xs px-1 py-1 w-10" : "px-3 py-2 w-16";
   const containerClass = cn(className, compact ? "scale-90" : "");
-  const disabledClass = disabled ? "opacity-50 cursor-not-allowed" : "";
 
   return (
     <div className={containerClass}>
@@ -140,7 +137,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
           {label}
         </label>
       )}
-      <div className={`flex items-center ${disabledClass}`}>
+      <div className="flex items-center">
         <div className={`flex items-center justify-between rounded-l-lg border border-r-0 ${inputClasses}`}>
           <input
             id={id}
@@ -152,7 +149,6 @@ const TimeInput: React.FC<TimeInputProps> = ({
             value={hours}
             onChange={handleHoursChange}
             maxLength={2}
-            disabled={disabled}
           />
         </div>
         <div className="flex items-center justify-between border border-x-0 px-1 py-2">
@@ -169,7 +165,6 @@ const TimeInput: React.FC<TimeInputProps> = ({
             onChange={handleMinutesChange}
             onBlur={handleMinutesBlur}
             maxLength={2}
-            disabled={disabled}
           />
         </div>
         <button
@@ -180,10 +175,8 @@ const TimeInput: React.FC<TimeInputProps> = ({
             compact ? "px-2 py-1 h-[30px] w-12 text-xs" : "px-3 py-2 h-[42px] w-16",
             period === "AM"
               ? "bg-teacher-gray text-teacher-darkGray"
-              : "bg-teacher-blue text-white",
-            disabled && "opacity-50 cursor-not-allowed"
+              : "bg-teacher-blue text-white"
           )}
-          disabled={disabled}
         >
           {period}
         </button>

@@ -3,11 +3,10 @@ import React from 'react';
 import Button from "@/components/shared/Button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/auth";
+import { useAuth } from "@/context/AuthContext";
 import { useReminders } from "@/context/ReminderContext";
 import { createDefaultTerm } from './OnboardingUtils';
 import { useOnboarding } from './OnboardingContext';
-import { SchoolSetup, ReminderPriority } from '@/types';
 
 const OnboardingControls: React.FC = () => {
   const navigate = useNavigate();
@@ -95,49 +94,35 @@ const OnboardingControls: React.FC = () => {
         }
       }
       
-      // Final step - save the school setup
-      const userId = "current-user"; // In a real app, this would come from authentication
+      if (iepMeetingsEnabled && !categories.includes("IEP meetings")) {
+        setCategories([...categories, "IEP meetings"]);
+      }
       
-      const term = createDefaultTerm(termType, termName, schoolYear);
+      const defaultTerm = createDefaultTerm(schoolYear, termType, termName);
       
-      const schoolSetupData: SchoolSetup = {
-        userId,
-        schoolName: "My School", // This could be collected in an earlier step
-        schoolYear,
-        terms: [term],
-        periods,
-        days: selectedDays,
-        categories,
+      saveSchoolSetup({
+        termId: defaultTerm.id,
+        terms: [defaultTerm],
         schoolDays: selectedDays,
-        notificationPreferences: {
-          email: {
-            enabled: true,
-            address: "user@example.com", // This could be collected elsewhere
-            minPriority: ReminderPriority.Medium
-          },
-          push: {
-            enabled: false,
-            minPriority: ReminderPriority.High
-          },
-          text: {
-            enabled: false,
-            phoneNumber: "",
-            minPriority: ReminderPriority.High
-          }
+        periods,
+        schoolHours: {
+          startTime: schoolStart,
+          endTime: schoolEnd,
+          teacherArrivalTime: teacherArrival
+        },
+        categories: categories,
+        iepMeetings: {
+          enabled: iepMeetingsEnabled,
+          beforeSchool: iepBeforeSchool,
+          afterSchool: iepAfterSchool,
+          beforeSchoolTime: iepBeforeSchoolTime,
+          afterSchoolTime: iepAfterSchoolTime
         }
-      };
+      });
       
-      saveSchoolSetup(schoolSetupData, userId)
-        .then(() => {
-          toast.success("School setup saved successfully!");
-          setCompleteOnboarding();
-          navigate("/dashboard");
-        })
-        .catch(error => {
-          toast.error("Failed to save school setup");
-          console.error("Error saving school setup:", error);
-        });
-        
+      setCompleteOnboarding();
+      
+      navigate("/dashboard");
       return;
     }
     
@@ -147,28 +132,22 @@ const OnboardingControls: React.FC = () => {
   const goToPreviousStep = () => {
     if (currentStep === 0) {
       setShowExitConfirm(true);
-      return;
+    } else {
+      setCurrentStep(currentStep - 1);
     }
-    
-    setCurrentStep(currentStep - 1);
   };
-  
+
   return (
-    <div className="flex justify-between mt-8">
+    <div className="flex justify-between border-t p-6">
       <Button
+        type="button"
         variant="outline"
         onClick={goToPreviousStep}
-        className="px-4"
       >
-        {currentStep === 0 ? "Exit" : "Back"}
+        Back
       </Button>
-      
-      <Button
-        variant="primary"
-        onClick={goToNextStep}
-        className="px-6"
-      >
-        {currentStep === 5 ? "Finish" : "Next"}
+      <Button type="button" variant="primary" onClick={goToNextStep}>
+        {currentStep === 5 ? "Complete Setup" : "Next"}
       </Button>
     </div>
   );

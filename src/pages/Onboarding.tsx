@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/auth";
+import { useAuth } from "@/context/AuthContext";
 import OnboardingComponent from "@/components/onboarding/Onboarding";
 
 const Onboarding = () => {
