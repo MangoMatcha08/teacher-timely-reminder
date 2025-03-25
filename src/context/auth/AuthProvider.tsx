@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { handleNetworkError } from "@/services/utils/serviceUtils";
+import { handleNetworkError, isPreviewEnvironment } from "@/services/utils/serviceUtils";
 import AuthContext from "./AuthContext";
 import { manageTestUserOnboarding, createTestUser } from "./utils";
 
@@ -29,12 +30,24 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
     const initializeAuth = async () => {
       try {
+        // For preview environment, use a shorter timeout
+        const timeoutDuration = isPreviewEnvironment() ? 2000 : 5000;
+        
         const timeout = setTimeout(() => {
           console.log("Auth initialization timed out - switching to offline mode");
-          setIsOffline(true);
-          setIsInitialized(true);
-          toast.error("Connection timeout. Using offline mode.");
-        }, 5000);
+          // In preview mode, create a test user automatically
+          if (isPreviewEnvironment()) {
+            console.log("Preview environment detected - creating test user");
+            handleTestAccountLogin().then(() => {
+              setIsInitialized(true);
+              setIsOffline(false);
+            });
+          } else {
+            setIsOffline(true);
+            setIsInitialized(true);
+            toast.error("Connection timeout. Using offline mode.");
+          }
+        }, timeoutDuration);
         
         setInitTimeout(timeout);
         
@@ -68,17 +81,18 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             setHasCompletedOnboarding(userHasCompletedOnboarding);
           }
           
-          if (window.location.hostname.includes('lovableproject.com')) {
-            setIsOffline(false);
-          } else {
-            setIsOffline(false);
-          }
+          setIsOffline(false);
         } catch (error: any) {
           console.error("Error getting session:", error);
           const isNetworkError = handleNetworkError(error, 'retrieving authentication session');
           
-          if (window.location.hostname.includes('lovableproject.com')) {
+          if (isPreviewEnvironment()) {
+            console.log("Preview environment detected - switching to test user mode");
             setIsOffline(false);
+            // Auto-login with test account in preview
+            handleTestAccountLogin().then(() => {
+              setIsInitialized(true);
+            });
           } else {
             setIsOffline(isNetworkError);
           }
@@ -87,18 +101,25 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             clearTimeout(initTimeout);
             setInitTimeout(null);
           }
-          setIsInitialized(true);
+          
+          if (!isPreviewEnvironment() || isInitialized) {
+            setIsInitialized(true);
+          }
         }
       } catch (error: any) {
         console.error("Error setting up auth state listener:", error);
         const isNetworkError = handleNetworkError(error, 'initializing authentication');
         
-        if (window.location.hostname.includes('lovableproject.com')) {
+        if (isPreviewEnvironment()) {
           setIsOffline(false);
+          // Auto-login with test account in preview
+          handleTestAccountLogin().then(() => {
+            setIsInitialized(true);
+          });
         } else {
           setIsOffline(isNetworkError);
+          setIsInitialized(true);
         }
-        setIsInitialized(true);
         
         if (initTimeout) {
           clearTimeout(initTimeout);
@@ -113,7 +134,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       const isOnline = navigator.onLine;
       console.log("Network status changed:", isOnline ? "online" : "offline");
       
-      if (window.location.hostname.includes('lovableproject.com')) {
+      if (isPreviewEnvironment()) {
         setIsOffline(false);
         return;
       }
@@ -129,7 +150,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     window.addEventListener('online', handleConnectionChange);
     window.addEventListener('offline', handleConnectionChange);
     
-    if (!navigator.onLine && !window.location.hostname.includes('lovableproject.com')) {
+    if (!navigator.onLine && !isPreviewEnvironment()) {
       console.log("Initial network status: offline");
       setIsOffline(true);
     } else {

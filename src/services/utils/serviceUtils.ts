@@ -10,12 +10,18 @@ export type Json =
     | { [key: string]: Json | undefined }
     | Json[];
 
+// Helper function to check if we're in the preview environment
+export const isPreviewEnvironment = (): boolean => {
+  return window.location.hostname.includes('lovableproject.com');
+};
+
 // Helper function to handle network errors
 export const handleNetworkError = (error: any, operation: string) => {
   console.error(`Network error during ${operation}:`, error);
   
   // Always return false for network errors in preview environment
-  if (window.location.hostname.includes('lovableproject.com')) {
+  if (isPreviewEnvironment()) {
+    console.log(`In preview environment, simulating success for ${operation}`);
     return false;
   }
   
@@ -44,7 +50,8 @@ export const handleNetworkError = (error: any, operation: string) => {
 // Helper function to check if we're online and can reach Supabase
 export const checkNetworkConnection = async (): Promise<boolean> => {
   // Always return true for preview environment to enable testing
-  if (window.location.hostname.includes('lovableproject.com')) {
+  if (isPreviewEnvironment()) {
+    console.log("In preview environment, simulating online status");
     return true;
   }
   
@@ -80,7 +87,7 @@ export const createNetworkStatusListener = (
 ) => {
   const handleOnline = () => {
     // In preview, always say we're online
-    if (window.location.hostname.includes('lovableproject.com')) {
+    if (isPreviewEnvironment()) {
       onOnline();
       return;
     }
@@ -89,7 +96,7 @@ export const createNetworkStatusListener = (
   
   const handleOffline = () => {
     // In preview, ignore offline events
-    if (window.location.hostname.includes('lovableproject.com')) {
+    if (isPreviewEnvironment()) {
       return;
     }
     onOffline();
