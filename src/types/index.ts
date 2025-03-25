@@ -9,7 +9,7 @@ export enum DayOfWeek {
   Sunday = 'Sunday'
 }
 
-// Add string literal alternatives that match what's being used in the codebase
+// Used for code representations of days
 export type DayOfWeekCode = 'M' | 'T' | 'W' | 'Th' | 'F' | 'Sa' | 'Su';
 
 export interface SchoolSetup {
@@ -76,7 +76,7 @@ export interface Reminder {
   isPastDue?: boolean;
 }
 
-// Update enums to include the string literals being used in the code
+// Updated to include all string literals used in the codebase
 export enum ReminderTiming {
   BeforeClass = 'before-class',
   DuringClass = 'during-class',
