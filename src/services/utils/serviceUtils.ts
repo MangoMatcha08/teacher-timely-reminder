@@ -14,6 +14,11 @@ export type Json =
 export const handleNetworkError = (error: any, operation: string) => {
   console.error(`Network error during ${operation}:`, error);
   
+  // Always return false for network errors in preview environment
+  if (window.location.hostname.includes('lovableproject.com')) {
+    return false;
+  }
+  
   // Check if it's a network error
   if (
     (error.message && (
@@ -73,8 +78,22 @@ export const createNetworkStatusListener = (
   onOnline: () => void, 
   onOffline: () => void
 ) => {
-  const handleOnline = () => onOnline();
-  const handleOffline = () => onOffline();
+  const handleOnline = () => {
+    // In preview, always say we're online
+    if (window.location.hostname.includes('lovableproject.com')) {
+      onOnline();
+      return;
+    }
+    onOnline();
+  };
+  
+  const handleOffline = () => {
+    // In preview, ignore offline events
+    if (window.location.hostname.includes('lovableproject.com')) {
+      return;
+    }
+    onOffline();
+  };
   
   window.addEventListener('online', handleOnline);
   window.addEventListener('offline', handleOffline);

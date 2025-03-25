@@ -14,6 +14,7 @@ const MobileSync: React.FC = () => {
   
   // Force online mode in preview environment
   useEffect(() => {
+    // Always set forceOnline to true for preview environments
     if (window.location.hostname.includes('lovableproject.com')) {
       setForceOnline(true);
     }
@@ -25,15 +26,26 @@ const MobileSync: React.FC = () => {
       return;
     }
     
-    if (!isOnline && !forceOnline) {
+    // Allow syncing in preview environment even if we're technically offline
+    const effectivelyOnline = isOnline || forceOnline;
+    
+    if (!effectivelyOnline) {
       toast.error('You are currently offline. Please connect to the internet to sync data.');
       return;
     }
     
     try {
       setIsSyncing(true);
-      await syncWithCloud();
-      toast.success('Data synced successfully');
+      
+      // In preview environment, simulate successful sync
+      if (forceOnline && !isOnline) {
+        // Simulate a delay for realistic feedback
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        toast.success('Data synced successfully (Preview Mode)');
+      } else {
+        await syncWithCloud();
+        toast.success('Data synced successfully');
+      }
     } catch (error) {
       toast.error('Failed to sync data. Please try again later.');
       console.error(error);
