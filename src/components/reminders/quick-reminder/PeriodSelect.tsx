@@ -52,7 +52,7 @@ const PeriodSelect: React.FC<PeriodSelectProps> = ({ show }) => {
           </option>
         ))}
       </select>
-      <FormError error={errors.periodId} />
+      {errors.periodId && <FormError error={errors.periodId} />}
     </div>
   );
 };

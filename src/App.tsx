@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { StrictMode } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Auth from './pages/Auth';
@@ -18,7 +18,7 @@ import Analytics from './pages/Analytics';
 
 function App() {
   return (
-    <React.StrictMode>
+    <StrictMode>
       <BrowserRouter>
         <AuthProvider>
           <ReminderProvider>
@@ -39,7 +39,7 @@ function App() {
           </ReminderProvider>
         </AuthProvider>
       </BrowserRouter>
-    </React.StrictMode>
+    </StrictMode>
   );
 }
 

@@ -46,7 +46,7 @@ const TimingSelect = () => {
           ))}
         </SelectContent>
       </Select>
-      {errors.timing && <FormError message={errors.timing.message as string} />}
+      {errors.timing && <FormError error={errors.timing} />}
     </div>
   );
 };
