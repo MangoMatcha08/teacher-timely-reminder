@@ -7,7 +7,7 @@ import { handleNetworkError } from "@/services/utils/serviceUtils";
 import AuthContext from "./AuthContext";
 import { manageTestUserOnboarding, createTestUser } from "./utils";
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);

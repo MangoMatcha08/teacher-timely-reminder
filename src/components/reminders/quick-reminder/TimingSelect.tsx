@@ -3,7 +3,7 @@ import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import FormError from "./FormError";
+import { FormError } from "./FormError";
 import { ReminderTiming } from "@/types";
 
 const TimingSelect = () => {
