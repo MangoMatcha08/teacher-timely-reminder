@@ -7,7 +7,7 @@ export enum DayOfWeek {
   Friday = 'Friday',
   Saturday = 'Saturday',
   Sunday = 'Sunday',
-  // Add code representation values
+  // Code representation values
   M = 'M',
   T = 'T',
   W = 'W',
