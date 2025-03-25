@@ -1,190 +1,224 @@
 
-import { Reminder, SchoolSetup, DayOfWeek } from '@/context/ReminderContext';
+import { Reminder, SchoolSetup, DayOfWeek, ReminderType, ReminderTiming, ReminderPriority, RecurrencePattern } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 
-// Create some mock reminders for when network is down
+// Function to generate mock reminders for testing
 export const getMockReminders = (): Reminder[] => {
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
   return [
     {
-      id: 'mock-1',
-      title: 'Collect homework assignments',
-      notes: 'Math homework from yesterday',
-      category: 'Instruction',
-      priority: 'High',
+      id: "reminder-1",
+      userId: "user-1",
+      title: "Call parent about Johnny's progress",
+      description: "Discuss recent improvements in class participation",
+      periodId: "period-1",
+      timing: ReminderTiming.BeforeClass,
+      type: ReminderType.CallHome,
+      priority: ReminderPriority.High,
+      category: "Parent Communication",
       completed: false,
-      periodId: 'period-1',
-      type: 'Prepare Materials',
-      timing: 'During Period',
-      days: ['M', 'W', 'F'],
-      recurrence: 'Weekly',
-      termId: 'term_default',
-      dueDate: today.toISOString(),
-      createdAt: new Date(),
-      isPastDue: false
+      recurrence: RecurrencePattern.None,
+      days: [DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     },
     {
-      id: 'mock-2',
-      title: 'Grade quizzes',
-      notes: 'Science quizzes from Monday',
-      category: 'Grading',
-      priority: 'Medium',
-      completed: false,
-      periodId: 'period-2',
-      type: 'Grade',
-      timing: 'After School',
-      days: ['T', 'Th'],
-      recurrence: 'Weekly',
-      termId: 'term_default',
-      dueDate: tomorrow.toISOString(),
-      createdAt: new Date(),
-      isPastDue: false
-    },
-    {
-      id: 'mock-3',
-      title: 'Faculty meeting',
-      notes: 'Discuss curriculum changes',
-      category: 'Meeting',
-      priority: 'Low',
+      id: "reminder-2",
+      userId: "user-1",
+      title: "Prepare lab materials for chemistry experiment",
+      description: "Set up for sulfuric acid demonstration",
+      periodId: "period-2",
+      timing: ReminderTiming.BeforeClass,
+      type: ReminderType.PrepareMaterials,
+      priority: ReminderPriority.Medium,
+      category: "Class Preparation",
       completed: true,
-      periodId: 'period-3',
-      type: 'Other',
-      timing: 'After School',
-      days: ['W'],
-      recurrence: 'Weekly',
-      termId: 'term_default',
-      dueDate: today.toISOString(),
-      createdAt: new Date(),
-      isPastDue: false
+      recurrence: RecurrencePattern.None,
+      days: [DayOfWeek.Tuesday, DayOfWeek.Thursday],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "reminder-3",
+      userId: "user-1",
+      title: "Grade midterm papers",
+      description: "Focus on essay portion first",
+      periodId: "period-3",
+      timing: ReminderTiming.AfterClass,
+      type: ReminderType.Grade,
+      priority: ReminderPriority.Medium,
+      category: "Grading",
+      completed: false,
+      recurrence: RecurrencePattern.None,
+      days: [DayOfWeek.Wednesday],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "reminder-4",
+      userId: "user-1",
+      title: "Submit attendance reports",
+      description: "Complete for all classes",
+      periodId: "period-4",
+      timing: ReminderTiming.AfterSchool,
+      type: ReminderType.Other,
+      priority: ReminderPriority.Low,
+      category: "Administrative",
+      completed: false,
+      recurrence: RecurrencePattern.Daily,
+      days: [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     }
   ];
 };
 
-// Create mock school setup for network failures
+// Function to generate a mock school setup for testing
 export const getMockSchoolSetup = (): SchoolSetup => {
-  return {
-    schoolDays: ["M", "T", "W", "Th", "F"],
-    schoolHours: {
+  const periods = [
+    {
+      id: "period-1",
+      name: "Period 1",
       startTime: "8:00 AM",
-      endTime: "3:00 PM",
-      teacherArrivalTime: "7:30 AM"
+      endTime: "9:00 AM",
+      subject: "Math",
+      location: "Room 101",
+      schedules: [
+        {
+          dayOfWeek: DayOfWeek.Monday,
+          startTime: "8:00 AM",
+          endTime: "9:00 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Tuesday,
+          startTime: "8:00 AM",
+          endTime: "9:00 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Wednesday,
+          startTime: "8:00 AM",
+          endTime: "9:00 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Thursday,
+          startTime: "8:00 AM",
+          endTime: "9:00 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Friday,
+          startTime: "8:00 AM",
+          endTime: "9:00 AM"
+        }
+      ]
     },
-    categories: [
-      "Instruction",
-      "Grading",
-      "Meeting",
-      "Communication",
-      "Administration"
-    ],
-    periods: [
-      {
-        id: "period-1",
-        name: "1st Period",
-        schedules: [
-          {
-            dayOfWeek: "M",
-            startTime: "8:00 AM",
-            endTime: "8:50 AM"
-          },
-          {
-            dayOfWeek: "T",
-            startTime: "8:00 AM",
-            endTime: "8:50 AM"
-          },
-          {
-            dayOfWeek: "W",
-            startTime: "8:00 AM",
-            endTime: "8:30 AM"
-          },
-          {
-            dayOfWeek: "Th",
-            startTime: "8:00 AM",
-            endTime: "8:50 AM"
-          },
-          {
-            dayOfWeek: "F",
-            startTime: "8:00 AM",
-            endTime: "8:50 AM"
-          }
-        ],
-        isPrepPeriod: false
-      },
-      {
-        id: "period-2",
-        name: "2nd Period",
-        schedules: [
-          {
-            dayOfWeek: "M",
-            startTime: "9:00 AM",
-            endTime: "9:50 AM"
-          },
-          {
-            dayOfWeek: "T",
-            startTime: "9:00 AM",
-            endTime: "9:50 AM"
-          },
-          {
-            dayOfWeek: "W",
-            startTime: "8:35 AM",
-            endTime: "9:05 AM"
-          },
-          {
-            dayOfWeek: "Th",
-            startTime: "9:00 AM",
-            endTime: "9:50 AM"
-          },
-          {
-            dayOfWeek: "F",
-            startTime: "9:00 AM",
-            endTime: "9:50 AM"
-          }
-        ],
-        isPrepPeriod: true
-      },
-      {
-        id: "period-3",
-        name: "3rd Period",
-        schedules: [
-          {
-            dayOfWeek: "M",
-            startTime: "10:00 AM",
-            endTime: "10:50 AM"
-          },
-          {
-            dayOfWeek: "T",
-            startTime: "10:00 AM",
-            endTime: "10:50 AM"
-          },
-          {
-            dayOfWeek: "W",
-            startTime: "9:10 AM",
-            endTime: "9:40 AM"
-          },
-          {
-            dayOfWeek: "Th",
-            startTime: "10:00 AM",
-            endTime: "10:50 AM"
-          },
-          {
-            dayOfWeek: "F",
-            startTime: "10:00 AM",
-            endTime: "10:50 AM"
-          }
-        ],
-        isPrepPeriod: false
-      }
-    ],
-    termId: "term_default",
+    {
+      id: "period-2",
+      name: "Period 2",
+      startTime: "9:10 AM",
+      endTime: "10:10 AM",
+      subject: "English",
+      location: "Room 102",
+      schedules: [
+        {
+          dayOfWeek: DayOfWeek.Monday,
+          startTime: "9:10 AM",
+          endTime: "10:10 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Tuesday,
+          startTime: "9:10 AM",
+          endTime: "10:10 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Wednesday,
+          startTime: "9:10 AM",
+          endTime: "10:10 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Thursday,
+          startTime: "9:10 AM",
+          endTime: "10:10 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Friday,
+          startTime: "9:10 AM",
+          endTime: "10:10 AM"
+        }
+      ]
+    },
+    {
+      id: "period-3",
+      name: "Period 3",
+      startTime: "10:20 AM",
+      endTime: "11:20 AM",
+      subject: "Science",
+      location: "Room 103",
+      schedules: [
+        {
+          dayOfWeek: DayOfWeek.Monday,
+          startTime: "10:20 AM",
+          endTime: "11:20 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Tuesday,
+          startTime: "10:20 AM",
+          endTime: "11:20 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Wednesday,
+          startTime: "10:20 AM",
+          endTime: "11:20 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Thursday,
+          startTime: "10:20 AM",
+          endTime: "11:20 AM"
+        },
+        {
+          dayOfWeek: DayOfWeek.Friday,
+          startTime: "10:20 AM",
+          endTime: "11:20 AM"
+        }
+      ]
+    }
+  ];
+  
+  return {
+    id: "school-setup-1",
+    userId: "user-1",
+    schoolName: "Westfield High School",
+    schoolYear: "2023-2024",
     terms: [
       {
-        id: "term_default",
-        name: "Current Term",
-        startDate: new Date().toISOString(),
-        endDate: new Date(new Date().setMonth(new Date().getMonth() + 4)).toISOString(),
-        schoolYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
+        id: "term-1",
+        name: "Fall Semester",
+        startDate: "2023-08-15",
+        endDate: "2023-12-20"
+      },
+      {
+        id: "term-2",
+        name: "Spring Semester",
+        startDate: "2024-01-05",
+        endDate: "2024-05-25"
       }
-    ]
+    ],
+    periods,
+    days: [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday],
+    categories: ["Lesson Planning", "Grading", "Parent Communication", "Administrative", "Professional Development"],
+    notificationPreferences: {
+      email: {
+        enabled: true,
+        address: "teacher@example.com",
+        minPriority: ReminderPriority.Medium
+      },
+      push: {
+        enabled: true,
+        minPriority: ReminderPriority.High
+      },
+      text: {
+        enabled: false,
+        phoneNumber: "",
+        minPriority: ReminderPriority.High
+      }
+    }
   };
 };

@@ -58,12 +58,12 @@ export interface Reminder {
   description?: string;
   periodId: string;
   dueDate?: string;
-  timing: ReminderTiming | string;
-  type: ReminderType | string;
-  priority: ReminderPriority | string;
+  timing: ReminderTiming;
+  type: ReminderType;
+  priority: ReminderPriority;
   category?: string;
   completed: boolean;
-  recurrence?: RecurrencePattern | string;
+  recurrence?: RecurrencePattern;
   recurringDays?: DayOfWeek[];
   createdAt: string | Date;
   updatedAt: string | Date;

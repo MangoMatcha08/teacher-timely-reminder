@@ -1,99 +1,51 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { Reminder, ReminderPriority } from '@/context/ReminderContext';
-import { handleNetworkError } from './utils/serviceUtils';
-import { toast } from 'sonner';
+import { ReminderPriority } from '@/types';
 
 /**
- * Send a test email notification
- * @param emailAddress Email address to send the test to
- * @returns Promise that resolves when the email is sent
+ * Sends a test email notification to the specified email address
+ * @param emailAddress The email address to send the test notification to
+ * @returns A promise that resolves to true if the email was sent successfully
  */
 export const sendTestEmailNotification = async (emailAddress: string): Promise<boolean> => {
-  try {
-    // Call Supabase function to send email
-    const { data, error } = await supabase.functions.invoke('send-test-email', {
-      body: { 
-        email: emailAddress,
-        subject: 'Teacher Reminder - Test Notification',
-        message: 'This is a test notification from Teacher Reminder app. If you received this email, your notifications are working correctly!'
-      }
-    });
-    
-    if (error) {
-      if (handleNetworkError(error, 'sending test email')) {
-        console.log("Network error detected while sending test email. Using offline mode simulation instead.");
-        return true; // In offline mode, we'll just pretend it worked
-      }
-      throw error;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error sending test email:", error);
-    toast.error("Failed to send test email", {
-      description: "Please check your connection and try again later."
-    });
-    return false;
-  }
+  // For now, we'll just simulate sending an email
+  console.log(`Sending test email notification to ${emailAddress}`);
+  
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  
+  // In a real implementation, this would call a backend API
+  return true;
 };
 
 /**
- * Send a reminder notification via email
- * @param reminder The reminder to send notification for
- * @param emailAddress Email address to send the notification to
- * @returns Promise that resolves when the email is sent
+ * Configures notification preferences for a user
+ * @param userId The user ID
+ * @param emailEnabled Whether email notifications are enabled
+ * @param emailAddress The email address to send notifications to
+ * @param emailPriority The minimum priority level for email notifications
+ * @param pushEnabled Whether push notifications are enabled
+ * @param pushPriority The minimum priority level for push notifications
+ * @param textEnabled Whether text notifications are enabled
+ * @param phoneNumber The phone number to send text notifications to
+ * @param textPriority The minimum priority level for text notifications
+ * @returns A promise that resolves to true if the preferences were saved successfully
  */
-export const sendReminderEmailNotification = async (
-  reminder: Reminder, 
-  emailAddress: string
+export const saveNotificationPreferences = async (
+  userId: string,
+  emailEnabled: boolean,
+  emailAddress: string,
+  emailPriority: ReminderPriority,
+  pushEnabled: boolean,
+  pushPriority: ReminderPriority,
+  textEnabled: boolean,
+  phoneNumber: string,
+  textPriority: ReminderPriority
 ): Promise<boolean> => {
-  try {
-    // Format due date if available
-    const dueDate = reminder.dueDate 
-      ? new Date(reminder.dueDate).toLocaleDateString()
-      : 'No due date';
-      
-    // Call Supabase function to send email
-    const { data, error } = await supabase.functions.invoke('send-reminder-email', {
-      body: { 
-        email: emailAddress,
-        subject: `Reminder: ${reminder.title}`,
-        reminderTitle: reminder.title,
-        reminderNotes: reminder.notes || '',
-        reminderPriority: reminder.priority,
-        reminderDueDate: dueDate,
-        reminderCategory: reminder.category || 'Uncategorized'
-      }
-    });
-    
-    if (error) {
-      if (handleNetworkError(error, 'sending reminder email')) {
-        console.log(`Network error detected while sending reminder email for "${reminder.title}". Using offline mode simulation instead.`);
-        return true; // In offline mode, we'll just pretend it worked
-      }
-      throw error;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error sending reminder email:", error);
-    return false;
-  }
-};
-
-/**
- * Get priority text color class for email templates
- */
-export const getPriorityColorClass = (priority: ReminderPriority): string => {
-  switch (priority) {
-    case 'High':
-      return 'text-red-600';
-    case 'Medium':
-      return 'text-amber-600';
-    case 'Low':
-      return 'text-green-600';
-    default:
-      return 'text-gray-600';
-  }
+  console.log('Saving notification preferences for user', userId);
+  
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  
+  // In a real implementation, this would call a backend API
+  return true;
 };

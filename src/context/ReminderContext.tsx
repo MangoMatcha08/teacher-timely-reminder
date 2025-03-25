@@ -1,7 +1,9 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { SchoolSetup, NotificationPreferences } from '@/types';
+import { SchoolSetup, NotificationPreferences, Reminder } from '@/types';
 import { schoolSetupService } from '@/services/schoolSetupService';
+import { getUserReminders, saveReminder, updateReminder, deleteReminder } from '@/services/reminderService';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ReminderContextType {
   schoolSetup: SchoolSetup | null;
@@ -16,10 +18,13 @@ interface ReminderContextType {
   syncWithCloud: () => Promise<void>;
   completedTasks: number;
   totalTasks: number;
-  todaysReminders: any[];
-  pastDueReminders: any[];
+  todaysReminders: Reminder[];
+  pastDueReminders: Reminder[];
   toggleReminderComplete: (id: string) => void;
-  reminders: any[];
+  reminders: Reminder[];
+  createReminder: (reminderData: Partial<Reminder>) => void;
+  bulkCompleteReminders: (ids: string[]) => void;
+  deleteReminder: (id: string) => void;
 }
 
 const ReminderContext = createContext<ReminderContextType | undefined>(undefined);
@@ -29,13 +34,13 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  const [reminders, setReminders] = useState<any[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   
   // Mock data for demonstration
   const completedTasks = 3;
   const totalTasks = 10;
-  const todaysReminders: any[] = [];
-  const pastDueReminders: any[] = [];
+  const todaysReminders: Reminder[] = [];
+  const pastDueReminders: Reminder[] = [];
 
   const fetchSchoolSetup = async (userId: string) => {
     setIsLoading(true);
@@ -91,8 +96,79 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
   
   const toggleReminderComplete = (id: string) => {
-    // Mock implementation
-    console.log(`Toggling reminder ${id} complete status`);
+    // Implementation to toggle a reminder's complete status
+    setReminders(prev => 
+      prev.map(reminder => 
+        reminder.id === id 
+          ? { ...reminder, completed: !reminder.completed } 
+          : reminder
+      )
+    );
+  };
+  
+  const createReminder = (reminderData: Partial<Reminder>) => {
+    const newReminder: Reminder = {
+      id: uuidv4(),
+      userId: "current-user", // This should be replaced with the actual user ID
+      title: reminderData.title || "",
+      periodId: reminderData.periodId || "",
+      timing: reminderData.timing || "DuringPeriod",
+      type: reminderData.type || "Task",
+      priority: reminderData.priority || "Medium",
+      completed: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      days: reminderData.days || [],
+      category: reminderData.category || "",
+      notes: reminderData.notes || "",
+      recurrence: reminderData.recurrence || "None",
+      ...reminderData
+    };
+    
+    setReminders(prev => [...prev, newReminder]);
+    
+    // Here you would typically also save to backend
+    try {
+      saveReminder(newReminder, newReminder.userId);
+    } catch (error) {
+      console.error("Error saving reminder:", error);
+    }
+  };
+  
+  const bulkCompleteReminders = (ids: string[]) => {
+    setReminders(prev => 
+      prev.map(reminder => 
+        ids.includes(reminder.id) 
+          ? { ...reminder, completed: true } 
+          : reminder
+      )
+    );
+    
+    // Here you would typically also update backend
+    ids.forEach(id => {
+      const reminder = reminders.find(r => r.id === id);
+      if (reminder) {
+        try {
+          updateReminder(id, { completed: true }, reminder.userId);
+        } catch (error) {
+          console.error(`Error updating reminder ${id}:`, error);
+        }
+      }
+    });
+  };
+  
+  const deleteReminderHandler = (id: string) => {
+    const reminderToDelete = reminders.find(r => r.id === id);
+    if (!reminderToDelete) return;
+    
+    setReminders(prev => prev.filter(reminder => reminder.id !== id));
+    
+    // Delete from backend
+    try {
+      deleteReminder(id, reminderToDelete.userId);
+    } catch (error) {
+      console.error(`Error deleting reminder ${id}:`, error);
+    }
   };
 
   // Effect to listen for online/offline events
@@ -126,6 +202,9 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     pastDueReminders,
     toggleReminderComplete,
     reminders,
+    createReminder,
+    bulkCompleteReminders,
+    deleteReminder: deleteReminderHandler,
   };
 
   return (

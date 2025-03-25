@@ -94,35 +94,49 @@ const OnboardingControls: React.FC = () => {
         }
       }
       
-      if (iepMeetingsEnabled && !categories.includes("IEP meetings")) {
-        setCategories([...categories, "IEP meetings"]);
-      }
+      // Final step - save the school setup
+      const userId = "current-user"; // In a real app, this would come from authentication
       
-      const defaultTerm = createDefaultTerm(schoolYear, termType, termName);
+      const term = createDefaultTerm(termType, termName, schoolYear);
       
-      saveSchoolSetup({
-        termId: defaultTerm.id,
-        terms: [defaultTerm],
-        schoolDays: selectedDays,
+      const schoolSetupData = {
+        userId,
+        schoolName: "My School", // This could be collected in an earlier step
+        schoolYear,
+        terms: [term],
         periods,
-        schoolHours: {
-          startTime: schoolStart,
-          endTime: schoolEnd,
-          teacherArrivalTime: teacherArrival
-        },
-        categories: categories,
-        iepMeetings: {
-          enabled: iepMeetingsEnabled,
-          beforeSchool: iepBeforeSchool,
-          afterSchool: iepAfterSchool,
-          beforeSchoolTime: iepBeforeSchoolTime,
-          afterSchoolTime: iepAfterSchoolTime
+        days: selectedDays,
+        categories,
+        schoolDays: selectedDays,
+        notificationPreferences: {
+          email: {
+            enabled: true,
+            address: "user@example.com", // This could be collected elsewhere
+            minPriority: "Medium"
+          },
+          push: {
+            enabled: false,
+            minPriority: "High"
+          },
+          text: {
+            enabled: false,
+            phoneNumber: "",
+            minPriority: "High"
+          }
         }
-      });
+      };
       
-      setCompleteOnboarding();
-      
-      navigate("/dashboard");
+      saveSchoolSetup(schoolSetupData, userId)
+        .then(() => {
+          toast.success("School setup saved successfully!");
+          setCompleteOnboarding(true);
+          navigate("/dashboard");
+        })
+        .catch(error => {
+          toast.error("Failed to save school setup");
+          console.error("Error saving school setup:", error);
+        });
+        
       return;
     }
     
@@ -132,22 +146,28 @@ const OnboardingControls: React.FC = () => {
   const goToPreviousStep = () => {
     if (currentStep === 0) {
       setShowExitConfirm(true);
-    } else {
-      setCurrentStep(currentStep - 1);
+      return;
     }
+    
+    setCurrentStep(currentStep - 1);
   };
-
+  
   return (
-    <div className="flex justify-between border-t p-6">
+    <div className="flex justify-between mt-8">
       <Button
-        type="button"
         variant="outline"
         onClick={goToPreviousStep}
+        className="px-4"
       >
-        Back
+        {currentStep === 0 ? "Exit" : "Back"}
       </Button>
-      <Button type="button" variant="primary" onClick={goToNextStep}>
-        {currentStep === 5 ? "Complete Setup" : "Next"}
+      
+      <Button
+        variant="primary"
+        onClick={goToNextStep}
+        className="px-6"
+      >
+        {currentStep === 5 ? "Finish" : "Next"}
       </Button>
     </div>
   );
