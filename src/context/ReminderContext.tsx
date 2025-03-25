@@ -1,8 +1,8 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { SchoolSetup, NotificationPreferences, Reminder } from '@/types';
+import { SchoolSetup, NotificationPreferences, Reminder, RecurrencePattern, ReminderPriority, ReminderTiming, ReminderType, DayOfWeek } from '@/types';
 import { schoolSetupService } from '@/services/schoolSetupService';
-import { getUserReminders, saveReminder, updateReminder, deleteReminder } from '@/services/reminderService';
+import { getUserReminders, saveReminder, updateReminder, deleteReminder as deleteReminderApi } from '@/services/reminderService';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ReminderContextType {
@@ -112,16 +112,16 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       userId: "current-user", // This should be replaced with the actual user ID
       title: reminderData.title || "",
       periodId: reminderData.periodId || "",
-      timing: reminderData.timing || "DuringPeriod",
-      type: reminderData.type || "Task",
-      priority: reminderData.priority || "Medium",
+      timing: reminderData.timing || ReminderTiming.DuringPeriod,
+      type: reminderData.type || ReminderType.Task,
+      priority: reminderData.priority || ReminderPriority.Medium,
       completed: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       days: reminderData.days || [],
       category: reminderData.category || "",
       notes: reminderData.notes || "",
-      recurrence: reminderData.recurrence || "None",
+      recurrence: reminderData.recurrence || RecurrencePattern.None,
       ...reminderData
     };
     
@@ -138,7 +138,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const bulkCompleteReminders = (ids: string[]) => {
     setReminders(prev => 
       prev.map(reminder => 
-        ids.includes(reminder.id) 
+        ids.includes(reminder.id!) 
           ? { ...reminder, completed: true } 
           : reminder
       )
@@ -165,7 +165,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     // Delete from backend
     try {
-      deleteReminder(id, reminderToDelete.userId);
+      deleteReminderApi(id, reminderToDelete.userId);
     } catch (error) {
       console.error(`Error deleting reminder ${id}:`, error);
     }

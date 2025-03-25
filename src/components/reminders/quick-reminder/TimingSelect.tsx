@@ -1,60 +1,52 @@
 
 import React from "react";
-import { Controller, useFormContext } from "react-hook-form";
-import { ReminderTiming } from "@/types";
+import { useFormContext } from "react-hook-form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import FormError from "./FormError";
+import { ReminderTiming } from "@/types";
 
-const TimingSelect: React.FC = () => {
-  const { 
-    control,
-    formState: { errors } 
-  } = useFormContext();
+const TimingSelect = () => {
+  const { formState: { errors }, setValue, watch } = useFormContext();
+  const watchTiming = watch("timing");
   
-  const reminderTimings: ReminderTiming[] = [
+  const reminderTimings = [
     ReminderTiming.BeforeSchool,
     ReminderTiming.AfterSchool,
-    ReminderTiming.DuringPeriod
+    ReminderTiming.DuringPeriod,
+    ReminderTiming.StartOfPeriod,
+    ReminderTiming.EndOfPeriod,
+    ReminderTiming.FifteenMinutesIntoPeriod
   ];
+  
+  const handleTimingChange = (value: string) => {
+    setValue("timing", value as ReminderTiming, { shouldValidate: true });
+  };
 
   return (
-    <div>
-      <label
-        htmlFor="timing"
-        className="block text-sm font-medium text-foreground mb-2"
-      >
+    <div className="space-y-2">
+      <label htmlFor="timing" className="block text-sm font-medium">
         When would you like this reminder?
       </label>
-      <Controller
-        control={control}
-        name="timing"
-        render={({ field }) => (
-          <Select 
-            value={field.value} 
-            onValueChange={field.onChange}
-          >
-            <SelectTrigger className={cn(
-              "w-full",
-              errors.timing ? "border-destructive" : "border-input"
-            )}>
-              <SelectValue placeholder="Select a timing" />
-            </SelectTrigger>
-            <SelectContent>
-              {reminderTimings.map((timing) => (
-                <SelectItem key={timing} value={timing}>
-                  {timing}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      />
+      <Select value={watchTiming} onValueChange={handleTimingChange}>
+        <SelectTrigger
+          id="timing"
+          className={cn(
+            "w-full",
+            errors.timing ? "border-red-500" : "border-gray-300"
+          )}
+        >
+          <SelectValue placeholder="Select a timing" />
+        </SelectTrigger>
+        <SelectContent>
+          {reminderTimings.map((timing) => (
+            <SelectItem key={timing} value={timing}>
+              {timing}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {errors.timing && <FormError message={errors.timing.message as string} />}
     </div>
   );
 };

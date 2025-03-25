@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth";
 import { useReminders } from "@/context/ReminderContext";
 import { createDefaultTerm } from './OnboardingUtils';
 import { useOnboarding } from './OnboardingContext';
+import { SchoolSetup, ReminderPriority } from '@/types';
 
 const OnboardingControls: React.FC = () => {
   const navigate = useNavigate();
@@ -99,7 +100,7 @@ const OnboardingControls: React.FC = () => {
       
       const term = createDefaultTerm(termType, termName, schoolYear);
       
-      const schoolSetupData = {
+      const schoolSetupData: SchoolSetup = {
         userId,
         schoolName: "My School", // This could be collected in an earlier step
         schoolYear,
@@ -112,16 +113,16 @@ const OnboardingControls: React.FC = () => {
           email: {
             enabled: true,
             address: "user@example.com", // This could be collected elsewhere
-            minPriority: "Medium"
+            minPriority: ReminderPriority.Medium
           },
           push: {
             enabled: false,
-            minPriority: "High"
+            minPriority: ReminderPriority.High
           },
           text: {
             enabled: false,
             phoneNumber: "",
-            minPriority: "High"
+            minPriority: ReminderPriority.High
           }
         }
       };
@@ -129,7 +130,7 @@ const OnboardingControls: React.FC = () => {
       saveSchoolSetup(schoolSetupData, userId)
         .then(() => {
           toast.success("School setup saved successfully!");
-          setCompleteOnboarding(true);
+          setCompleteOnboarding();
           navigate("/dashboard");
         })
         .catch(error => {

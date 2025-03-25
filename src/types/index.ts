@@ -83,7 +83,9 @@ export enum ReminderTiming {
   DuringPeriod = 'During Period',
   StartOfPeriod = 'Start of Period',
   EndOfPeriod = 'End of Period',
-  FifteenMinutesIntoPeriod = '15 Minutes Into Period'
+  FifteenMinutesIntoPeriod = '15 Minutes Into Period',
+  BeforePeriod = 'Before Period',
+  AfterPeriod = 'After Period'
 }
 
 export enum ReminderType {

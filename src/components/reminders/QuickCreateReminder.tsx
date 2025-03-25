@@ -2,11 +2,12 @@
 import React from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useReminders, DayOfWeek } from "@/context/ReminderContext";
+import { useReminders } from "@/context/ReminderContext";
 import { toast } from "sonner";
 import { quickReminderSchema, QuickReminderFormData } from "./quick-reminder/ReminderSchema";
 import QuickReminderModal from "./quick-reminder/QuickReminderModal";
 import ReminderForm from "./quick-reminder/ReminderForm";
+import { DayOfWeek, ReminderType, ReminderTiming, RecurrencePattern, ReminderPriority } from "@/types";
 
 interface QuickCreateReminderProps {
   onClose: () => void;
@@ -23,10 +24,10 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({
     resolver: zodResolver(quickReminderSchema),
     defaultValues: {
       title: "",
-      timing: "During Period",
+      timing: ReminderTiming.DuringPeriod,
       periodId: schoolSetup?.periods[0]?.id || "",
       category: "",
-      priority: "Medium",
+      priority: ReminderPriority.Medium,
       schoolSetup: schoolSetup
     },
   });
@@ -36,19 +37,19 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({
       // For quick reminders, use today's day and set default type
       const today = new Date();
       const dayIndex = today.getDay() - 1; // 0 = Sunday, so -1 gives Monday as 0
-      const daysOfWeek = ["M", "T", "W", "Th", "F"];
-      const todayCode = dayIndex >= 0 && dayIndex < 5 ? daysOfWeek[dayIndex] : "M";
+      const daysOfWeek = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday];
+      const todayCode = dayIndex >= 0 && dayIndex < 5 ? daysOfWeek[dayIndex] : DayOfWeek.Monday;
       
       // Ensure all required properties are passed
       createReminder({
         title: data.title,
-        type: "Talk to Student",
+        type: ReminderType.TalkToStudent,
         timing: data.timing,
-        days: [todayCode as DayOfWeek],
+        days: [todayCode],
         periodId: data.periodId,
         category: data.category || "",
         notes: "",
-        recurrence: "Once",
+        recurrence: RecurrencePattern.Once,
         priority: data.priority
       });
       

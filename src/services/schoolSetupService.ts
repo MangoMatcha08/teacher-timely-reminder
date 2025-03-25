@@ -14,7 +14,7 @@ export const schoolSetupService: SchoolSetupService = {
   getSchoolSetup: async (userId: string): Promise<SchoolSetup | null> => {
     try {
       const { data, error } = await supabase
-        .from('school_setups')
+        .from('school_setup')
         .select('*')
         .eq('user_id', userId)
         .single();
@@ -49,16 +49,18 @@ export const schoolSetupService: SchoolSetupService = {
   saveSchoolSetup: async (userId: string, schoolSetup: SchoolSetup): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('school_setups')
+        .from('school_setup')
         .insert({
           user_id: userId,
-          school_name: schoolSetup.schoolName,
-          school_year: schoolSetup.schoolYear,
-          terms: schoolSetup.terms,
-          periods: schoolSetup.periods,
-          days: schoolSetup.days,
-          categories: schoolSetup.categories,
-          notification_preferences: schoolSetup.notificationPreferences
+          data: {
+            school_name: schoolSetup.schoolName,
+            school_year: schoolSetup.schoolYear,
+            terms: schoolSetup.terms,
+            periods: schoolSetup.periods,
+            days: schoolSetup.days,
+            categories: schoolSetup.categories,
+            notification_preferences: schoolSetup.notificationPreferences
+          }
         });
       
       if (error) {
@@ -79,15 +81,17 @@ export const schoolSetupService: SchoolSetupService = {
   updateSchoolSetup: async (userId: string, schoolSetup: SchoolSetup): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('school_setups')
+        .from('school_setup')
         .update({
-          school_name: schoolSetup.schoolName,
-          school_year: schoolSetup.schoolYear,
-          terms: schoolSetup.terms,
-          periods: schoolSetup.periods,
-          days: schoolSetup.days,
-          categories: schoolSetup.categories,
-          notification_preferences: schoolSetup.notificationPreferences
+          data: {
+            school_name: schoolSetup.schoolName,
+            school_year: schoolSetup.schoolYear,
+            terms: schoolSetup.terms,
+            periods: schoolSetup.periods,
+            days: schoolSetup.days,
+            categories: schoolSetup.categories,
+            notification_preferences: schoolSetup.notificationPreferences
+          }
         })
         .eq('user_id', userId);
       
@@ -141,17 +145,18 @@ const createDefaultSchoolSetup = (userId: string): SchoolSetup => {
 
 // Helper function to parse school setup from storage
 const parseSchoolSetupFromStorage = (data: any): SchoolSetup => {
+  const schoolData = data.data || {};
   return {
     id: data.id,
     userId: data.user_id,
-    schoolName: data.school_name,
-    schoolYear: data.school_year,
-    terms: data.terms || [],
-    periods: data.periods || [],
-    days: data.days || [],
-    categories: data.categories || [],
-    notificationPreferences: data.notification_preferences,
-    termId: data.term_id,
-    schoolDays: data.school_days
+    schoolName: schoolData.school_name || "My School",
+    schoolYear: schoolData.school_year || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+    terms: schoolData.terms || [],
+    periods: schoolData.periods || [],
+    days: schoolData.days || [],
+    categories: schoolData.categories || [],
+    notificationPreferences: schoolData.notification_preferences,
+    termId: schoolData.term_id,
+    schoolDays: schoolData.school_days
   };
 };
