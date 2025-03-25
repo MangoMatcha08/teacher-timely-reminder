@@ -51,24 +51,24 @@ export const schoolSetupService: SchoolSetupService = {
       // Create a UUID for the new school setup
       const id = crypto.randomUUID();
       
-      // Create a data object to save - convert to string format
+      // Convert complex object to a serializable format
       const dataToInsert = {
-        school_name: schoolSetup.schoolName,
-        school_year: schoolSetup.schoolYear,
-        terms: schoolSetup.terms,
-        periods: schoolSetup.periods,
-        days: schoolSetup.days,
-        categories: schoolSetup.categories,
-        notification_preferences: schoolSetup.notificationPreferences
+        id: id,
+        user_id: userId,
+        data: JSON.parse(JSON.stringify({
+          school_name: schoolSetup.schoolName,
+          school_year: schoolSetup.schoolYear,
+          terms: schoolSetup.terms,
+          periods: schoolSetup.periods,
+          days: schoolSetup.days,
+          categories: schoolSetup.categories,
+          notification_preferences: schoolSetup.notificationPreferences
+        }))
       };
       
       const { error } = await supabase
         .from('school_setup')
-        .insert({
-          id: id,
-          user_id: userId,
-          data: dataToInsert
-        });
+        .insert(dataToInsert);
       
       if (error) {
         if (handleNetworkError(error, 'saving school setup')) {
@@ -87,22 +87,22 @@ export const schoolSetupService: SchoolSetupService = {
   
   updateSchoolSetup: async (userId: string, schoolSetup: SchoolSetup): Promise<void> => {
     try {
-      // Create a data object to update
+      // Ensure proper serialization for complex objects
       const dataToUpdate = {
-        school_name: schoolSetup.schoolName,
-        school_year: schoolSetup.schoolYear,
-        terms: schoolSetup.terms,
-        periods: schoolSetup.periods,
-        days: schoolSetup.days,
-        categories: schoolSetup.categories,
-        notification_preferences: schoolSetup.notificationPreferences
+        data: JSON.parse(JSON.stringify({
+          school_name: schoolSetup.schoolName,
+          school_year: schoolSetup.schoolYear,
+          terms: schoolSetup.terms,
+          periods: schoolSetup.periods,
+          days: schoolSetup.days,
+          categories: schoolSetup.categories,
+          notification_preferences: schoolSetup.notificationPreferences
+        }))
       };
       
       const { error } = await supabase
         .from('school_setup')
-        .update({
-          data: dataToUpdate
-        })
+        .update(dataToUpdate)
         .eq('user_id', userId);
       
       if (error) {
