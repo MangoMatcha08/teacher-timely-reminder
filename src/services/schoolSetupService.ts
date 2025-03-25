@@ -51,8 +51,8 @@ export const schoolSetupService: SchoolSetupService = {
       // Create a UUID for the new school setup
       const id = crypto.randomUUID();
       
-      // Convert the schoolSetup object to a JSON-serializable structure
-      const dataToSave = {
+      // Convert the schoolSetup object to a stringified JSON
+      const dataToSave = JSON.stringify({
         school_name: schoolSetup.schoolName,
         school_year: schoolSetup.schoolYear,
         terms: schoolSetup.terms,
@@ -60,14 +60,14 @@ export const schoolSetupService: SchoolSetupService = {
         days: schoolSetup.days,
         categories: schoolSetup.categories,
         notification_preferences: schoolSetup.notificationPreferences
-      };
+      });
       
       const { error } = await supabase
         .from('school_setup')
         .insert({
           id: id,
           user_id: userId,
-          data: dataToSave
+          data: JSON.parse(dataToSave)
         });
       
       if (error) {
@@ -87,8 +87,8 @@ export const schoolSetupService: SchoolSetupService = {
   
   updateSchoolSetup: async (userId: string, schoolSetup: SchoolSetup): Promise<void> => {
     try {
-      // Convert the schoolSetup object to a JSON-serializable structure
-      const dataToUpdate = {
+      // Convert the schoolSetup object to a stringified JSON
+      const dataToUpdate = JSON.stringify({
         school_name: schoolSetup.schoolName,
         school_year: schoolSetup.schoolYear,
         terms: schoolSetup.terms,
@@ -96,12 +96,12 @@ export const schoolSetupService: SchoolSetupService = {
         days: schoolSetup.days,
         categories: schoolSetup.categories,
         notification_preferences: schoolSetup.notificationPreferences
-      };
+      });
       
       const { error } = await supabase
         .from('school_setup')
         .update({
-          data: dataToUpdate
+          data: JSON.parse(dataToUpdate)
         })
         .eq('user_id', userId);
       

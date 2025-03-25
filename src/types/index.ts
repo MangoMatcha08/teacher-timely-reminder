@@ -1,13 +1,16 @@
 
 export enum DayOfWeek {
-  Monday = 'M',
-  Tuesday = 'T',
-  Wednesday = 'W',
-  Thursday = 'Th',
-  Friday = 'F',
-  Saturday = 'Sa',
-  Sunday = 'Su'
+  Monday = 'Monday',
+  Tuesday = 'Tuesday',
+  Wednesday = 'Wednesday',
+  Thursday = 'Thursday',
+  Friday = 'Friday',
+  Saturday = 'Saturday',
+  Sunday = 'Sunday'
 }
+
+// Add string literal alternatives that match what's being used in the codebase
+export type DayOfWeekCode = 'M' | 'T' | 'W' | 'Th' | 'F' | 'Sa' | 'Su';
 
 export interface SchoolSetup {
   id?: string;
@@ -16,11 +19,11 @@ export interface SchoolSetup {
   schoolYear: string;
   terms: Term[];
   periods: Period[];
-  days: DayOfWeek[];
+  days: DayOfWeek[] | DayOfWeekCode[];
   categories: string[];
   notificationPreferences?: NotificationPreferences;
   termId?: string;
-  schoolDays?: DayOfWeek[];
+  schoolDays?: DayOfWeek[] | DayOfWeekCode[];
 }
 
 export interface Term {
@@ -44,7 +47,7 @@ export interface Period {
 }
 
 export interface PeriodSchedule {
-  dayOfWeek: DayOfWeek;
+  dayOfWeek: DayOfWeek | DayOfWeekCode;
   dayCode?: string;
   enabled?: boolean;
   startTime: string;
@@ -64,15 +67,16 @@ export interface Reminder {
   category?: string;
   completed: boolean;
   recurrence?: RecurrencePattern;
-  recurringDays?: DayOfWeek[];
+  recurringDays?: DayOfWeek[] | DayOfWeekCode[];
   createdAt: string | Date;
   updatedAt: string | Date;
-  days?: DayOfWeek[];
+  days?: DayOfWeek[] | DayOfWeekCode[];
   notes?: string;
   termId?: string;
   isPastDue?: boolean;
 }
 
+// Update enums to include the string literals being used in the code
 export enum ReminderTiming {
   BeforeClass = 'before-class',
   DuringClass = 'during-class',
