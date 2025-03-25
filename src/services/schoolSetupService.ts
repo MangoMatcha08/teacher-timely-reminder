@@ -48,19 +48,22 @@ export const schoolSetupService: SchoolSetupService = {
   
   saveSchoolSetup: async (userId: string, schoolSetup: SchoolSetup): Promise<void> => {
     try {
+      // Convert the schoolSetup object to a JSON-serializable structure
+      const serializedData = {
+        school_name: schoolSetup.schoolName,
+        school_year: schoolSetup.schoolYear,
+        terms: schoolSetup.terms,
+        periods: schoolSetup.periods,
+        days: schoolSetup.days,
+        categories: schoolSetup.categories,
+        notification_preferences: schoolSetup.notificationPreferences
+      };
+      
       const { error } = await supabase
         .from('school_setup')
         .insert({
           user_id: userId,
-          data: {
-            school_name: schoolSetup.schoolName,
-            school_year: schoolSetup.schoolYear,
-            terms: schoolSetup.terms,
-            periods: schoolSetup.periods,
-            days: schoolSetup.days,
-            categories: schoolSetup.categories,
-            notification_preferences: schoolSetup.notificationPreferences
-          }
+          data: serializedData
         });
       
       if (error) {
@@ -80,18 +83,21 @@ export const schoolSetupService: SchoolSetupService = {
   
   updateSchoolSetup: async (userId: string, schoolSetup: SchoolSetup): Promise<void> => {
     try {
+      // Convert the schoolSetup object to a JSON-serializable structure
+      const serializedData = {
+        school_name: schoolSetup.schoolName,
+        school_year: schoolSetup.schoolYear,
+        terms: schoolSetup.terms,
+        periods: schoolSetup.periods,
+        days: schoolSetup.days,
+        categories: schoolSetup.categories,
+        notification_preferences: schoolSetup.notificationPreferences
+      };
+      
       const { error } = await supabase
         .from('school_setup')
         .update({
-          data: {
-            school_name: schoolSetup.schoolName,
-            school_year: schoolSetup.schoolYear,
-            terms: schoolSetup.terms,
-            periods: schoolSetup.periods,
-            days: schoolSetup.days,
-            categories: schoolSetup.categories,
-            notification_preferences: schoolSetup.notificationPreferences
-          }
+          data: serializedData
         })
         .eq('user_id', userId);
       
