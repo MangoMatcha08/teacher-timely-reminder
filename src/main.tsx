@@ -4,11 +4,19 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-// Explicitly make React available globally to ensure hooks work properly
+// Make sure React is properly available for hooks
 window.React = React;
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+// Create the root with null check
+const rootElement = document.getElementById('root');
+
+if (rootElement) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+} else {
+  console.error("Root element not found!");
+}
