@@ -7,7 +7,7 @@ import Onboarding from './pages/Onboarding';
 import NotFound from './pages/NotFound';
 import Index from './pages/Index';
 import { ReminderProvider } from './context/ReminderContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/auth';
 import CreateReminder from './pages/CreateReminder';
 import { Toaster } from '@/components/ui/sonner';
 import Schedule from './pages/Schedule';
