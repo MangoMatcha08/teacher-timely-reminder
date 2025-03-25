@@ -1,7 +1,8 @@
 
 // Export the context, hook, and provider
 import AuthProvider from "./AuthProvider";
-import AuthContext, { useAuth } from "./AuthContext";
+import AuthContext from "./AuthContext";
+import { useAuth } from "./AuthContext";
 
 export {
   AuthContext,

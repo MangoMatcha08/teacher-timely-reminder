@@ -1,6 +1,12 @@
 
 import { Session, User } from "@supabase/supabase-js";
 
+export enum ReminderPriority {
+  Low = 'Low',
+  Medium = 'Medium',
+  High = 'High'
+}
+
 export interface AuthContextType {
   user: User | null;
   session: Session | null;
