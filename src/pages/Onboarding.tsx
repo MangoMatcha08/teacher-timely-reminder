@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import OnboardingComponent from "@/components/onboarding/Onboarding";
@@ -8,7 +8,7 @@ const Onboarding = () => {
   const { isAuthenticated, isInitialized, hasCompletedOnboarding } = useAuth();
   const navigate = useNavigate();
   
-  useEffect(() => {
+  React.useEffect(() => {
     if (isInitialized) {
       if (!isAuthenticated) {
         navigate("/auth");
