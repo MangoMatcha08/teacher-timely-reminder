@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react'
+import React from 'react' // Added explicit React import
 import './App.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'

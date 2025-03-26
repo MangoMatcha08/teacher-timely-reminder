@@ -1,5 +1,5 @@
 
-import * as React from "react";
+import React from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { login, register, logout, signInWithGoogle, loginWithTestAccount } from "@/services/firebase";
@@ -19,7 +19,20 @@ interface AuthContextType {
   resetOnboarding: () => void;
 }
 
-const AuthContext = React.createContext<AuthContextType | null>(null);
+// Create context with a default value to avoid null checks
+const AuthContext = React.createContext<AuthContextType>({
+  user: null,
+  isAuthenticated: false,
+  isInitialized: false,
+  hasCompletedOnboarding: false,
+  login: async () => { throw new Error("AuthContext not initialized"); },
+  register: async () => { throw new Error("AuthContext not initialized"); },
+  loginWithGoogle: async () => { throw new Error("AuthContext not initialized"); },
+  loginWithTestAccount: async () => { throw new Error("AuthContext not initialized"); },
+  logout: async () => { throw new Error("AuthContext not initialized"); },
+  setCompleteOnboarding: () => { throw new Error("AuthContext not initialized"); },
+  resetOnboarding: () => { throw new Error("AuthContext not initialized"); },
+});
 
 export const useAuth = () => {
   const context = React.useContext(AuthContext);
