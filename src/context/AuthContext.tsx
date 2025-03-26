@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+
+import * as React from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { login, register, logout, signInWithGoogle, loginWithTestAccount } from "@/services/firebase";
@@ -18,7 +19,7 @@ interface AuthContextType {
   resetOnboarding: () => void;
 }
 
-const AuthContext = createContext<AuthContextType>({
+const AuthContext = React.createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   isInitialized: false,
@@ -46,14 +47,14 @@ const AuthContext = createContext<AuthContextType>({
   },
 });
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => React.useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [user, setUser] = React.useState<User | null>(null);
+  const [isInitialized, setIsInitialized] = React.useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       
