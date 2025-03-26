@@ -9,7 +9,7 @@ import { toast } from "sonner";
 // Minimal implementation of auth state in case context fails
 const defaultAuthState = {
   isAuthenticated: false,
-  isInitialized: false,
+  isInitialized: true, // Changed to true so UI doesn't show loading indefinitely
   hasCompletedOnboarding: false,
   resetOnboarding: () => {}
 };
@@ -27,7 +27,7 @@ const Auth = () => {
       setAuthState(auth);
     } catch (error) {
       console.error("Error accessing auth context:", error);
-      setAuthError("There was a problem connecting to the authentication service. Please try refreshing the page.");
+      setAuthError("There was a problem connecting to the authentication service. Please try using the test account option.");
     }
   }, []);
   
@@ -59,11 +59,14 @@ const Auth = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4 text-center text-red-600">Authentication Error</h2>
+          <h2 className="text-2xl font-bold mb-4 text-center text-amber-600">Authentication Notice</h2>
           <p className="mb-6 text-center text-muted-foreground">{authError}</p>
-          <Button variant="primary" onClick={() => window.location.reload()} className="w-full">
-            Refresh Page
-          </Button>
+          <div className="space-y-3">
+            <Button variant="primary" onClick={() => window.location.reload()} className="w-full">
+              Try Again
+            </Button>
+            <AuthScreen />
+          </div>
         </div>
       </div>
     );

@@ -31,18 +31,62 @@ function AppRoutes() {
   );
 }
 
-// Safe wrapper for context providers
+// Safe wrapper for context providers with error handling
 function SafeProviders({ children }: { children: React.ReactNode }) {
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ReminderProvider>
-          {children}
-          <Toaster />
-        </ReminderProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  );
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    // Set up error handler for unhandled promise rejections
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error("Unhandled promise rejection:", event.reason);
+      if (event.reason?.message?.includes("Firebase") || 
+          event.reason?.message?.includes("auth") ||
+          event.reason?.message?.includes("firestore")) {
+        // Don't crash the app for Firebase-related errors
+        event.preventDefault();
+      }
+    };
+
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    return () => {
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    };
+  }, []);
+
+  // Using error boundary pattern with try-catch
+  try {
+    return (
+      <BrowserRouter>
+        <AuthProvider>
+          <ReminderProvider>
+            {children}
+            <Toaster />
+          </ReminderProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    );
+  } catch (error) {
+    console.error("Error in SafeProviders:", error);
+    return (
+      <BrowserRouter>
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
+            <h2 className="text-xl font-bold text-amber-600">Authentication Notice</h2>
+            <p className="mt-2 text-gray-600">
+              There was a problem connecting to authentication services. Please try the test account option.
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </BrowserRouter>
+    );
+  }
 }
 
 // Error fallback component
@@ -50,9 +94,11 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetError
   return (
     <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
-        <h2 className="text-xl font-bold text-red-600">Something went wrong</h2>
+        <h2 className="text-xl font-bold text-amber-600">Application Notice</h2>
         <p className="mt-2 text-gray-600">
-          {error?.message || "The application encountered an error. Please refresh the page."}
+          {error?.message?.includes("Firebase") || error?.message?.includes("auth") 
+            ? "There was a problem connecting to authentication services. Please try the test account option."
+            : error?.message || "The application encountered an error. Please refresh the page."}
         </p>
         <button 
           onClick={() => window.location.reload()} 
@@ -99,8 +145,10 @@ function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
-          <h2 className="text-xl font-bold text-red-600">Application Error</h2>
-          <p className="mt-2 text-gray-600">The application failed to start. Please refresh the page.</p>
+          <h2 className="text-xl font-bold text-amber-600">Application Notice</h2>
+          <p className="mt-2 text-gray-600">
+            The application is having trouble connecting to services. Please try the test account option.
+          </p>
           <button 
             onClick={() => window.location.reload()} 
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
