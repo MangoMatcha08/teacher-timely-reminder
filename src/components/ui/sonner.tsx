@@ -7,39 +7,45 @@ import { Toaster as Sonner } from "sonner"
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  // Use a simpler approach that doesn't rely on theme context immediately
-  const [theme, setTheme] = React.useState<string>("system")
+  // Use a simpler approach that doesn't rely on theme context at all
+  const [theme, setTheme] = React.useState<"light" | "dark" | "system">("system")
   
   // Use a safer approach to get the color scheme from the system
   React.useEffect(() => {
-    // First try to get the theme from localStorage to match theme-provider behavior
-    const storedTheme = localStorage.getItem("theme")
-    if (storedTheme) {
-      setTheme(storedTheme)
-      return
-    }
-    
-    // Fallback to checking system preference
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-    const updateTheme = () => {
-      setTheme(mediaQuery.matches ? "dark" : "light")
-    }
-    
-    // Set initial theme
-    updateTheme()
-    
-    // Add listener for theme changes
-    mediaQuery.addEventListener("change", updateTheme)
-    
-    // Cleanup
-    return () => {
-      mediaQuery.removeEventListener("change", updateTheme)
+    try {
+      // First try to get the theme from localStorage to match theme-provider behavior
+      const storedTheme = localStorage.getItem("theme")
+      if (storedTheme && (storedTheme === "dark" || storedTheme === "light" || storedTheme === "system")) {
+        setTheme(storedTheme as "light" | "dark" | "system")
+        return
+      }
+      
+      // Fallback to checking system preference
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+      const updateTheme = () => {
+        setTheme(mediaQuery.matches ? "dark" : "light")
+      }
+      
+      // Set initial theme
+      updateTheme()
+      
+      // Add listener for theme changes
+      mediaQuery.addEventListener("change", updateTheme)
+      
+      // Cleanup
+      return () => {
+        mediaQuery.removeEventListener("change", updateTheme)
+      }
+    } catch (error) {
+      // If all fails, default to light theme
+      console.error("Error determining theme:", error)
+      setTheme("light")
     }
   }, [])
   
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={theme}
       className="toaster group"
       toastOptions={{
         classNames: {

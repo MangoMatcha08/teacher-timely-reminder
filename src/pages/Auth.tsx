@@ -6,26 +6,32 @@ import AuthScreen from "@/components/auth/AuthScreen";
 import Button from "@/components/shared/Button";
 import { toast } from "sonner";
 
+// Minimal implementation of auth state in case context fails
+const defaultAuthState = {
+  isAuthenticated: false,
+  isInitialized: false,
+  hasCompletedOnboarding: false,
+  resetOnboarding: () => {}
+};
+
 const Auth = () => {
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authState, setAuthState] = useState(defaultAuthState);
+  const navigate = useNavigate();
   
-  // Wrap the auth hook in a try-catch to handle potential context errors
-  let authState = {
-    isAuthenticated: false,
-    isInitialized: false,
-    hasCompletedOnboarding: false,
-    resetOnboarding: () => {}
-  };
-  
-  try {
-    authState = useAuth();
-  } catch (error) {
-    console.error("Error accessing auth context:", error);
-    setAuthError("There was a problem connecting to the authentication service. Please try refreshing the page.");
-  }
+  // Initialize auth state safely
+  useEffect(() => {
+    try {
+      // Try to get auth from context
+      const auth = useAuth();
+      setAuthState(auth);
+    } catch (error) {
+      console.error("Error accessing auth context:", error);
+      setAuthError("There was a problem connecting to the authentication service. Please try refreshing the page.");
+    }
+  }, []);
   
   const { isAuthenticated, isInitialized, hasCompletedOnboarding, resetOnboarding } = authState;
-  const navigate = useNavigate();
   
   useEffect(() => {
     if (isInitialized && isAuthenticated) {
