@@ -7,7 +7,7 @@ import { Toaster as Sonner } from "sonner"
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const [theme, setTheme] = React.useState<"light" | "dark" | "system">("light")
+  const [currentTheme, setCurrentTheme] = React.useState<"light" | "dark" | "system">("system")
   
   // Use a safe approach to get the theme
   React.useEffect(() => {
@@ -15,24 +15,24 @@ const Toaster = ({ ...props }: ToasterProps) => {
       // Try to get saved theme from localStorage
       const savedTheme = localStorage.getItem("theme")
       if (savedTheme === "dark" || savedTheme === "light" || savedTheme === "system") {
-        setTheme(savedTheme)
+        setCurrentTheme(savedTheme)
         return
       }
       
       // Fallback to system preference
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-      setTheme(prefersDark ? "dark" : "light")
+      setCurrentTheme(prefersDark ? "dark" : "light")
       
     } catch (error) {
       console.error("Error determining theme:", error)
-      // Default to light if there's an error
-      setTheme("light")
+      // Default to system if there's an error
+      setCurrentTheme("system")
     }
   }, [])
   
   return (
     <Sonner
-      theme={theme}
+      theme={currentTheme}
       className="toaster group"
       toastOptions={{
         classNames: {

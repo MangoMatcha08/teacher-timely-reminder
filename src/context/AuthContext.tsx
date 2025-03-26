@@ -19,35 +19,15 @@ interface AuthContextType {
   resetOnboarding: () => void;
 }
 
-const AuthContext = React.createContext<AuthContextType>({
-  user: null,
-  isAuthenticated: false,
-  isInitialized: false,
-  hasCompletedOnboarding: false,
-  login: async () => {
-    throw new Error("Function not implemented");
-  },
-  register: async () => {
-    throw new Error("Function not implemented");
-  },
-  loginWithGoogle: async () => {
-    throw new Error("Function not implemented");
-  },
-  loginWithTestAccount: async () => {
-    throw new Error("Function not implemented");
-  },
-  logout: async () => {
-    throw new Error("Function not implemented");
-  },
-  setCompleteOnboarding: () => {
-    throw new Error("Function not implemented");
-  },
-  resetOnboarding: () => {
-    throw new Error("Function not implemented");
-  },
-});
+const AuthContext = React.createContext<AuthContextType | null>(null);
 
-export const useAuth = () => React.useContext(AuthContext);
+export const useAuth = () => {
+  const context = React.useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = React.useState<User | null>(null);
@@ -55,23 +35,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
 
   React.useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      
-      if (user) {
-        if (user.uid.startsWith("test-user-")) {
-          const testUserOnboarding = localStorage.getItem("testUserOnboarding");
-          setHasCompletedOnboarding(testUserOnboarding !== "reset");
-        } else {
-          const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
-          setHasCompletedOnboarding(!!onboardingCompleted);
+    try {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        
+        if (user) {
+          if (user.uid.startsWith("test-user-")) {
+            const testUserOnboarding = localStorage.getItem("testUserOnboarding");
+            setHasCompletedOnboarding(testUserOnboarding !== "reset");
+          } else {
+            const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
+            setHasCompletedOnboarding(!!onboardingCompleted);
+          }
         }
-      }
-      
-      setIsInitialized(true);
-    });
+        
+        setIsInitialized(true);
+      });
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Firebase auth initialization error:", error);
+      // Gracefully handle Firebase initialization failure
+      setIsInitialized(true);
+    }
   }, []);
 
   const handleLogin = async (email: string, password: string) => {
@@ -175,22 +161,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Create the provider value object outside the return statement
+  const contextValue: AuthContextType = {
+    user,
+    isAuthenticated: !!user,
+    isInitialized,
+    hasCompletedOnboarding,
+    login: handleLogin,
+    register: handleRegister,
+    loginWithGoogle: handleGoogleLogin,
+    loginWithTestAccount: handleTestAccountLogin,
+    logout: handleLogout,
+    setCompleteOnboarding: completeOnboarding,
+    resetOnboarding: resetOnboardingData,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isInitialized,
-        hasCompletedOnboarding,
-        login: handleLogin,
-        register: handleRegister,
-        loginWithGoogle: handleGoogleLogin,
-        loginWithTestAccount: handleTestAccountLogin,
-        logout: handleLogout,
-        setCompleteOnboarding: completeOnboarding,
-        resetOnboarding: resetOnboardingData,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react'
 import './App.css'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import Auth from './pages/Auth'
 import Onboarding from './pages/Onboarding'
@@ -29,6 +29,47 @@ function AppRoutes() {
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
+}
+
+// Error Boundary component to catch React errors
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; errorMessage: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: "" };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, errorMessage: error.message };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Error caught by boundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
+            <h2 className="text-xl font-bold text-amber-600">Application Notice</h2>
+            <p className="mt-2 text-gray-600">
+              {this.state.errorMessage || "The application encountered an error. Please refresh the page."}
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 // Safer App component without nested context providers
@@ -75,19 +116,21 @@ function App() {
     );
   }
 
-  // Main rendering path with simplified provider nesting
+  // Main rendering path with a better provider nesting order
   return (
     <div className="min-h-screen w-full">
-      <BrowserRouter>
-        <AuthProvider>
-          <ReminderProvider>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-              <AppRoutes />
-              <Toaster />
-            </ThemeProvider>
-          </ReminderProvider>
-        </AuthProvider>
-      </BrowserRouter>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <AuthProvider>
+              <ReminderProvider>
+                <AppRoutes />
+                <Toaster />
+              </ReminderProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </BrowserRouter>
+      </ErrorBoundary>
     </div>
   );
 }
