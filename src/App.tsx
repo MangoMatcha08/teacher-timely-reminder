@@ -13,26 +13,29 @@ import CreateReminder from './pages/CreateReminder'
 import { Toaster } from '@/components/ui/sonner'
 import Schedule from './pages/Schedule'
 import Settings from './pages/Settings'
+import { ThemeProvider } from 'next-themes'
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ReminderProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/schedule" element={<Schedule />} />
-            <Route path="/create-reminder" element={<CreateReminder />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-        </ReminderProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <BrowserRouter>
+        <AuthProvider>
+          <ReminderProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/schedule" element={<Schedule />} />
+              <Route path="/create-reminder" element={<CreateReminder />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
+          </ReminderProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   )
 }
 
