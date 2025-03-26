@@ -1,153 +1,206 @@
 
-import { 
-  supabase 
-} from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-// Sample school setup data
-const sampleSchoolSetup = {
-  schoolYear: "2023-2024",
-  termType: "semester",
-  termName: "Fall Semester",
-  selectedDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-  periods: [
-    {
-      id: "period-1",
-      name: "Period 1",
-      schedules: [
-        { dayOfWeek: "Monday", startTime: "8:00 AM", endTime: "8:50 AM" },
-        { dayOfWeek: "Tuesday", startTime: "8:00 AM", endTime: "8:50 AM" },
-        { dayOfWeek: "Wednesday", startTime: "8:00 AM", endTime: "8:50 AM" },
-        { dayOfWeek: "Thursday", startTime: "8:00 AM", endTime: "8:50 AM" },
-        { dayOfWeek: "Friday", startTime: "8:00 AM", endTime: "8:50 AM" }
-      ]
-    },
-    {
-      id: "period-2",
-      name: "Period 2",
-      schedules: [
-        { dayOfWeek: "Monday", startTime: "9:00 AM", endTime: "9:50 AM" },
-        { dayOfWeek: "Tuesday", startTime: "9:00 AM", endTime: "9:50 AM" },
-        { dayOfWeek: "Wednesday", startTime: "9:00 AM", endTime: "9:50 AM" },
-        { dayOfWeek: "Thursday", startTime: "9:00 AM", endTime: "9:50 AM" },
-        { dayOfWeek: "Friday", startTime: "9:00 AM", endTime: "9:50 AM" }
-      ]
-    }
-  ],
-  categories: [
-    "Materials/Set up",
-    "Student support",
-    "School events",
-    "Instruction",
-    "Administrative tasks"
-  ],
-  schoolStart: "8:00 AM",
-  schoolEnd: "3:00 PM",
-  teacherArrival: "7:30 AM",
-  iepMeetingsEnabled: true,
-  iepBeforeSchool: true,
-  iepBeforeSchoolTime: "7:00 AM",
-  iepAfterSchool: true,
-  iepAfterSchoolTime: "3:30 PM"
-};
-
-// Sample reminders data
-const sampleReminders = [
-  {
-    id: "reminder-1",
-    title: "Prepare math worksheets",
-    description: "Print worksheets for Period 1 math class",
-    periodId: "period-1",
-    category: "Materials/Set up",
-    daysOfWeek: ["Monday", "Wednesday"],
-    reminderTime: "7:45 AM",
-    isActive: true,
-    isComplete: false,
-    lastCompleted: null
-  },
-  {
-    id: "reminder-2",
-    title: "Grade assignments",
-    description: "Grade yesterday's assignments for Period 2",
-    periodId: "period-2",
-    category: "Administrative tasks",
-    daysOfWeek: ["Tuesday", "Thursday"],
-    reminderTime: "8:30 AM", 
-    isActive: true,
-    isComplete: false,
-    lastCompleted: null
-  },
-  {
-    id: "reminder-3",
-    title: "Submit attendance",
-    description: "Submit daily attendance report",
-    periodId: null,
-    category: "Administrative tasks",
-    daysOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-    reminderTime: "9:15 AM",
-    isActive: true,
-    isComplete: false,
-    lastCompleted: null
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
+import { SchoolSetup } from "@/context/ReminderContext";
+import { Reminder } from "@/context/reminder/types";
 
 /**
- * Test if Supabase connection is working
- * @returns {Promise<boolean>} true if connection is successful
+ * Verify connection to Supabase
  */
 export const verifySupabaseConnection = async (): Promise<boolean> => {
   try {
-    // Try to get a collection reference and query it
     const { error } = await supabase.from('profiles').select('id').limit(1);
-    
-    if (error) {
-      throw error;
-    }
-    
-    console.log("Supabase connection verified successfully");
-    return true;
+    return !error;
   } catch (error) {
-    console.error("Supabase connection verification failed:", error);
+    console.error("Supabase connection check failed:", error);
     return false;
   }
 };
 
 /**
- * Load test data to Supabase for a specific user
- * @param {string} userId - User ID to associate with test data
- * @returns {Promise<void>}
+ * Load test data to the user's Supabase account
  */
 export const loadTestDataToSupabase = async (userId: string): Promise<void> => {
-  if (!userId) {
-    throw new Error("User ID is required to load test data");
-  }
-  
   try {
-    // Save school setup data
-    const { saveSchoolSetup } = await import('./supabase/schoolSetup');
-    await saveSchoolSetup(userId, sampleSchoolSetup);
-    console.log("Sample school setup loaded");
+    // First, create test school setup
+    await createTestSchoolSetup(userId);
     
-    // Save reminders
-    const { saveReminder } = await import('./supabase/reminders');
-    for (const reminder of sampleReminders) {
-      await saveReminder({
-        ...reminder,
-        title: reminder.title,
-        notes: reminder.description,
-        days: reminder.daysOfWeek,
-        completed: reminder.isComplete || false,
-        category: reminder.category,
-        periodId: reminder.periodId,
-      }, userId);
-    }
-    console.log("Sample reminders loaded");
+    // Then, create test reminders
+    await createTestReminders(userId);
     
-    toast.success("Test data loaded successfully!");
-    return;
+    console.log("Test data loaded successfully");
   } catch (error) {
     console.error("Error loading test data:", error);
-    toast.error("Failed to load test data");
+    throw error;
+  }
+};
+
+/**
+ * Create test school setup
+ */
+const createTestSchoolSetup = async (userId: string): Promise<void> => {
+  try {
+    // Create a term object
+    const term = {
+      id: "term_default",
+      name: "Fall Semester 2024",
+      startDate: new Date().toISOString(),
+      endDate: new Date(new Date().setMonth(new Date().getMonth() + 5)).toISOString(),
+      schoolYear: "2024-2025"
+    };
+    
+    // Create the school setup object following the SchoolSetup type
+    const schoolSetup: SchoolSetup = {
+      termId: term.id,
+      terms: [term],
+      schoolDays: ["M", "T", "W", "Th", "F"],
+      periods: [
+        {
+          id: "period_1",
+          name: "Period 1",
+          schedules: [
+            { dayOfWeek: "M", startTime: "08:00", endTime: "09:00" },
+            { dayOfWeek: "T", startTime: "08:00", endTime: "09:00" },
+            { dayOfWeek: "W", startTime: "08:00", endTime: "09:00" },
+            { dayOfWeek: "Th", startTime: "08:00", endTime: "09:00" },
+            { dayOfWeek: "F", startTime: "08:00", endTime: "09:00" }
+          ]
+        },
+        {
+          id: "period_2",
+          name: "Period 2",
+          schedules: [
+            { dayOfWeek: "M", startTime: "09:15", endTime: "10:15" },
+            { dayOfWeek: "T", startTime: "09:15", endTime: "10:15" },
+            { dayOfWeek: "W", startTime: "09:15", endTime: "10:15" },
+            { dayOfWeek: "Th", startTime: "09:15", endTime: "10:15" },
+            { dayOfWeek: "F", startTime: "09:15", endTime: "10:15" }
+          ]
+        },
+        {
+          id: "period_3",
+          name: "Period 3",
+          schedules: [
+            { dayOfWeek: "M", startTime: "10:30", endTime: "11:30" },
+            { dayOfWeek: "T", startTime: "10:30", endTime: "11:30" },
+            { dayOfWeek: "W", startTime: "10:30", endTime: "11:30" },
+            { dayOfWeek: "Th", startTime: "10:30", endTime: "11:30" },
+            { dayOfWeek: "F", startTime: "10:30", endTime: "11:30" }
+          ]
+        }
+      ],
+      schoolHours: {
+        startTime: "08:00",
+        endTime: "15:00",
+        teacherArrivalTime: "07:30"
+      },
+      categories: [
+        "Materials/Set up",
+        "Student support",
+        "School events",
+        "Instruction",
+        "Administrative tasks"
+      ],
+      iepMeetings: {
+        enabled: true,
+        beforeSchool: true,
+        beforeSchoolTime: "07:00",
+        afterSchool: true,
+        afterSchoolTime: "16:00"
+      }
+    };
+    
+    // Save to Supabase
+    const { saveSchoolSetup } = await import("@/services/supabase/schoolSetup");
+    await saveSchoolSetup(userId, schoolSetup);
+    
+  } catch (error) {
+    console.error("Error creating test school setup:", error);
+    throw error;
+  }
+};
+
+/**
+ * Create test reminders
+ */
+const createTestReminders = async (userId: string): Promise<void> => {
+  try {
+    const reminders: Partial<Reminder>[] = [
+      {
+        title: "Prepare weekly quiz",
+        notes: "Create 10 questions for Friday's assessment",
+        category: "Instruction",
+        priority: "High",
+        type: "Planning",
+        timing: "After School",
+        days: ["M"],
+        recurrence: "Weekly",
+        periodId: "period_1",
+        termId: "term_default"
+      },
+      {
+        title: "Grade homework assignments",
+        notes: "For period 2 students",
+        category: "Administrative tasks",
+        priority: "Medium",
+        type: "Grading",
+        timing: "During Period",
+        days: ["W"],
+        recurrence: "Weekly",
+        periodId: "period_2",
+        termId: "term_default"
+      },
+      {
+        title: "Set up lab equipment",
+        notes: "Chemistry demonstration for period 3",
+        category: "Materials/Set up",
+        priority: "Medium",
+        type: "Preparation",
+        timing: "Before School",
+        days: ["Th"],
+        recurrence: "Once",
+        periodId: "period_3",
+        termId: "term_default",
+        dueDate: new Date(new Date().setDate(new Date().getDate() + 3))
+      },
+      {
+        title: "Parent-teacher conference",
+        notes: "Meet with the Johnson family about Billy's progress",
+        category: "Student support",
+        priority: "High",
+        type: "Meeting",
+        timing: "After School",
+        days: ["T"],
+        recurrence: "Once",
+        termId: "term_default",
+        dueDate: new Date(new Date().setDate(new Date().getDate() + 7))
+      },
+      {
+        title: "Submit attendance records",
+        notes: "Weekly attendance report due",
+        category: "Administrative tasks",
+        priority: "Medium",
+        type: "Administrative",
+        timing: "After School",
+        days: ["F"],
+        recurrence: "Weekly",
+        termId: "term_default"
+      }
+    ];
+    
+    const { saveReminder } = await import("@/services/supabase/reminders");
+    
+    // Save each reminder
+    for (const reminder of reminders) {
+      await saveReminder({
+        ...reminder,
+        completed: false,
+        createdAt: new Date(),
+        id: `test_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+      }, userId);
+    }
+    
+  } catch (error) {
+    console.error("Error creating test reminders:", error);
     throw error;
   }
 };
