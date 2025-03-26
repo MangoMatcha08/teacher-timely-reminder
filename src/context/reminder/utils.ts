@@ -130,11 +130,20 @@ export const loadFromFirebase = async (
   
   try {
     const cloudReminders = await getReminders(user.id, undefined);
+    
+    // Convert string dates to actual Date objects and ensure correct typing
+    const typedReminders: Reminder[] = cloudReminders.map(reminder => ({
+      ...reminder,
+      type: reminder.type as ReminderType || "_none",
+      createdAt: reminder.createdAt ? new Date(reminder.createdAt) : new Date(),
+      completed: reminder.completed || false
+    }));
+    
     const { getSchoolSetup } = await import("@/services/supabase/schoolSetup");
     const cloudSetup = await getSchoolSetup(user.id);
     
     return {
-      reminders: cloudReminders,
+      reminders: typedReminders,
       schoolSetup: cloudSetup || null
     };
   } catch (error) {
