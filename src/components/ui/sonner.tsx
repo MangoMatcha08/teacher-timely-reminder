@@ -1,27 +1,42 @@
+
 "use client"
 
 import * as React from "react"
-import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  // Add more robust error handling for theme context
+  // Use a simpler approach that doesn't rely on theme context immediately
   const [theme, setTheme] = React.useState<string>("system")
   
+  // Use a safer approach to get the color scheme from the system
   React.useEffect(() => {
-    try {
-      const themeContext = useTheme()
-      if (themeContext && themeContext.theme) {
-        setTheme(themeContext.theme)
-      }
-    } catch (error) {
-      console.error("Theme context error:", error)
-      // Keep using the default "system" theme that was set in useState
+    // First try to get the theme from localStorage to match theme-provider behavior
+    const storedTheme = localStorage.getItem("theme")
+    if (storedTheme) {
+      setTheme(storedTheme)
+      return
+    }
+    
+    // Fallback to checking system preference
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+    const updateTheme = () => {
+      setTheme(mediaQuery.matches ? "dark" : "light")
+    }
+    
+    // Set initial theme
+    updateTheme()
+    
+    // Add listener for theme changes
+    mediaQuery.addEventListener("change", updateTheme)
+    
+    // Cleanup
+    return () => {
+      mediaQuery.removeEventListener("change", updateTheme)
     }
   }, [])
-
+  
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}

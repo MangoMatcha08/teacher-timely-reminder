@@ -45,25 +45,28 @@ function App() {
   // Component-level error boundary using try/catch
   try {
     return (
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        {hasError ? (
-          <div className="min-h-screen flex items-center justify-center bg-white">
-            <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
-              <h2 className="text-xl font-bold text-red-600">Something went wrong</h2>
-              <p className="mt-2 text-gray-600">
-                {errorInfo?.message || "The application encountered an error. Please refresh the page."}
-              </p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              >
-                Refresh
-              </button>
+      // Add enableSystem and disableTransitionOnChange to prevent flashing
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <div className="min-h-screen w-full">
+          {hasError ? (
+            <div className="min-h-screen flex items-center justify-center bg-white">
+              <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
+                <h2 className="text-xl font-bold text-red-600">Something went wrong</h2>
+                <p className="mt-2 text-gray-600">
+                  {errorInfo?.message || "The application encountered an error. Please refresh the page."}
+                </p>
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                >
+                  Refresh
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <AppContent />
-        )}
+          ) : (
+            <AppContent />
+          )}
+        </div>
       </ThemeProvider>
     )
   } catch (error) {

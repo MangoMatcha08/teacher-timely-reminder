@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import AuthScreen from "@/components/auth/AuthScreen";
@@ -7,7 +7,24 @@ import Button from "@/components/shared/Button";
 import { toast } from "sonner";
 
 const Auth = () => {
-  const { isAuthenticated, isInitialized, hasCompletedOnboarding, resetOnboarding } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
+  
+  // Wrap the auth hook in a try-catch to handle potential context errors
+  let authState = {
+    isAuthenticated: false,
+    isInitialized: false,
+    hasCompletedOnboarding: false,
+    resetOnboarding: () => {}
+  };
+  
+  try {
+    authState = useAuth();
+  } catch (error) {
+    console.error("Error accessing auth context:", error);
+    setAuthError("There was a problem connecting to the authentication service. Please try refreshing the page.");
+  }
+  
+  const { isAuthenticated, isInitialized, hasCompletedOnboarding, resetOnboarding } = authState;
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -21,10 +38,30 @@ const Auth = () => {
   }, [isAuthenticated, isInitialized, hasCompletedOnboarding, navigate]);
   
   const handleResetOnboarding = () => {
-    resetOnboarding();
-    toast.success("Onboarding reset successfully!");
-    navigate("/onboarding");
+    try {
+      resetOnboarding();
+      toast.success("Onboarding reset successfully!");
+      navigate("/onboarding");
+    } catch (error) {
+      console.error("Failed to reset onboarding:", error);
+      toast.error("Failed to reset onboarding. Please try again.");
+    }
   };
+  
+  // Show auth error if there was a problem with the context
+  if (authError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4 text-center text-red-600">Authentication Error</h2>
+          <p className="mb-6 text-center text-muted-foreground">{authError}</p>
+          <Button variant="primary" onClick={() => window.location.reload()} className="w-full">
+            Refresh Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
   
   if (!isInitialized) {
     // Show loading state
