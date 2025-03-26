@@ -1,5 +1,5 @@
 
-import { ReminderState, Reminder, SchoolSetup, ReminderTiming, ReminderType, DayOfWeek } from '../types';
+import { ReminderState, Reminder, SchoolSetup, ReminderTiming, ReminderType, DayOfWeek, RecurrencePattern } from '../types';
 import { User } from '@supabase/supabase-js';
 import { getReminders, saveReminder } from "@/services/supabase/reminders";
 
@@ -42,6 +42,7 @@ export const loadFromFirebase = async (
       type: reminder.type as ReminderType || "_none",
       timing: reminder.timing as ReminderTiming,
       days: reminder.days as DayOfWeek[],
+      recurrence: reminder.recurrence as RecurrencePattern,
       createdAt: reminder.createdAt ? new Date(reminder.createdAt) : new Date(),
       completed: reminder.completed || false
     }));
