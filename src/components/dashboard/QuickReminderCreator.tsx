@@ -25,7 +25,7 @@ const QuickReminderCreator: React.FC<QuickReminderCreatorProps> = ({ onComplete,
   
   return (
     <QuickCreateReminder 
-      onClose={onClose} 
+      onClose={onClose}
       onSuccess={handleSuccess}
       onError={handleError}
     />

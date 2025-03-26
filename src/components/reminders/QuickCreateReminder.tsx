@@ -30,9 +30,15 @@ type QuickReminderFormData = z.infer<typeof quickReminderSchema>;
 
 interface QuickCreateReminderProps {
   onClose: () => void;
+  onSuccess?: () => void;
+  onError?: (error: unknown) => void;
 }
 
-const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) => {
+const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ 
+  onClose,
+  onSuccess,
+  onError 
+}) => {
   const { createReminder, schoolSetup } = useReminders();
   
   const reminderTimings: ReminderTiming[] = [
@@ -104,10 +110,18 @@ const QuickCreateReminder: React.FC<QuickCreateReminderProps> = ({ onClose }) =>
         priority: data.priority
       });
       
-      toast.success("Quick reminder created!");
-      onClose();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        toast.success("Quick reminder created!");
+        onClose();
+      }
     } catch (error) {
-      toast.error("Failed to create reminder");
+      if (onError) {
+        onError(error);
+      } else {
+        toast.error("Failed to create reminder");
+      }
     }
   };
   

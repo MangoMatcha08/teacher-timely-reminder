@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const Index = () => {
   const { isAuthenticated, isInitialized, hasCompletedOnboarding } = useAuth();
@@ -12,10 +13,15 @@ const Index = () => {
   React.useEffect(() => {
     if (isInitialized) {
       if (isAuthenticated) {
-        if (hasCompletedOnboarding) {
-          navigate("/dashboard");
-        } else {
-          navigate("/onboarding");
+        try {
+          if (hasCompletedOnboarding) {
+            navigate("/dashboard");
+          } else {
+            navigate("/onboarding");
+          }
+        } catch (error) {
+          console.error("Navigation error:", error);
+          toast.error("Something went wrong while navigating. Please try refreshing the page.");
         }
       }
     }
