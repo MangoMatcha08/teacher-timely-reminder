@@ -1,6 +1,5 @@
 
-import { User } from "firebase/auth";
-import { SchoolSetup } from "../ReminderContext";
+import { User } from "@supabase/supabase-js";
 
 export interface AuthContextType {
   user: User | null;
@@ -9,10 +8,11 @@ export interface AuthContextType {
   hasCompletedOnboarding: boolean;
   setCompletedOnboarding: () => true;
   resetOnboarding: () => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  loginWithTestAccount: () => Promise<void>;
+  login: (email: string, password: string) => Promise<any>;
+  register: (email: string, password: string) => Promise<any>;
+  loginWithGoogle: () => Promise<any>;
+  loginWithTestAccount: () => Promise<any>;
+  signOut: () => Promise<void>;
 }
 
 export interface AuthProviderProps {

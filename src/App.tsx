@@ -12,6 +12,7 @@ import { ReminderProvider } from "./context/ReminderContext";
 import { AuthProvider } from "./context/auth";
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
+import AuthCallback from "./pages/AuthCallback";
 import "./App.css";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/create-reminder" element={<CreateReminder />} />
             <Route path="/schedule" element={<Schedule />} />

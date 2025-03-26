@@ -13,7 +13,8 @@ const AuthContext = React.createContext<AuthContextType>({
   login: async () => {},
   register: async () => {},
   loginWithGoogle: async () => {},
-  loginWithTestAccount: async () => {}
+  loginWithTestAccount: async () => {},
+  signOut: async () => {}
 });
 
 // Custom hook to use the auth context with error handling
@@ -34,7 +35,8 @@ export const useAuth = () => {
       login: async () => {},
       register: async () => {},
       loginWithGoogle: async () => {},
-      loginWithTestAccount: async () => {}
+      loginWithTestAccount: async () => {},
+      signOut: async () => {}
     };
   }
   

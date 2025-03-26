@@ -1,20 +1,22 @@
 
 import * as React from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { getSchoolSetup, saveSchoolSetup } from "@/services/firebase";
+import { User, Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { getSchoolSetup, saveSchoolSetup } from "@/services/supabase";
 import { SchoolSetup } from "../ReminderContext";
 import AuthContext from "./useAuth";
 import { AuthProviderProps } from "./types";
+import { toast } from "sonner";
 
 // Component declaration - ensures React hooks can only be used inside component
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = React.useState<User | null>(null);
+  const [session, setSession] = React.useState<Session | null>(null);
   const [isInitialized, setIsInitialized] = React.useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
   const [offlineMode, setOfflineMode] = React.useState(false);
   
-  // Set a timeout to switch to offline mode if firebase auth doesn't initialize quickly
+  // Set a timeout to switch to offline mode if Supabase auth doesn't initialize quickly
   React.useEffect(() => {
     const offlineTimer = setTimeout(() => {
       if (!isInitialized) {
@@ -29,20 +31,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check for onboarding completion
   React.useEffect(() => {
-    if (offlineMode) return;
+    if (offlineMode || !user) return;
     
     console.log("Auth context: Checking onboarding status");
     const checkOnboardingStatus = async () => {
-      if (user) {
-        try {
-          const schoolSetup = await getSchoolSetup(user.uid);
-          setHasCompletedOnboarding(!!schoolSetup);
-          console.log("Onboarding status checked:", !!schoolSetup);
-        } catch (error) {
-          console.error("Error checking onboarding status:", error);
-          setHasCompletedOnboarding(false);
-        }
-      } else {
+      try {
+        const schoolSetup = await getSchoolSetup(user.id);
+        setHasCompletedOnboarding(!!schoolSetup);
+        console.log("Onboarding status checked:", !!schoolSetup);
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
         setHasCompletedOnboarding(false);
       }
     };
@@ -52,13 +50,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   
   // Auth state listener
   React.useEffect(() => {
-    console.log("Setting up auth state listener");
-    let unsubscribe = () => {};
+    console.log("Setting up Supabase auth state listener");
+    let subscription: { data: { subscription: any } } | null = null;
     
     try {
-      unsubscribe = onAuthStateChanged(auth, (user) => {
-        console.log("Auth state changed:", { userId: user?.uid || "no user" });
-        setUser(user);
+      // First, set up the auth state listener
+      const { data } = supabase.auth.onAuthStateChange((event, sessionData) => {
+        console.log("Auth state changed:", { event, userId: sessionData?.user?.id || "no user" });
+        setUser(sessionData?.user || null);
+        setSession(sessionData);
+        setIsInitialized(true);
+      });
+      
+      subscription = data;
+      
+      // Then check for existing session
+      supabase.auth.getSession().then(({ data: { session: sessionData } }) => {
+        console.log("Initial session check:", { userId: sessionData?.user?.id || "no session" });
+        setUser(sessionData?.user || null);
+        setSession(sessionData);
         setIsInitialized(true);
       });
     } catch (error) {
@@ -67,7 +77,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setOfflineMode(true);
     }
     
-    return () => unsubscribe();
+    // Cleanup subscription on unmount
+    return () => {
+      if (subscription) {
+        subscription.subscription.unsubscribe();
+      }
+    };
   }, []);
   
   // Set onboarding status - with correct return type
@@ -87,7 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     if (user) {
       try {
-        await saveSchoolSetup(user.uid, {} as SchoolSetup);
+        await saveSchoolSetup(user.id, {} as SchoolSetup);
         setHasCompletedOnboarding(false);
         console.log("Onboarding reset successful");
       } catch (error) {
@@ -97,25 +112,126 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Add stub implementations for required auth methods
+  // Authentication methods using Supabase
   const login = async (email: string, password: string) => {
-    console.log("Login method called", { email });
-    // Implementation would go here
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Signed in successfully!");
+      return data.user;
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast.error(error.message || "Failed to sign in. Please try again.");
+      throw error;
+    }
   };
 
   const register = async (email: string, password: string) => {
-    console.log("Register method called", { email });
-    // Implementation would go here
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Account created successfully!");
+      return data.user;
+    } catch (error: any) {
+      console.error("Register error:", error);
+      toast.error(error.message || "Failed to create account. Please try again.");
+      throw error;
+    }
   };
 
   const loginWithGoogle = async () => {
-    console.log("Login with Google method called");
-    // Implementation would go here
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      
+      if (error) throw error;
+      // This will redirect the browser, so any code after this may not run
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      toast.error("Failed to sign in with Google. Please try again.");
+      throw error;
+    }
   };
 
   const loginWithTestAccount = async () => {
-    console.log("Login with test account method called");
-    // Implementation would go here
+    try {
+      // Use a consistent test account for easier testing
+      const testEmail = "test@teacherreminder.app";
+      const testPassword = "test-password-123456";
+      
+      // Try to sign in with existing test account
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: testEmail,
+        password: testPassword
+      });
+      
+      if (!error && data.user) {
+        toast.success("Signed in with test account");
+        return data.user;
+      }
+      
+      // If sign in fails, create a new test account
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: testEmail,
+        password: testPassword,
+        options: {
+          data: {
+            display_name: "Test Teacher"
+          }
+        }
+      });
+      
+      if (signUpError) throw signUpError;
+      
+      if (signUpData.user) {
+        // Create default data for the test account
+        setTimeout(async () => {
+          try {
+            // Import required functions to avoid circular dependencies
+            const { createDefaultDataForTestUser } = await import("@/services/supabase");
+            if (signUpData.user) {
+              await createDefaultDataForTestUser(signUpData.user.id);
+            }
+          } catch (error) {
+            console.error("Error creating test data:", error);
+          }
+        }, 0);
+        
+        toast.success("Test account created successfully!");
+        return signUpData.user;
+      }
+      
+      throw new Error("Failed to create test account");
+    } catch (error: any) {
+      console.error("Test account error:", error);
+      toast.error("Failed to sign in with test account. Please try again.");
+      throw error;
+    }
+  };
+  
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("Signed out successfully");
+    } catch (error: any) {
+      console.error("Sign out error:", error);
+      toast.error("Failed to sign out. Please try again.");
+    }
   };
   
   const value = {
@@ -128,7 +244,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     loginWithGoogle,
-    loginWithTestAccount
+    loginWithTestAccount,
+    signOut
   };
   
   console.log("Auth context value prepared:", {
