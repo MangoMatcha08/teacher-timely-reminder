@@ -28,6 +28,38 @@ export const supabase = createClient<Database>(
         'X-Client-Info': 'teacherreminder-app'
       },
     },
+    // Add custom fetch with CORS debugging
+    fetch: (url, options) => {
+      console.log("Supabase fetch request:", { 
+        url: url.toString(), 
+        method: options?.method || 'GET',
+        headers: options?.headers ? Object.keys(options.headers) : []
+      });
+      
+      // Use the standard fetch with additional logging
+      return fetch(url, {
+        ...options,
+        // Add mode: 'cors' explicitly
+        mode: 'cors',
+      })
+      .then(response => {
+        console.log("Supabase fetch response:", { 
+          status: response.status, 
+          statusText: response.statusText,
+          headers: Array.from(response.headers.entries()),
+          url: response.url
+        });
+        return response;
+      })
+      .catch(error => {
+        console.error("Supabase fetch error:", { 
+          message: error.message, 
+          type: error.name,
+          stack: error.stack
+        });
+        throw error;
+      });
+    },
     // Add retries to improve connection reliability
     realtime: {
       params: {
@@ -58,11 +90,65 @@ export const checkSupabaseConnection = async (): Promise<boolean> => {
   }
 };
 
+// Add a specific CORS check
+export const checkCORSConnection = async (): Promise<{success: boolean, details: any}> => {
+  try {
+    console.log("Running CORS diagnostic test...");
+    const startTime = Date.now();
+    
+    // Make a simple OPTIONS request to check CORS
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+      method: 'OPTIONS',
+      headers: {
+        'apikey': SUPABASE_PUBLISHABLE_KEY,
+        'Content-Type': 'application/json'
+      },
+      mode: 'cors'
+    });
+    
+    const duration = Date.now() - startTime;
+    const headers = Object.fromEntries([...response.headers.entries()]);
+    
+    const details = {
+      status: response.status,
+      statusText: response.statusText,
+      headers: headers,
+      accessControlAllowOrigin: headers['access-control-allow-origin'] || null,
+      accessControlAllowMethods: headers['access-control-allow-methods'] || null,
+      accessControlAllowHeaders: headers['access-control-allow-headers'] || null,
+      duration: `${duration}ms`
+    };
+    
+    console.log("CORS check result:", details);
+    
+    return {
+      success: response.ok && headers['access-control-allow-origin'] !== undefined,
+      details
+    };
+  } catch (error) {
+    console.error("CORS check failed:", error);
+    return {
+      success: false,
+      details: {
+        error: error instanceof Error ? error.message : String(error),
+        type: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    };
+  }
+};
+
 // Initialize connection check on load
 setTimeout(() => {
   checkSupabaseConnection()
     .then(isConnected => {
       console.log("Initial Supabase connection check:", isConnected ? "Connected" : "Failed");
+      if (!isConnected) {
+        // If connection failed, try CORS check
+        checkCORSConnection().then(corsResult => {
+          console.log("CORS diagnostic results:", corsResult);
+        });
+      }
     })
     .catch(err => {
       console.error("Error during initial connection check:", err);

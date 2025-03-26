@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { User, Session } from "@supabase/supabase-js";
-import { supabase, checkSupabaseConnection } from "@/integrations/supabase/client";
+import { supabase, checkSupabaseConnection, checkCORSConnection } from "@/integrations/supabase/client";
 import { getSchoolSetup } from "@/services/supabase/schoolSetup";
 import { toast } from "sonner";
 
@@ -15,6 +15,7 @@ export function useAuthState() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
   const [offlineMode, setOfflineMode] = React.useState(false);
   const [connectionChecks, setConnectionChecks] = React.useState(0);
+  const [connectionIssue, setConnectionIssue] = React.useState<string | null>(null);
   
   // Auth state listener
   React.useEffect(() => {
@@ -73,7 +74,7 @@ export function useAuthState() {
       setIsInitialized(true);
       
       // Try to verify connection before going offline
-      checkConnectionBeforeOffline();
+      checkConnectionBeforeOffline("Error getting session: " + (error instanceof Error ? error.message : String(error)));
     });
     
     // Set a timeout to switch to offline mode if Supabase auth doesn't initialize quickly
@@ -82,17 +83,28 @@ export function useAuthState() {
       
       if (!isInitialized) {
         console.info("Auth initialization timed out - checking connection before going offline");
-        checkConnectionBeforeOffline();
+        checkConnectionBeforeOffline("Auth initialization timed out");
       }
     }, 12000); // Extended to 12 seconds (from 8)
     
     // Helper function to check connection before going offline
-    const checkConnectionBeforeOffline = async () => {
+    const checkConnectionBeforeOffline = async (reason: string) => {
       if (!isSubscribed) return;
       
       setConnectionChecks(prev => prev + 1);
+      setConnectionIssue(reason);
       
       try {
+        // Check for CORS issues first
+        const corsCheck = await checkCORSConnection();
+        console.log("CORS diagnostic during connection check:", corsCheck);
+        
+        if (!corsCheck.success) {
+          console.error("CORS check failed - possible browser security restrictions");
+          setConnectionIssue("CORS check failed: " + JSON.stringify(corsCheck.details));
+        }
+        
+        // Then check general connection
         const isConnected = await checkSupabaseConnection();
         
         if (isConnected) {
@@ -114,12 +126,18 @@ export function useAuthState() {
           console.log("Connection failed - switching to offline mode");
           setIsInitialized(true);
           setOfflineMode(true);
-          toast.error("Could not connect to server - running in offline mode");
+          
+          if (!corsCheck.success) {
+            toast.error("CORS issue detected - browser may be blocking requests");
+          } else {
+            toast.error("Could not connect to server - running in offline mode");
+          }
         }
       } catch (error) {
         console.error("Error checking connection:", error);
         setIsInitialized(true);
         setOfflineMode(true);
+        setConnectionIssue("Error checking connection: " + (error instanceof Error ? error.message : String(error)));
         toast.error("Network error - running in offline mode");
       }
     };
@@ -159,6 +177,7 @@ export function useAuthState() {
     hasCompletedOnboarding,
     offlineMode,
     connectionChecks,
+    connectionIssue,
     setCompletedOnboarding,
     setHasCompletedOnboarding
   };

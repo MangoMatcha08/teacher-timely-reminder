@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { loadTestDataToSupabase, verifySupabaseConnection } from "@/services/supabaseTestData";
-import { checkSupabaseConnection } from "@/integrations/supabase/client";
+import { checkSupabaseConnection, checkCORSConnection } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/auth";
 import { useReminders } from "@/context/ReminderContext";
 import {
@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import UploadedReminders from "./UploadedReminders";
+import CORSDiagnostic from "./CORSDiagnostic";
 
 const TestControls: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -36,12 +37,16 @@ const TestControls: React.FC = () => {
       const isConnected1 = await checkSupabaseConnection();
       const isConnected2 = await verifySupabaseConnection();
       
+      // Check for CORS issues
+      const corsResult = await checkCORSConnection();
+      
       const duration = Date.now() - startTime;
       
       setDetailedInfo({
         duration: `${duration}ms`,
         isConnected1,
         isConnected2,
+        corsCheck: corsResult,
         timestamp: new Date().toISOString()
       });
       
@@ -50,7 +55,11 @@ const TestControls: React.FC = () => {
         toast.success("Supabase connection successful!");
       } else {
         setTestStatus(`Supabase connection failed. ❌ (${duration}ms)`);
-        toast.error("Supabase connection failed");
+        if (!corsResult.success) {
+          toast.error("Supabase connection failed - CORS issue detected");
+        } else {
+          toast.error("Supabase connection failed");
+        }
       }
     } catch (error) {
       console.error("Error testing connection:", error);
@@ -140,6 +149,9 @@ const TestControls: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Add the new CORS Diagnostic component */}
+      <CORSDiagnostic />
       
       {/* Display the UploadedReminders component */}
       <UploadedReminders />
