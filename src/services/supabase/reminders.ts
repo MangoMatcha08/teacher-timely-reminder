@@ -1,53 +1,54 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { DayOfWeek, Reminder, RecurrencePattern, ReminderTiming, ReminderType } from "@/context/ReminderContext";
 import { handleSupabaseError } from "./utils";
-import { Database } from "@/integrations/supabase/types";
-
-// Type for converting between our app types and database types
-type DbReminder = Database['public']['Tables']['reminders']['Row'];
+import { Reminder, ReminderType, ReminderTiming, DayOfWeek, RecurrencePattern, ReminderPriority } from "@/context/ReminderContext";
 
 /**
- * Save a new reminder to the database
+ * Save a reminder to the database
  */
 export const saveReminder = async (reminder: Reminder, userId: string): Promise<void> => {
   try {
-    // Check if we're using a test account - use same approach as before to maintain compatibility
+    // Check if we're using a test account
     if (userId.startsWith("test-user-")) {
+      // Get existing reminders from localStorage
       const existingRemindersStr = localStorage.getItem(`reminders_${userId}`);
       const existingReminders: Reminder[] = existingRemindersStr ? JSON.parse(existingRemindersStr) : [];
       
+      // Add the new reminder with a generated ID
       const newReminder = {
         ...reminder,
-        id: `reminder-${Date.now()}`,
-        createdAt: new Date()
+        id: reminder.id || `reminder-${Date.now()}`,
+        createdAt: reminder.createdAt || new Date()
       };
       
       existingReminders.push(newReminder);
+      
+      // Save back to localStorage
       localStorage.setItem(`reminders_${userId}`, JSON.stringify(existingReminders));
       return;
     }
     
-    // Convert days from DayOfWeek[] to string[]
-    const daysAsStrings = reminder.days.map(day => day.toString());
-    
-    // Supabase storage for regular accounts
-    const { error } = await supabase.from('reminders').insert({
-      user_id: userId,
-      title: reminder.title,
-      notes: reminder.notes,
-      category: reminder.category,
-      priority: reminder.priority,
-      completed: reminder.completed || false,
-      period_id: reminder.periodId,
-      type: reminder.type,
-      timing: reminder.timing,
-      days: daysAsStrings,
-      recurrence: reminder.recurrence,
-      term_id: reminder.termId,
-      due_date: reminder.dueDate?.toISOString() || null
-    });
-    
+    // Regular Supabase storage for non-test accounts
+    const { error } = await supabase
+      .from('reminders')
+      .insert({
+        id: reminder.id || undefined, // Let Supabase generate an ID if none is provided
+        user_id: userId,
+        title: reminder.title,
+        notes: reminder.notes,
+        category: reminder.category,
+        priority: reminder.priority,
+        completed: reminder.completed,
+        period_id: reminder.periodId,
+        type: reminder.type,
+        timing: reminder.timing,
+        days: reminder.days,
+        recurrence: reminder.recurrence,
+        term_id: reminder.termId,
+        due_date: reminder.dueDate,
+        created_at: reminder.createdAt || new Date()
+      });
+      
     if (error) throw error;
   } catch (error) {
     console.error("Error saving reminder:", error);
@@ -56,38 +57,48 @@ export const saveReminder = async (reminder: Reminder, userId: string): Promise<
 };
 
 /**
- * Update an existing reminder
+ * Update a reminder in the database
  */
-export const updateReminder = async (reminderId: string, reminderData: Partial<Reminder>): Promise<void> => {
+export const updateReminder = async (reminderId: string, reminderData: Partial<Reminder>, userId: string): Promise<void> => {
   try {
-    // Transform the reminder data to match the database column names
-    const dbReminderData: Record<string, any> = {};
-    
-    if (reminderData.title !== undefined) dbReminderData.title = reminderData.title;
-    if (reminderData.notes !== undefined) dbReminderData.notes = reminderData.notes;
-    if (reminderData.category !== undefined) dbReminderData.category = reminderData.category;
-    if (reminderData.priority !== undefined) dbReminderData.priority = reminderData.priority;
-    if (reminderData.completed !== undefined) dbReminderData.completed = reminderData.completed;
-    if (reminderData.periodId !== undefined) dbReminderData.period_id = reminderData.periodId;
-    if (reminderData.type !== undefined) dbReminderData.type = reminderData.type;
-    if (reminderData.timing !== undefined) dbReminderData.timing = reminderData.timing;
-    
-    // Convert days if present
-    if (reminderData.days !== undefined) {
-      dbReminderData.days = reminderData.days.map(day => day.toString());
+    // Check if we're using a test account
+    if (userId.startsWith("test-user-")) {
+      // Get existing reminders from localStorage
+      const existingRemindersStr = localStorage.getItem(`reminders_${userId}`);
+      const existingReminders: Reminder[] = existingRemindersStr ? JSON.parse(existingRemindersStr) : [];
+      
+      // Find and update the reminder
+      const updatedReminders = existingReminders.map(reminder => 
+        reminder.id === reminderId ? { ...reminder, ...reminderData } : reminder
+      );
+      
+      // Save back to localStorage
+      localStorage.setItem(`reminders_${userId}`, JSON.stringify(updatedReminders));
+      return;
     }
     
-    if (reminderData.recurrence !== undefined) dbReminderData.recurrence = reminderData.recurrence;
-    if (reminderData.termId !== undefined) dbReminderData.term_id = reminderData.termId;
-    if (reminderData.dueDate !== undefined) {
-      dbReminderData.due_date = reminderData.dueDate ? new Date(reminderData.dueDate).toISOString() : null;
-    }
+    // Convert to snake_case for Supabase
+    const dataForUpdate: Record<string, any> = {};
+    if (reminderData.title) dataForUpdate.title = reminderData.title;
+    if (reminderData.notes !== undefined) dataForUpdate.notes = reminderData.notes;
+    if (reminderData.category) dataForUpdate.category = reminderData.category;
+    if (reminderData.priority) dataForUpdate.priority = reminderData.priority;
+    if (reminderData.completed !== undefined) dataForUpdate.completed = reminderData.completed;
+    if (reminderData.periodId) dataForUpdate.period_id = reminderData.periodId;
+    if (reminderData.type) dataForUpdate.type = reminderData.type;
+    if (reminderData.timing) dataForUpdate.timing = reminderData.timing;
+    if (reminderData.days) dataForUpdate.days = reminderData.days;
+    if (reminderData.recurrence) dataForUpdate.recurrence = reminderData.recurrence;
+    if (reminderData.termId) dataForUpdate.term_id = reminderData.termId;
+    if (reminderData.dueDate) dataForUpdate.due_date = reminderData.dueDate;
     
+    // Update in Supabase
     const { error } = await supabase
       .from('reminders')
-      .update(dbReminderData)
-      .eq('id', reminderId);
-    
+      .update(dataForUpdate)
+      .eq('id', reminderId)
+      .eq('user_id', userId);
+      
     if (error) throw error;
   } catch (error) {
     console.error("Error updating reminder:", error);
@@ -96,15 +107,31 @@ export const updateReminder = async (reminderId: string, reminderData: Partial<R
 };
 
 /**
- * Delete a reminder
+ * Delete a reminder from the database
  */
-export const deleteReminder = async (reminderId: string): Promise<void> => {
+export const deleteReminder = async (reminderId: string, userId: string): Promise<void> => {
   try {
+    // Check if we're using a test account
+    if (userId.startsWith("test-user-")) {
+      // Get existing reminders from localStorage
+      const existingRemindersStr = localStorage.getItem(`reminders_${userId}`);
+      const existingReminders: Reminder[] = existingRemindersStr ? JSON.parse(existingRemindersStr) : [];
+      
+      // Filter out the deleted reminder
+      const updatedReminders = existingReminders.filter(reminder => reminder.id !== reminderId);
+      
+      // Save back to localStorage
+      localStorage.setItem(`reminders_${userId}`, JSON.stringify(updatedReminders));
+      return;
+    }
+    
+    // Delete from Supabase
     const { error } = await supabase
       .from('reminders')
       .delete()
-      .eq('id', reminderId);
-    
+      .eq('id', reminderId)
+      .eq('user_id', userId);
+      
     if (error) throw error;
   } catch (error) {
     console.error("Error deleting reminder:", error);
@@ -113,32 +140,33 @@ export const deleteReminder = async (reminderId: string): Promise<void> => {
 };
 
 /**
- * Get all reminders for a user
+ * Get user reminders from the database
  */
 export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
   try {
-    // Check if we're using a test account - maintain compatibility
+    // Check if we're using a test account
     if (userId.startsWith("test-user-")) {
       const remindersStr = localStorage.getItem(`reminders_${userId}`);
       return remindersStr ? JSON.parse(remindersStr) : [];
     }
     
-    // Supabase fetching for regular accounts
+    // Fetch from Supabase
     const { data, error } = await supabase
       .from('reminders')
       .select('*')
-      .eq('user_id', userId);
-    
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+      
     if (error) throw error;
     
-    // Transform the data to match the expected Reminder type
-    const reminders: Reminder[] = (data || []).map(item => ({
+    // Convert from snake_case to camelCase
+    return (data || []).map(item => ({
       id: item.id,
       title: item.title,
       notes: item.notes,
       category: item.category,
-      priority: item.priority,
-      completed: item.completed,
+      priority: item.priority as ReminderPriority,
+      completed: item.completed || false,
       periodId: item.period_id,
       type: item.type as ReminderType,
       timing: item.timing as ReminderTiming,
@@ -148,8 +176,6 @@ export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
       dueDate: item.due_date ? new Date(item.due_date) : undefined,
       createdAt: new Date(item.created_at)
     }));
-    
-    return reminders;
   } catch (error) {
     console.error("Error getting reminders:", error);
     throw handleSupabaseError(error);

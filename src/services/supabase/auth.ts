@@ -4,6 +4,8 @@ import { User } from "@supabase/supabase-js";
 import { handleSupabaseError } from "./utils";
 import { SchoolSetup } from "@/context/ReminderContext";
 import { saveSchoolSetup } from "./schoolSetup";
+import { AppError, ErrorType } from "@/utils/errorHandling";
+import { ReminderType, ReminderTiming, DayOfWeek, RecurrencePattern, ReminderPriority } from "@/context/ReminderContext";
 
 /**
  * Register a new user with email and password
@@ -69,6 +71,9 @@ export const signInWithGoogle = async (): Promise<User | null> => {
     throw handleSupabaseError(error);
   }
 };
+
+// For backward compatibility
+export const loginWithGoogle = signInWithGoogle;
 
 /**
  * Simulated test account login for demo purposes
@@ -173,45 +178,48 @@ export async function createDefaultDataForTestUser(userId: string): Promise<void
         title: "Collect Math Homework",
         notes: "Collect homework from Period 1",
         category: "Materials/Set up",
-        priority: "Medium",
+        priority: "Medium" as ReminderPriority,
         completed: false,
         periodId: "period-1",
-        type: "Prepare Materials",
-        timing: "During Period",
-        days: ["M", "W", "F"],
-        recurrence: "Weekly",
+        type: "Prepare Materials" as ReminderType,
+        timing: "During Period" as ReminderTiming,
+        days: ["M", "W", "F"] as DayOfWeek[],
+        recurrence: "Weekly" as RecurrencePattern,
         termId: defaultTerm.id,
-        createdAt: new Date()
+        createdAt: new Date(),
+        dueDate: undefined
       },
       {
         id: "reminder-2",
         title: "Science Project Due",
         notes: "Final project presentations",
         category: "Instruction",
-        priority: "High",
+        priority: "High" as ReminderPriority,
         completed: false,
         periodId: "period-3",
-        type: "Grade",
-        timing: "End of Period",
-        days: ["T"],
-        recurrence: "Once",
+        type: "Grade" as ReminderType,
+        timing: "End of Period" as ReminderTiming,
+        days: ["T"] as DayOfWeek[],
+        recurrence: "Once" as RecurrencePattern,
         termId: defaultTerm.id,
-        createdAt: new Date()
+        createdAt: new Date(),
+        dueDate: undefined
       },
       {
         id: "reminder-3",
         title: "Parent Conference",
         notes: "Meeting with Alex's parents",
         category: "Student support",
-        priority: "High",
+        priority: "High" as ReminderPriority,
         completed: false,
         periodId: "period-4",
-        type: "Call Home",
-        timing: "After School",
-        days: ["Th"],
-        recurrence: "Once",
+        type: "Call Home" as ReminderType,
+        timing: "After School" as ReminderTiming,
+        days: ["Th"] as DayOfWeek[],
+        recurrence: "Once" as RecurrencePattern,
         termId: defaultTerm.id,
-        createdAt: new Date()
+        createdAt: new Date(),
+        dueDate: undefined
       }
     ];
 
