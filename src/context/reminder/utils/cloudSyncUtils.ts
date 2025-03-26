@@ -45,7 +45,8 @@ export const loadFromFirebase = async (
       recurrence: reminder.recurrence as RecurrencePattern,
       priority: reminder.priority as ReminderPriority,
       createdAt: reminder.createdAt ? new Date(reminder.createdAt) : new Date(),
-      completed: reminder.completed || false
+      completed: reminder.completed || false,
+      dueDate: reminder.dueDate ? new Date(reminder.dueDate) : undefined
     }));
     
     const { getSchoolSetup } = await import("@/services/supabase/schoolSetup");

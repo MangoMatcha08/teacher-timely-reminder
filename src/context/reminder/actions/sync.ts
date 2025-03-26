@@ -38,7 +38,8 @@ export const createSyncActions = (
               recurrence: reminder.recurrence as RecurrencePattern,
               priority: reminder.priority as ReminderPriority,
               createdAt: reminder.createdAt ? new Date(reminder.createdAt) : new Date(),
-              completed: reminder.completed || false
+              completed: reminder.completed || false,
+              dueDate: reminder.dueDate ? new Date(reminder.dueDate) : undefined
             }));
             
             setState(prev => ({ 
