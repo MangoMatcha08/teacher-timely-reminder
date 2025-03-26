@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { SchoolSetup } from "@/context/ReminderContext";
-import { Reminder } from "@/context/reminder/types";
+import { Reminder, ReminderType } from "@/context/reminder/types";
 
 /**
  * Verify connection to Supabase
@@ -130,7 +130,7 @@ const createTestReminders = async (userId: string): Promise<void> => {
         notes: "Create 10 questions for Friday's assessment",
         category: "Instruction",
         priority: "High",
-        type: "Planning",
+        type: "Prepare Materials" as ReminderType, // Fixed type
         timing: "After School",
         days: ["M"],
         recurrence: "Weekly",
@@ -142,7 +142,7 @@ const createTestReminders = async (userId: string): Promise<void> => {
         notes: "For period 2 students",
         category: "Administrative tasks",
         priority: "Medium",
-        type: "Grading",
+        type: "Grade" as ReminderType, // Fixed type
         timing: "During Period",
         days: ["W"],
         recurrence: "Weekly",
@@ -154,7 +154,7 @@ const createTestReminders = async (userId: string): Promise<void> => {
         notes: "Chemistry demonstration for period 3",
         category: "Materials/Set up",
         priority: "Medium",
-        type: "Preparation",
+        type: "Prepare Materials" as ReminderType, // Fixed type
         timing: "Before School",
         days: ["Th"],
         recurrence: "Once",
@@ -167,7 +167,7 @@ const createTestReminders = async (userId: string): Promise<void> => {
         notes: "Meet with the Johnson family about Billy's progress",
         category: "Student support",
         priority: "High",
-        type: "Meeting",
+        type: "Call Home" as ReminderType, // Fixed type
         timing: "After School",
         days: ["T"],
         recurrence: "Once",
@@ -179,7 +179,7 @@ const createTestReminders = async (userId: string): Promise<void> => {
         notes: "Weekly attendance report due",
         category: "Administrative tasks",
         priority: "Medium",
-        type: "Administrative",
+        type: "Other" as ReminderType, // Fixed type
         timing: "After School",
         days: ["F"],
         recurrence: "Weekly",

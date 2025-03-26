@@ -20,16 +20,16 @@ const Dashboard = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [isQuickCreateOpen, setIsQuickCreateOpen] = React.useState(false);
-  const [showTestTools, setShowTestTools] = React.useState(false);
-  
+  const [showTestTools, setShowTestTools] = React.useState(true);
+
   const handleQuickCreateComplete = () => {
     setIsQuickCreateOpen(false);
     toast.success("Reminder created successfully");
   };
-  
+
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   const [selectedPriority, setSelectedPriority] = React.useState<string | null>(null);
-  
+
   const filteredReminders = React.useMemo(() => {
     let filtered = [...reminders];
     
@@ -43,16 +43,16 @@ const Dashboard = () => {
     
     return filtered;
   }, [reminders, selectedCategory, selectedPriority]);
-  
+
   const handleSettingsDoubleClick = () => {
     setShowTestTools(prev => !prev);
     if (!showTestTools) {
-      toast.success("Firebase testing tools enabled");
+      toast.success("Supabase testing tools enabled");
     } else {
-      toast.info("Firebase testing tools disabled");
+      toast.info("Supabase testing tools disabled");
     }
   };
-  
+
   return (
     <div className="container mx-auto px-3 py-4">
       <div className="flex flex-col space-y-4">

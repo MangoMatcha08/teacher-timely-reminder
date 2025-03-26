@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { loadTestDataToSupabase, verifySupabaseConnection } from "@/services/supabaseTestData";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth";
 import { useReminders } from "@/context/ReminderContext";
 import {
   Dialog,
@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import UploadedReminders from "./UploadedReminders";
 
 const TestControls: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -113,6 +114,9 @@ const TestControls: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Add the UploadedReminders component here */}
+      <UploadedReminders />
       
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
