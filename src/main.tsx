@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Make React available globally to avoid issues
+// Explicitly set React on window to ensure it's accessible globally
 window.React = React;
 
 // Add a global error handler to catch unhandled errors
@@ -57,9 +57,6 @@ const getRootElement = () => {
 try {
   const rootElement = getRootElement();
   const root = createRoot(rootElement);
-  
-  // Explicitly set React on window to ensure it's accessible
-  window.React = React;
   
   root.render(
     <React.StrictMode>

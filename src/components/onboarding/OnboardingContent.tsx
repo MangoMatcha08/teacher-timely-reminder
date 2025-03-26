@@ -16,14 +16,57 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const OnboardingContent = () => {
-  const { currentStep, showExitConfirm, setShowExitConfirm } = useOnboarding();
+  const onboarding = useOnboarding();
+  const { 
+    currentStep, 
+    showExitConfirm, 
+    setShowExitConfirm,
+    schoolYear,
+    setSchoolYear,
+    termType,
+    setTermType,
+    termName,
+    setTermName,
+    selectedDays,
+    toggleDay,
+    periods,
+    handlePeriodNameChange,
+    removePeriod,
+    addPeriod,
+    schoolStart,
+    setSchoolStart,
+    schoolEnd,
+    setSchoolEnd,
+    teacherArrival,
+    setTeacherArrival,
+    iepMeetingsEnabled,
+    setIepMeetingsEnabled,
+    iepBeforeSchool,
+    setIepBeforeSchool,
+    iepBeforeSchoolTime,
+    setIepBeforeSchoolTime,
+    iepAfterSchool,
+    setIepAfterSchool,
+    iepAfterSchoolTime,
+    setIepAfterSchoolTime,
+    categories,
+    updateCategory,
+    removeCategory,
+    addCategory,
+    customScheduleVisibility,
+    toggleCustomScheduleVisibility,
+    handleScheduleStartTimeChange,
+    handleScheduleEndTimeChange,
+    hasCustomSchedule,
+    toggleCustomSchedule,
+    applyScheduleToAllDays
+  } = onboarding;
+  
   const { setCompleteOnboarding } = useAuth();
   const { saveSchoolSetup } = useReminders();
   const navigate = useNavigate();
 
   const handleFinishOnboarding = () => {
-    const onboardingData = useOnboarding();
-    
     // Destructure only the data we need for the school setup
     const {
       schoolYear,
@@ -40,7 +83,7 @@ const OnboardingContent = () => {
       iepBeforeSchoolTime,
       iepAfterSchool,
       iepAfterSchoolTime,
-    } = onboardingData;
+    } = onboarding;
     
     // Create term object based on type
     let startDate = new Date();
@@ -98,30 +141,84 @@ const OnboardingContent = () => {
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <SchoolYearSetup />;
+        return <SchoolYearSetup 
+          schoolYear={schoolYear} 
+          setSchoolYear={setSchoolYear}
+          termType={termType}
+          setTermType={setTermType}
+          termName={termName}
+          setTermName={setTermName}
+        />;
       case 1:
-        return <SchoolDaysSetup />;
+        return <SchoolDaysSetup 
+          selectedDays={selectedDays}
+          toggleDay={toggleDay}
+        />;
       case 2:
-        return <PeriodSetup />;
+        return <PeriodSetup 
+          periods={periods}
+          handlePeriodNameChange={handlePeriodNameChange}
+          removePeriod={removePeriod}
+          addPeriod={addPeriod}
+        />;
       case 3:
-        return <SchoolHoursSetup />;
+        return <SchoolHoursSetup 
+          schoolStart={schoolStart}
+          setSchoolStart={setSchoolStart}
+          schoolEnd={schoolEnd}
+          setSchoolEnd={setSchoolEnd}
+          teacherArrival={teacherArrival}
+          setTeacherArrival={setTeacherArrival}
+          iepMeetingsEnabled={iepMeetingsEnabled}
+          setIepMeetingsEnabled={setIepMeetingsEnabled}
+          iepBeforeSchool={iepBeforeSchool}
+          setIepBeforeSchool={setIepBeforeSchool}
+          iepBeforeSchoolTime={iepBeforeSchoolTime}
+          setIepBeforeSchoolTime={setIepBeforeSchoolTime}
+          iepAfterSchool={iepAfterSchool}
+          setIepAfterSchool={setIepAfterSchool}
+          iepAfterSchoolTime={iepAfterSchoolTime}
+          setIepAfterSchoolTime={setIepAfterSchoolTime}
+        />;
       case 4:
-        return <CategorySetup />;
+        return <CategorySetup 
+          categories={categories}
+          updateCategory={updateCategory}
+          removeCategory={removeCategory}
+          addCategory={addCategory}
+        />;
       case 5:
-        return <ScheduleSetup />;
+        return <ScheduleSetup 
+          periods={periods}
+          selectedDays={selectedDays}
+          customScheduleVisibility={customScheduleVisibility}
+          toggleCustomScheduleVisibility={toggleCustomScheduleVisibility}
+          handleScheduleStartTimeChange={handleScheduleStartTimeChange}
+          handleScheduleEndTimeChange={handleScheduleEndTimeChange}
+          hasCustomSchedule={hasCustomSchedule}
+          toggleCustomSchedule={toggleCustomSchedule}
+          applyScheduleToAllDays={applyScheduleToAllDays}
+        />;
       default:
-        return <SchoolYearSetup />;
+        return <SchoolYearSetup 
+          schoolYear={schoolYear} 
+          setSchoolYear={setSchoolYear}
+          termType={termType}
+          setTermType={setTermType}
+          termName={termName}
+          setTermName={setTermName}
+        />;
     }
   };
   
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center">
       <div className="w-full max-w-4xl px-4 py-6">
-        <StepIndicator />
+        <StepIndicator currentStep={currentStep} totalSteps={6} />
         <div className="mt-8">
           {renderStep()}
         </div>
-        <OnboardingControls onFinish={handleFinishOnboarding} />
+        <OnboardingControls />
       </div>
       
       <ExitDialog

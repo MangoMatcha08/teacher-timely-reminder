@@ -1,17 +1,18 @@
 
-import React from 'react';
+import * as React from 'react';
 import Button from "@/components/shared/Button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useReminders } from "@/context/ReminderContext";
 import { createDefaultTerm } from './OnboardingUtils';
-import { useOnboarding } from './OnboardingContext';
+import { useOnboarding } from './context/OnboardingContext';
 
 const OnboardingControls: React.FC = () => {
   const navigate = useNavigate();
   const { setCompleteOnboarding } = useAuth();
   const { saveSchoolSetup } = useReminders();
+  const onboarding = useOnboarding();
   const { 
     currentStep, 
     setCurrentStep, 
@@ -31,7 +32,7 @@ const OnboardingControls: React.FC = () => {
     iepAfterSchool,
     iepAfterSchoolTime,
     setCategories
-  } = useOnboarding();
+  } = onboarding;
   
   const goToNextStep = () => {
     if (currentStep === 0) {

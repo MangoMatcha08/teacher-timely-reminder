@@ -1,7 +1,6 @@
 
-import React from 'react';
+import * as React from 'react';
 import { useNavigate } from "react-router-dom";
-import { useOnboarding } from './OnboardingContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,16 +12,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const ExitDialog: React.FC = () => {
+interface ExitDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const ExitDialog: React.FC<ExitDialogProps> = ({ open, onOpenChange }) => {
   const navigate = useNavigate();
-  const { showExitConfirm, setShowExitConfirm } = useOnboarding();
   
   const handleExitOnboarding = () => {
     navigate("/");
   };
   
   return (
-    <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Exit Onboarding?</AlertDialogTitle>
