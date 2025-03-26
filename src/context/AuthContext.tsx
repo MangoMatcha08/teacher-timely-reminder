@@ -5,72 +5,68 @@ import { auth } from "@/lib/firebase";
 import { getSchoolSetup, saveSchoolSetup } from "@/services/firebase";
 import { SchoolSetup } from "./ReminderContext";
 
-// Add comprehensive React checks
-console.log("AuthContext.tsx - React initialization check:", {
-  isReactAvailable: !!React,
-  reactVersion: React.version,
-  useState: !!React.useState,
-  useEffect: !!React.useEffect,
-  createContext: !!React.createContext
+// Create React context with offline fallbacks
+const AuthContext = React.createContext({
+  user: null,
+  isAuthenticated: false,
+  isInitialized: true,
+  hasCompletedOnboarding: false,
+  setCompletedOnboarding: () => {},
+  resetOnboarding: async () => {},
+  login: async (email: string, password: string) => {},
+  register: async (email: string, password: string) => {},
+  loginWithGoogle: async () => {},
+  loginWithTestAccount: async () => {}
 });
 
-// Explicitly define all available methods in the AuthContextType
-type AuthContextType = {
-  user: User | null;
-  isAuthenticated: boolean;
-  isInitialized: boolean;
-  hasCompletedOnboarding: boolean;
-  setCompletedOnboarding: () => void;
-  resetOnboarding: () => void;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  loginWithTestAccount: () => Promise<void>;
-};
-
-// Create the context with a default value
-const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
-
-// Custom hook to use the auth context
+// Custom hook to use the auth context with error handling
 export const useAuth = () => {
-  const context = React.useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+  try {
+    const context = React.useContext(AuthContext);
+    return context;
+  } catch (error) {
+    console.error("Error in useAuth hook:", error);
+    // Return a fallback offline context
+    return {
+      user: null,
+      isAuthenticated: false,
+      isInitialized: true, // Initialized but offline
+      hasCompletedOnboarding: false,
+      setCompletedOnboarding: () => {},
+      resetOnboarding: async () => {},
+      login: async (email: string, password: string) => {},
+      register: async (email: string, password: string) => {},
+      loginWithGoogle: async () => {},
+      loginWithTestAccount: async () => {}
+    };
   }
-  return context;
 };
 
-// Auth provider component - ensure this is a proper function component
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Ensure React is properly imported before using hooks
-  if (!React || !React.useState) {
-    console.error("React or React.useState is not available!", { React });
-    // Provide a fallback UI when React hooks aren't available
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
-          <h2 className="text-xl font-bold text-red-600">React Error</h2>
-          <p className="mt-2 text-gray-600">
-            React hooks are not available. Please refresh the page or check the console for more details.
-          </p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Now safely use hooks after verification
+// Auth provider component - with safer React checks
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  // Safe state initializations with fallbacks for React availability issues
   const [user, setUser] = React.useState<User | null>(null);
   const [isInitialized, setIsInitialized] = React.useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
+  const [offlineMode, setOfflineMode] = React.useState(false);
+  
+  // Set a timeout to switch to offline mode if firebase auth doesn't initialize quickly
+  React.useEffect(() => {
+    const offlineTimer = setTimeout(() => {
+      if (!isInitialized) {
+        console.info("Auth initialization timed out - switching to offline mode");
+        setIsInitialized(true);
+        setOfflineMode(true);
+      }
+    }, 5000); // 5 second timeout
+    
+    return () => clearTimeout(offlineTimer);
+  }, [isInitialized]);
 
   // Check for onboarding completion
   React.useEffect(() => {
+    if (offlineMode) return;
+    
     console.log("Auth context: Checking onboarding status");
     const checkOnboardingStatus = async () => {
       if (user) {
@@ -88,16 +84,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     checkOnboardingStatus();
-  }, [user]);
+  }, [user, offlineMode]);
   
   // Auth state listener
   React.useEffect(() => {
     console.log("Setting up auth state listener");
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log("Auth state changed:", { userId: user?.uid || "no user" });
-      setUser(user);
+    let unsubscribe = () => {};
+    
+    try {
+      unsubscribe = onAuthStateChanged(auth, (user) => {
+        console.log("Auth state changed:", { userId: user?.uid || "no user" });
+        setUser(user);
+        setIsInitialized(true);
+      });
+    } catch (error) {
+      console.error("Error in auth state listener:", error);
       setIsInitialized(true);
-    });
+      setOfflineMode(true);
+    }
     
     return () => unsubscribe();
   }, []);
@@ -110,6 +114,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   // Reset onboarding
   const resetOnboarding = async () => {
+    if (offlineMode) {
+      setHasCompletedOnboarding(false);
+      console.log("Onboarding reset in offline mode");
+      return;
+    }
+    
     if (user) {
       try {
         await saveSchoolSetup(user.uid, {} as SchoolSetup);
@@ -159,7 +169,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   console.log("Auth context value prepared:", {
     isAuthenticated: !!user,
     isInitialized,
-    hasCompletedOnboarding
+    hasCompletedOnboarding,
+    offlineMode
   });
   
   return (
