@@ -1,8 +1,8 @@
-
 import { firestore, auth, googleProvider } from "@/lib/firebase";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, setDoc, getDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User, signInWithPopup } from "firebase/auth";
 import { Reminder, SchoolSetup, DayOfWeek, ReminderType, ReminderTiming, Period, SchoolHours, Term } from "@/context/ReminderContext";
+import { handleFirebaseError, ErrorType, AppError } from "@/utils/errorHandling";
 
 // Authentication functions
 export const register = async (email: string, password: string) => {
@@ -10,22 +10,10 @@ export const register = async (email: string, password: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     console.log("Registration successful:", userCredential.user.uid);
     return userCredential.user;
-  } catch (error: any) {
+  } catch (error) {
     console.error("Register error:", error);
-    
-    if (error.code === 'auth/email-already-in-use') {
-      throw new Error("This email is already registered. Please sign in instead.");
-    } else if (error.code === 'auth/invalid-email') {
-      throw new Error("Invalid email format. Please check your email address.");
-    } else if (error.code === 'auth/weak-password') {
-      throw new Error("Password is too weak. Please use a stronger password.");
-    } else if (error.code === 'auth/network-request-failed') {
-      throw new Error("Network error. Please check your internet connection.");
-    } else if (error.code?.includes('api-key')) {
-      throw new Error("Firebase authentication error. Please try again later or use the test account.");
-    }
-    
-    throw new Error("Registration failed. Please try again later or use the test account.");
+    const appError = handleFirebaseError(error);
+    throw appError;
   }
 };
 
@@ -34,24 +22,10 @@ export const login = async (email: string, password: string) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     console.log("Login successful:", userCredential.user.uid);
     return userCredential.user;
-  } catch (error: any) {
+  } catch (error) {
     console.error("Login error:", error);
-    
-    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-      throw new Error("Invalid email or password. Please try again.");
-    } else if (error.code === 'auth/invalid-email') {
-      throw new Error("Invalid email format. Please check your email address.");
-    } else if (error.code === 'auth/user-disabled') {
-      throw new Error("This account has been disabled. Please contact support.");
-    } else if (error.code === 'auth/too-many-requests') {
-      throw new Error("Too many failed login attempts. Please try again later.");
-    } else if (error.code === 'auth/network-request-failed') {
-      throw new Error("Network error. Please check your internet connection.");
-    } else if (error.code?.includes('api-key')) {
-      throw new Error("Firebase authentication error. Please try again later or use the test account.");
-    }
-    
-    throw new Error("Login failed. Please try again later or use the test account.");
+    const appError = handleFirebaseError(error);
+    throw appError;
   }
 };
 
@@ -60,9 +34,10 @@ export const signInWithGoogle = async () => {
     const userCredential = await signInWithPopup(auth, googleProvider);
     console.log("Google sign-in successful:", userCredential.user.uid);
     return userCredential.user;
-  } catch (error: any) {
+  } catch (error) {
     console.error("Google sign-in error:", error);
-    throw new Error("Failed to sign in with Google. Please try again later or use the test account.");
+    const appError = handleFirebaseError(error);
+    throw appError;
   }
 };
 
@@ -230,7 +205,10 @@ export const loginWithTestAccount = async () => {
     return testUser;
   } catch (error) {
     console.error("Error creating test account:", error);
-    throw new Error("Failed to create test account. Please try again.");
+    throw {
+      type: ErrorType.AUTHENTICATION,
+      message: "Failed to create test account. Please try again."
+    } as AppError;
   }
 };
 
@@ -239,7 +217,8 @@ export const logout = async () => {
     await signOut(auth);
   } catch (error) {
     console.error("Logout error:", error);
-    throw new Error("Logout failed. Please try again.");
+    const appError = handleFirebaseError(error);
+    throw appError;
   }
 };
 
@@ -279,7 +258,8 @@ export const saveReminder = async (reminder: Reminder, userId: string) => {
     });
   } catch (error) {
     console.error("Error saving reminder:", error);
-    throw error;
+    const appError = handleFirebaseError(error);
+    throw appError;
   }
 };
 
@@ -289,7 +269,8 @@ export const updateReminder = async (reminderId: string, reminderData: Partial<R
     await updateDoc(reminderRef, { ...reminderData });
   } catch (error) {
     console.error("Error updating reminder:", error);
-    throw error;
+    const appError = handleFirebaseError(error);
+    throw appError;
   }
 };
 
@@ -299,7 +280,8 @@ export const deleteReminder = async (reminderId: string) => {
     await deleteDoc(reminderRef);
   } catch (error) {
     console.error("Error deleting reminder:", error);
-    throw error;
+    const appError = handleFirebaseError(error);
+    throw appError;
   }
 };
 
@@ -326,7 +308,8 @@ export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
     });
   } catch (error) {
     console.error("Error getting reminders:", error);
-    throw error;
+    const appError = handleFirebaseError(error);
+    throw appError;
   }
 };
 
@@ -344,7 +327,8 @@ export const saveSchoolSetup = async (userId: string, setup: SchoolSetup) => {
     await setDoc(setupRef, { ...setup, updatedAt: new Date().toISOString() });
   } catch (error) {
     console.error("Error saving school setup:", error);
-    throw error;
+    const appError = handleFirebaseError(error);
+    throw appError;
   }
 };
 
@@ -366,6 +350,7 @@ export const getSchoolSetup = async (userId: string): Promise<SchoolSetup | null
     return null;
   } catch (error) {
     console.error("Error getting school setup:", error);
-    throw error;
+    const appError = handleFirebaseError(error);
+    throw appError;
   }
 };
