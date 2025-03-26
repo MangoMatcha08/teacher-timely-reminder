@@ -3,7 +3,8 @@ import * as React from 'react';
 import { ReminderContextType, ReminderState } from './types';
 import { createReminderActions } from './actions';
 import { createReminderSelectors } from './selectors';
-import { loadFromFirebase, loadFromLocalStorage } from './utils';
+import { loadFromFirebase } from './utils/cloudSyncUtils';
+import { loadFromLocalStorage } from './utils/storageUtils';
 import { useAuth } from '../AuthContext';
 
 // Create the context with a default value

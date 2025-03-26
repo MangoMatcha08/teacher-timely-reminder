@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { Reminder, ReminderState, ReminderType, ReminderTiming, DayOfWeek, RecurrencePattern, ReminderPriority } from '../types';
 import { User } from '@supabase/supabase-js';
-import { saveToFirebase } from '../utils';
+import { saveToFirebase } from '../utils/cloudSyncUtils';
 import { getReminders, saveReminder, deleteReminder as deleteReminderFromDB } from "@/services/supabase/reminders";
 
 export const createSyncActions = (
