@@ -15,6 +15,9 @@ import Schedule from './pages/Schedule'
 import Settings from './pages/Settings'
 import { ThemeProvider } from 'next-themes'
 
+// Add a console log to verify React is available
+console.log("App.tsx - React available:", !!React);
+
 // Separate the Routes component to isolate potential errors
 function AppRoutes() {
   return (
@@ -98,6 +101,19 @@ const FirebaseErrorHandler: React.FC<{ children: React.ReactNode }> = ({ childre
 function App() {
   const [hasError, setHasError] = React.useState(false);
   const [errorInfo, setErrorInfo] = React.useState<{ message: string } | null>(null);
+
+  // Add a handler for initialization errors
+  React.useEffect(() => {
+    try {
+      // Just a test to make sure React hooks work
+      const [test, setTest] = React.useState(false);
+      console.log("React hooks are working in App component");
+    } catch (error) {
+      console.error("React hooks testing error:", error);
+      setHasError(true);
+      setErrorInfo({ message: "React initialization error. Please refresh the page." });
+    }
+  }, []);
 
   // Render a simple error UI if React itself has issues
   if (hasError) {

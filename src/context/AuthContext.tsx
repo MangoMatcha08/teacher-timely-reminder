@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -41,6 +40,11 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Explicitly check for React.useState before using it
+if (!React || !React.useState) {
+  console.error("React or React.useState is not available!", { React });
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = React.useState<User | null>(null);

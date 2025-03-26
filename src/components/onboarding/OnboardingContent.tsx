@@ -1,5 +1,5 @@
 
-import React from "react";
+import * as React from "react";
 import { useOnboarding } from "./context/OnboardingContext";
 import StepIndicator from "./StepIndicator";
 import OnboardingControls from "./OnboardingControls";
@@ -15,7 +15,7 @@ import { useReminders } from "@/context/ReminderContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-const OnboardingContent = () => {
+const OnboardingContent: React.FC = () => {
   const onboarding = useOnboarding();
   const { 
     currentStep, 
@@ -59,7 +59,8 @@ const OnboardingContent = () => {
     handleScheduleEndTimeChange,
     hasCustomSchedule,
     toggleCustomSchedule,
-    applyScheduleToAllDays
+    applyScheduleToAllDays,
+    updateTermNameFromType
   } = onboarding;
   
   const { setCompleteOnboarding } = useAuth();
@@ -148,6 +149,7 @@ const OnboardingContent = () => {
           setTermType={setTermType}
           termName={termName}
           setTermName={setTermName}
+          updateTermNameFromType={updateTermNameFromType}
         />;
       case 1:
         return <SchoolDaysSetup 
@@ -207,6 +209,7 @@ const OnboardingContent = () => {
           setTermType={setTermType}
           termName={termName}
           setTermName={setTermName}
+          updateTermNameFromType={updateTermNameFromType}
         />;
     }
   };

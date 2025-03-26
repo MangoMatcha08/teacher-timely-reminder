@@ -54,6 +54,11 @@ const getRootElement = () => {
   return rootElement;
 };
 
+// Add debugging to help identify React initialization issues
+console.log("React version:", React.version);
+console.log("React is available:", !!React);
+console.log("useState is available:", !!React.useState);
+
 try {
   const rootElement = getRootElement();
   const root = createRoot(rootElement);
