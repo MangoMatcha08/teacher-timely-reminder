@@ -1,9 +1,13 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { createClient } from "@supabase/supabase-js";
 import { User } from "@supabase/supabase-js";
-import { Reminder, SchoolSetup, ReminderType, ReminderTiming, Period, SchoolHours, Term } from "@/context/ReminderContext";
+import { Reminder, SchoolSetup, ReminderType, ReminderTiming, Period, SchoolHours, Term, DayOfWeek } from "@/context/ReminderContext";
 import { ErrorType, AppError } from "@/utils/errorHandling";
+import { Database } from "@/integrations/supabase/types";
+
+// Type for converting between our app types and database types
+type DbReminder = Database['public']['Tables']['reminders']['Row'];
+type DbSchoolSetup = Database['public']['Tables']['school_setup']['Row'];
 
 // Authentication functions
 export const register = async (email: string, password: string): Promise<User> => {
@@ -96,9 +100,6 @@ export const loginWithTestAccount = async (): Promise<User> => {
     
     console.log("Test account created:", newUserData.user.id);
     
-    // Create default school setup and reminders
-    await createDefaultDataForTestUser(newUserData.user.id);
-    
     return newUserData.user;
   } catch (error) {
     console.error("Error creating test account:", error);
@@ -138,6 +139,9 @@ export const saveReminder = async (reminder: Reminder, userId: string): Promise<
       return;
     }
     
+    // Convert days from DayOfWeek[] to string[]
+    const daysAsStrings = reminder.days.map(day => day.toString());
+    
     // Supabase storage for regular accounts
     const { error } = await supabase.from('reminders').insert({
       user_id: userId,
@@ -149,10 +153,10 @@ export const saveReminder = async (reminder: Reminder, userId: string): Promise<
       period_id: reminder.periodId,
       type: reminder.type,
       timing: reminder.timing,
-      days: reminder.days,
+      days: daysAsStrings,
       recurrence: reminder.recurrence,
       term_id: reminder.termId,
-      due_date: reminder.dueDate
+      due_date: reminder.dueDate ? new Date(reminder.dueDate).toISOString() : null
     });
     
     if (error) throw error;
@@ -175,10 +179,17 @@ export const updateReminder = async (reminderId: string, reminderData: Partial<R
     if (reminderData.periodId !== undefined) dbReminderData.period_id = reminderData.periodId;
     if (reminderData.type !== undefined) dbReminderData.type = reminderData.type;
     if (reminderData.timing !== undefined) dbReminderData.timing = reminderData.timing;
-    if (reminderData.days !== undefined) dbReminderData.days = reminderData.days;
+    
+    // Convert days if present
+    if (reminderData.days !== undefined) {
+      dbReminderData.days = reminderData.days.map(day => day.toString());
+    }
+    
     if (reminderData.recurrence !== undefined) dbReminderData.recurrence = reminderData.recurrence;
     if (reminderData.termId !== undefined) dbReminderData.term_id = reminderData.termId;
-    if (reminderData.dueDate !== undefined) dbReminderData.due_date = reminderData.dueDate;
+    if (reminderData.dueDate !== undefined) {
+      dbReminderData.due_date = reminderData.dueDate ? new Date(reminderData.dueDate).toISOString() : null;
+    }
     
     const { error } = await supabase
       .from('reminders')
@@ -223,7 +234,7 @@ export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
     if (error) throw error;
     
     // Transform the data to match the expected Reminder type
-    return (data || []).map(item => ({
+    const reminders: Reminder[] = (data || []).map(item => ({
       id: item.id,
       title: item.title,
       notes: item.notes,
@@ -233,12 +244,14 @@ export const getUserReminders = async (userId: string): Promise<Reminder[]> => {
       periodId: item.period_id,
       type: item.type as ReminderType,
       timing: item.timing as ReminderTiming,
-      days: item.days,
+      days: item.days as DayOfWeek[],  // Typecast to match the expected type
       recurrence: item.recurrence,
       termId: item.term_id,
       dueDate: item.due_date,
       createdAt: new Date(item.created_at)
     }));
+    
+    return reminders;
   } catch (error) {
     console.error("Error getting reminders:", error);
     throw handleSupabaseError(error);
@@ -264,11 +277,14 @@ export const saveSchoolSetup = async (userId: string, setup: SchoolSetup): Promi
     
     if (checkError) throw checkError;
     
+    // Convert SchoolSetup to a format that can be stored in jsonb
+    const setupForDb = JSON.parse(JSON.stringify(setup));
+    
     if (existingSetup) {
       // Update existing setup
       const { error } = await supabase
         .from('school_setup')
-        .update({ data: setup })
+        .update({ data: setupForDb })
         .eq('id', existingSetup.id);
         
       if (error) throw error;
@@ -276,7 +292,7 @@ export const saveSchoolSetup = async (userId: string, setup: SchoolSetup): Promi
       // Insert new setup
       const { error } = await supabase
         .from('school_setup')
-        .insert({ user_id: userId, data: setup });
+        .insert({ user_id: userId, data: setupForDb });
         
       if (error) throw error;
     }
@@ -303,7 +319,12 @@ export const getSchoolSetup = async (userId: string): Promise<SchoolSetup | null
     
     if (error) throw error;
     
-    return data ? data.data as SchoolSetup : null;
+    if (data && data.data) {
+      // Convert from jsonb to SchoolSetup
+      return data.data as unknown as SchoolSetup;
+    }
+    
+    return null;
   } catch (error) {
     console.error("Error getting school setup:", error);
     throw handleSupabaseError(error);
@@ -364,7 +385,7 @@ export function handleSupabaseError(error: any): AppError {
 }
 
 // Helper function to create default data for test users
-async function createDefaultDataForTestUser(userId: string): Promise<void> {
+export async function createDefaultDataForTestUser(userId: string): Promise<void> {
   try {
     // Create default periods
     const defaultPeriods: Period[] = [

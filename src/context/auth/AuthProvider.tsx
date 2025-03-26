@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Auth state listener
   React.useEffect(() => {
     console.log("Setting up Supabase auth state listener");
-    let subscription: { data: { subscription: any } } | null = null;
+    let subscription: { subscription: any } | null = null;
     
     try {
       // First, set up the auth state listener
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsInitialized(true);
       });
       
-      subscription = data;
+      subscription = { subscription: data.subscription };
       
       // Then check for existing session
       supabase.auth.getSession().then(({ data: { session: sessionData } }) => {
@@ -199,17 +199,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (signUpData.user) {
         // Create default data for the test account
+        const testUserId = signUpData.user.id;
+        console.log("Test user created:", signUpData.user);
+        
+        // Create default data using our existing utility
         setTimeout(async () => {
           try {
-            // Import required functions to avoid circular dependencies
-            const { createDefaultDataForTestUser } = await import("@/services/supabase");
-            if (signUpData.user) {
-              await createDefaultDataForTestUser(signUpData.user.id);
+            // Create separate implementation here instead of importing
+            const testUser = signUpData.user;
+            if (testUser) {
+              // Create default school setup with mock data
+              const defaultSchoolSetup: SchoolSetup = {
+                termId: "term-default",
+                terms: [{
+                  id: "term-default",
+                  name: "Current Term",
+                  startDate: new Date().toISOString(),
+                  endDate: new Date(Date.now() + 86400000 * 120).toISOString(),
+                  schoolYear: "2023-2024"
+                }],
+                schoolDays: ["M", "T", "W", "Th", "F"],
+                periods: [
+                  {
+                    id: "period-1",
+                    name: "Period 1",
+                    schedules: [
+                      { dayOfWeek: "M", startTime: "8:00 AM", endTime: "8:50 AM" },
+                      { dayOfWeek: "T", startTime: "8:00 AM", endTime: "8:50 AM" },
+                      { dayOfWeek: "W", startTime: "8:00 AM", endTime: "8:50 AM" },
+                      { dayOfWeek: "Th", startTime: "8:00 AM", endTime: "8:50 AM" },
+                      { dayOfWeek: "F", startTime: "8:00 AM", endTime: "8:50 AM" }
+                    ]
+                  },
+                  {
+                    id: "period-2",
+                    name: "Period 2",
+                    schedules: [
+                      { dayOfWeek: "M", startTime: "9:00 AM", endTime: "9:50 AM" },
+                      { dayOfWeek: "T", startTime: "9:00 AM", endTime: "9:50 AM" },
+                      { dayOfWeek: "W", startTime: "9:00 AM", endTime: "9:50 AM" },
+                      { dayOfWeek: "Th", startTime: "9:00 AM", endTime: "9:50 AM" },
+                      { dayOfWeek: "F", startTime: "9:00 AM", endTime: "9:50 AM" }
+                    ]
+                  }
+                ],
+                schoolHours: {
+                  startTime: "7:45 AM",
+                  endTime: "3:15 PM",
+                  teacherArrivalTime: "7:30 AM"
+                },
+                categories: ["Materials/Set up", "Student support", "School events", "Instruction", "Administrative tasks"],
+                iepMeetings: {
+                  enabled: false
+                }
+              };
+              
+              await saveSchoolSetup(testUser.id, defaultSchoolSetup);
             }
           } catch (error) {
             console.error("Error creating test data:", error);
           }
-        }, 0);
+        }, 1000);
         
         toast.success("Test account created successfully!");
         return signUpData.user;
