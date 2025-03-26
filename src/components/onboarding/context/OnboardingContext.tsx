@@ -7,11 +7,12 @@ import {
   getInitialOnboardingState 
 } from './utils';
 
-// Verify React is available in this file
-console.log("OnboardingContext.tsx - React check:", {
+// Comprehensive verification that React is available
+console.log("OnboardingContext.tsx - React initialization check:", {
   isReactAvailable: !!React,
-  useState: !!React.useState,
-  createContext: !!React.createContext
+  reactVersion: React.version,
+  useState: typeof React.useState === 'function',
+  createContext: typeof React.createContext === 'function'
 });
 
 // Create the context
@@ -26,12 +27,17 @@ export const useOnboarding = () => {
   return context;
 };
 
-// Provider component
+// Provider component with safety checks
 export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Add safety check
-  if (!React.useState) {
+  if (!React || !React.useState) {
     console.error("React.useState is not available in OnboardingProvider!");
-    throw new Error("React hooks not available");
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+        <h2 className="text-lg font-medium text-red-700">React Error</h2>
+        <p className="text-sm text-red-600">React hooks are not available. Please check the console for more details.</p>
+      </div>
+    );
   }
 
   const [state, setState] = React.useState(getInitialOnboardingState());

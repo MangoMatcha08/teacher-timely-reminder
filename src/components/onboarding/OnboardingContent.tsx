@@ -15,7 +15,20 @@ import { useReminders } from "@/context/ReminderContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+// Add verification that React is available
+console.log("OnboardingContent.tsx - React check:", {
+  isReactAvailable: !!React, 
+  useState: !!React.useState,
+  useEffect: !!React.useEffect
+});
+
 const OnboardingContent: React.FC = () => {
+  // Add safety check for React
+  if (!React || !React.useState) {
+    console.error("React hooks are not available in OnboardingContent");
+    return <div>Error: React hooks not available</div>;
+  }
+  
   const onboarding = useOnboarding();
   const { 
     currentStep, 
@@ -63,7 +76,8 @@ const OnboardingContent: React.FC = () => {
     updateTermNameFromType
   } = onboarding;
   
-  const { setCompleteOnboarding } = useAuth();
+  // Use the correct property name from the auth context
+  const auth = useAuth();
   const { saveSchoolSetup } = useReminders();
   const navigate = useNavigate();
 
@@ -130,8 +144,8 @@ const OnboardingContent: React.FC = () => {
     // Save school setup
     saveSchoolSetup(schoolSetup);
     
-    // Mark onboarding as completed
-    setCompleteOnboarding();
+    // Mark onboarding as completed - use the correct property
+    auth.setCompletedOnboarding();
     
     // Navigate to dashboard and show success message
     navigate("/dashboard");

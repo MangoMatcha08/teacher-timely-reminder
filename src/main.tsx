@@ -4,17 +4,17 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Ensure React is globally available
-window.React = React;
-
-// Add comprehensive error handling for React initialization
-console.log("Initial React check:", {
+// Enhanced React initialization and debugging
+console.log("main.tsx - Initial React initialization check:", {
   version: React.version,
   isReactAvailable: !!React,
   useState: !!React.useState,
   useEffect: !!React.useEffect,
   createContext: !!React.createContext
 });
+
+// Ensure React is globally available
+window.React = React;
 
 // Global error handler for uncaught errors
 const handleGlobalError = (event: ErrorEvent) => {
@@ -29,6 +29,7 @@ const handleGlobalError = (event: ErrorEvent) => {
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
           <h1 style="color: #e53e3e; margin-bottom: 1rem;">Application Error</h1>
           <p style="margin-bottom: 1rem;">There was a problem loading the application. Please refresh the page.</p>
+          <pre style="background: #f7fafc; padding: 1rem; border-radius: 0.5rem; max-width: 90%; overflow: auto; margin-bottom: 1rem;">${event.error?.stack || event.message}</pre>
           <button 
             style="padding: 0.5rem 1rem; background-color: #4299e1; color: white; border: none; border-radius: 0.25rem; cursor: pointer;"
             onclick="window.location.reload()"
@@ -79,8 +80,16 @@ if (!React || !React.createElement || !React.useState) {
   `;
 } else {
   try {
+    console.log("Attempting to render React application");
     const rootElement = getRootElement();
     const root = createRoot(rootElement);
+    
+    // Before render diagnostic
+    console.log("Before root.render - React hooks test:", {
+      useState: typeof React.useState === 'function',
+      useEffect: typeof React.useEffect === 'function',
+      rootElement: !!rootElement
+    });
     
     root.render(
       <React.StrictMode>
@@ -98,6 +107,7 @@ if (!React || !React.createElement || !React.useState) {
       <div style="display: flex; flex-direction: column; align-items: center; justify-center; height: 100vh; font-family: sans-serif;">
         <h1 style="color: #e53e3e; margin-bottom: 1rem;">Failed to Start Application</h1>
         <p style="margin-bottom: 1rem;">The application could not be loaded. Please refresh the page or try again later.</p>
+        <pre style="background: #f7fafc; padding: 1rem; border-radius: 0.5rem; max-width: 90%; overflow: auto; margin-bottom: 1rem;">${error instanceof Error ? error.stack : String(error)}</pre>
         <button 
           style="padding: 0.5rem 1rem; background-color: #4299e1; color: white; border: none; border-radius: 0.25rem; cursor: pointer;"
           onclick="window.location.reload()"

@@ -4,28 +4,28 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getSchoolSetup, saveSchoolSetup } from "@/services/firebase";
 import { SchoolSetup } from "./ReminderContext";
-import { useNavigate } from "react-router-dom";
 
-// Verify React is available in this file
-console.log("AuthContext.tsx - React check:", {
+// Add comprehensive React checks
+console.log("AuthContext.tsx - React initialization check:", {
   isReactAvailable: !!React,
+  reactVersion: React.version,
   useState: !!React.useState,
+  useEffect: !!React.useEffect,
   createContext: !!React.createContext
 });
 
-// Explicitly check for React hooks
-if (!React || !React.useState || !React.createContext) {
-  console.error("Critical: React hooks not available in AuthContext");
-  throw new Error("React or React hooks not available");
-}
-
+// Explicitly define all available methods in the AuthContextType
 type AuthContextType = {
   user: User | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
   hasCompletedOnboarding: boolean;
-  setCompletedOnboarding: (completed: boolean) => void;
+  setCompletedOnboarding: () => void;
   resetOnboarding: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithTestAccount: () => Promise<void>;
 };
 
 // Create the context with a default value
@@ -40,92 +40,18 @@ export const useAuth = () => {
   return context;
 };
 
-// Auth provider component
+// Auth provider component - ensure this is a proper function component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  try {
-    // Add safety checks
-    if (!React.useState) {
-      console.error("React.useState is not available in AuthProvider!");
-      throw new Error("React.useState is not available");
-    }
-
-    const [user, setUser] = React.useState<User | null>(null);
-    const [isInitialized, setIsInitialized] = React.useState(false);
-    const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
-    
-    // Check for onboarding completion
-    React.useEffect(() => {
-      const checkOnboardingStatus = async () => {
-        if (user) {
-          try {
-            const schoolSetup = await getSchoolSetup(user.uid);
-            setHasCompletedOnboarding(!!schoolSetup);
-          } catch (error) {
-            console.error("Error checking onboarding status:", error);
-            setHasCompletedOnboarding(false);
-          }
-        } else {
-          setHasCompletedOnboarding(false);
-        }
-      };
-      
-      checkOnboardingStatus();
-    }, [user]);
-    
-    // Auth state listener
-    React.useEffect(() => {
-      console.log("Setting up auth state listener");
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
-        setIsInitialized(true);
-        console.log("Auth state changed:", { user: user?.uid || "no user" });
-      });
-      
-      return () => unsubscribe();
-    }, []);
-    
-    // Set onboarding status
-    const setCompletedOnboarding = (completed: boolean) => {
-      setHasCompletedOnboarding(completed);
-    };
-    
-    // Reset onboarding
-    const resetOnboarding = async () => {
-      if (user) {
-        try {
-          await saveSchoolSetup(user.uid, {} as SchoolSetup);
-          setHasCompletedOnboarding(false);
-        } catch (error) {
-          console.error("Error resetting onboarding:", error);
-          throw error;
-        }
-      }
-    };
-    
-    const value = {
-      user,
-      isAuthenticated: !!user,
-      isInitialized,
-      hasCompletedOnboarding,
-      setCompletedOnboarding,
-      resetOnboarding
-    };
-    
-    return (
-      <AuthContext.Provider value={value}>
-        {children}
-      </AuthContext.Provider>
-    );
-  } catch (error) {
-    console.error("Critical error in AuthProvider:", error);
-    
-    // Render error fallback
+  // Ensure React is properly imported before using hooks
+  if (!React || !React.useState) {
+    console.error("React or React.useState is not available!", { React });
+    // Provide a fallback UI when React hooks aren't available
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
-          <h2 className="text-xl font-bold text-red-600">Authentication Error</h2>
+          <h2 className="text-xl font-bold text-red-600">React Error</h2>
           <p className="mt-2 text-gray-600">
-            There was a problem with the authentication system. Please refresh the page.
+            React hooks are not available. Please refresh the page or check the console for more details.
           </p>
           <button 
             onClick={() => window.location.reload()} 
@@ -137,4 +63,108 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       </div>
     );
   }
+
+  // Now safely use hooks after verification
+  const [user, setUser] = React.useState<User | null>(null);
+  const [isInitialized, setIsInitialized] = React.useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
+
+  // Check for onboarding completion
+  React.useEffect(() => {
+    console.log("Auth context: Checking onboarding status");
+    const checkOnboardingStatus = async () => {
+      if (user) {
+        try {
+          const schoolSetup = await getSchoolSetup(user.uid);
+          setHasCompletedOnboarding(!!schoolSetup);
+          console.log("Onboarding status checked:", !!schoolSetup);
+        } catch (error) {
+          console.error("Error checking onboarding status:", error);
+          setHasCompletedOnboarding(false);
+        }
+      } else {
+        setHasCompletedOnboarding(false);
+      }
+    };
+    
+    checkOnboardingStatus();
+  }, [user]);
+  
+  // Auth state listener
+  React.useEffect(() => {
+    console.log("Setting up auth state listener");
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("Auth state changed:", { userId: user?.uid || "no user" });
+      setUser(user);
+      setIsInitialized(true);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+  
+  // Set onboarding status
+  const setCompletedOnboarding = () => {
+    console.log("Setting onboarding as completed");
+    setHasCompletedOnboarding(true);
+  };
+  
+  // Reset onboarding
+  const resetOnboarding = async () => {
+    if (user) {
+      try {
+        await saveSchoolSetup(user.uid, {} as SchoolSetup);
+        setHasCompletedOnboarding(false);
+        console.log("Onboarding reset successful");
+      } catch (error) {
+        console.error("Error resetting onboarding:", error);
+        throw error;
+      }
+    }
+  };
+
+  // Add stub implementations for required auth methods
+  const login = async (email: string, password: string) => {
+    console.log("Login method called", { email });
+    // Implementation would go here
+  };
+
+  const register = async (email: string, password: string) => {
+    console.log("Register method called", { email });
+    // Implementation would go here
+  };
+
+  const loginWithGoogle = async () => {
+    console.log("Login with Google method called");
+    // Implementation would go here
+  };
+
+  const loginWithTestAccount = async () => {
+    console.log("Login with test account method called");
+    // Implementation would go here
+  };
+  
+  const value = {
+    user,
+    isAuthenticated: !!user,
+    isInitialized,
+    hasCompletedOnboarding,
+    setCompletedOnboarding,
+    resetOnboarding,
+    login,
+    register,
+    loginWithGoogle,
+    loginWithTestAccount
+  };
+  
+  console.log("Auth context value prepared:", {
+    isAuthenticated: !!user,
+    isInitialized,
+    hasCompletedOnboarding
+  });
+  
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
