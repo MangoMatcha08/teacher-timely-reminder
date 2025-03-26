@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { useOnboarding } from "./context/OnboardingContext";
 import StepIndicator from "./StepIndicator";
