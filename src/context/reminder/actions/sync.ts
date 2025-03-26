@@ -1,9 +1,9 @@
 
 import * as React from 'react';
-import { Reminder, ReminderState, ReminderType, ReminderTiming, DayOfWeek, RecurrencePattern } from '../types';
+import { Reminder, ReminderState, ReminderType, ReminderTiming, DayOfWeek, RecurrencePattern, ReminderPriority } from '../types';
 import { User } from '@supabase/supabase-js';
 import { saveToFirebase } from '../utils';
-import { getReminders, saveReminder, deleteReminder } from "@/services/supabase/reminders";
+import { getReminders, saveReminder, deleteReminder as deleteReminderFromDB } from "@/services/supabase/reminders";
 
 export const createSyncActions = (
   state: ReminderState,
@@ -36,6 +36,7 @@ export const createSyncActions = (
               timing: reminder.timing as ReminderTiming,
               days: reminder.days as DayOfWeek[],
               recurrence: reminder.recurrence as RecurrencePattern,
+              priority: reminder.priority as ReminderPriority,
               createdAt: reminder.createdAt ? new Date(reminder.createdAt) : new Date(),
               completed: reminder.completed || false
             }));
@@ -95,7 +96,7 @@ export const deleteReminderFromCloud = async (
   }
 
   try {
-    await deleteReminder(reminderId, userId);
+    await deleteReminderFromDB(reminderId, userId);
     return true;
   } catch (error) {
     console.error("Error deleting reminder from cloud:", error);
