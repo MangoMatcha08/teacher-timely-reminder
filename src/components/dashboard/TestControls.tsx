@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { loadTestDataToFirebase, verifyFirebaseConnection } from "@/services/firebaseTestData";
+import { loadTestDataToSupabase, verifySupabaseConnection } from "@/services/supabaseTestData";
 import { useAuth } from "@/context/AuthContext";
 import { useReminders } from "@/context/ReminderContext";
 import {
@@ -23,21 +23,21 @@ const TestControls: React.FC = () => {
   
   const handleTestConnection = async () => {
     setLoading(true);
-    setTestStatus("Testing Firebase connection...");
+    setTestStatus("Testing Supabase connection...");
     
     try {
-      const isConnected = await verifyFirebaseConnection();
+      const isConnected = await verifySupabaseConnection();
       if (isConnected) {
-        setTestStatus("Firebase connection successful! ✅");
-        toast.success("Firebase connection successful!");
+        setTestStatus("Supabase connection successful! ✅");
+        toast.success("Supabase connection successful!");
       } else {
-        setTestStatus("Firebase connection failed. ❌");
-        toast.error("Firebase connection failed");
+        setTestStatus("Supabase connection failed. ❌");
+        toast.error("Supabase connection failed");
       }
     } catch (error) {
       console.error("Error testing connection:", error);
-      setTestStatus("Firebase connection error: " + (error instanceof Error ? error.message : "Unknown error"));
-      toast.error("Firebase connection error");
+      setTestStatus("Supabase connection error: " + (error instanceof Error ? error.message : "Unknown error"));
+      toast.error("Supabase connection error");
     } finally {
       setLoading(false);
     }
@@ -59,10 +59,10 @@ const TestControls: React.FC = () => {
     }
     
     setLoading(true);
-    setTestStatus("Loading test data to Firebase...");
+    setTestStatus("Loading test data to Supabase...");
     
     try {
-      await loadTestDataToFirebase(user.uid);
+      await loadTestDataToSupabase(user.uid);
       setTestStatus("Test data loaded successfully! ✅");
       toast.success("Test data loaded successfully!");
       
@@ -81,7 +81,7 @@ const TestControls: React.FC = () => {
   return (
     <>
       <div className="bg-gray-50 p-4 rounded-lg border mt-6">
-        <h3 className="text-sm font-medium mb-2">Firebase Testing Tools</h3>
+        <h3 className="text-sm font-medium mb-2">Supabase Testing Tools</h3>
         <div className="flex flex-wrap gap-2">
           <Button 
             variant="outline" 
@@ -89,7 +89,7 @@ const TestControls: React.FC = () => {
             onClick={handleTestConnection}
             disabled={loading}
           >
-            Test Firebase Connection
+            Test Supabase Connection
           </Button>
           <Button 
             variant="outline" 
@@ -119,7 +119,7 @@ const TestControls: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Confirm Loading Test Data</DialogTitle>
             <DialogDescription>
-              This will add sample school setup and reminders to your Firebase account.
+              This will add sample school setup and reminders to your Supabase account.
               Are you sure you want to proceed?
             </DialogDescription>
           </DialogHeader>

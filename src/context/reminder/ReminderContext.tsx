@@ -3,7 +3,7 @@ import * as React from 'react';
 import { ReminderContextType, ReminderState } from './types';
 import { createReminderActions } from './actions';
 import { createReminderSelectors } from './selectors';
-import { loadFromFirebase } from './utils/cloudSyncUtils';
+import { loadFromSupabase } from './utils/cloudSyncUtils';
 import { loadFromLocalStorage } from './utils/storageUtils';
 import { useAuth } from '../AuthContext';
 
@@ -53,10 +53,10 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
   
-  // Load data from Firebase when authenticated
+  // Load data from Supabase when authenticated
   React.useEffect(() => {
     if (isAuthenticated && user) {
-      loadFromFirebase(user)
+      loadFromSupabase(user)
         .then(({ reminders, schoolSetup }) => {
           if (reminders.length > 0 || schoolSetup) {
             setState(prev => ({
@@ -68,7 +68,7 @@ export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           }
         })
         .catch(error => {
-          console.error("Error loading data from Firebase:", error);
+          console.error("Error loading data from Supabase:", error);
           setState(prev => ({ ...prev, syncStatus: 'failed' }));
         });
     }

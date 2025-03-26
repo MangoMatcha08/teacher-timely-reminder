@@ -4,7 +4,7 @@ import { User } from '@supabase/supabase-js';
 import { getReminders, saveReminder } from "@/services/supabase/reminders";
 
 // Function to save data to Supabase
-export const saveToFirebase = async (
+export const saveToSupabase = async (
   data: ReminderState,
   user: User | null
 ): Promise<void> => {
@@ -26,7 +26,7 @@ export const saveToFirebase = async (
 };
 
 // Function to load data from Supabase
-export const loadFromFirebase = async (
+export const loadFromSupabase = async (
   user: User | null
 ): Promise<{ reminders: Reminder[], schoolSetup: SchoolSetup | null }> => {
   if (!user) {

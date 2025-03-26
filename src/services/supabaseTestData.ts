@@ -1,11 +1,7 @@
 
 import { 
-  collection, 
-  getDocs, 
-  doc, 
-  setDoc,
-  getFirestore 
-} from "firebase/firestore";
+  supabase 
+} from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Sample school setup data
@@ -96,45 +92,54 @@ const sampleReminders = [
 ];
 
 /**
- * Test if Firebase connection is working
+ * Test if Supabase connection is working
  * @returns {Promise<boolean>} true if connection is successful
  */
-export const verifyFirebaseConnection = async (): Promise<boolean> => {
+export const verifySupabaseConnection = async (): Promise<boolean> => {
   try {
     // Try to get a collection reference and query it
-    const db = getFirestore();
-    const colRef = collection(db, "test");
-    await getDocs(colRef);
-    console.log("Firebase connection verified successfully");
+    const { error } = await supabase.from('profiles').select('id').limit(1);
+    
+    if (error) {
+      throw error;
+    }
+    
+    console.log("Supabase connection verified successfully");
     return true;
   } catch (error) {
-    console.error("Firebase connection verification failed:", error);
+    console.error("Supabase connection verification failed:", error);
     return false;
   }
 };
 
 /**
- * Load test data to Firebase for a specific user
+ * Load test data to Supabase for a specific user
  * @param {string} userId - User ID to associate with test data
  * @returns {Promise<void>}
  */
-export const loadTestDataToFirebase = async (userId: string): Promise<void> => {
+export const loadTestDataToSupabase = async (userId: string): Promise<void> => {
   if (!userId) {
     throw new Error("User ID is required to load test data");
   }
   
   try {
-    const db = getFirestore();
-    
-    // Save school setup
-    const schoolSetupRef = doc(db, "schoolSetup", userId);
-    await setDoc(schoolSetupRef, sampleSchoolSetup);
+    // Save school setup data
+    const { saveSchoolSetup } = await import('./supabase/schoolSetup');
+    await saveSchoolSetup(userId, sampleSchoolSetup);
     console.log("Sample school setup loaded");
     
     // Save reminders
+    const { saveReminder } = await import('./supabase/reminders');
     for (const reminder of sampleReminders) {
-      const reminderRef = doc(db, `users/${userId}/reminders/${reminder.id}`);
-      await setDoc(reminderRef, reminder);
+      await saveReminder({
+        ...reminder,
+        title: reminder.title,
+        notes: reminder.description,
+        days: reminder.daysOfWeek,
+        completed: reminder.isComplete || false,
+        category: reminder.category,
+        periodId: reminder.periodId,
+      }, userId);
     }
     console.log("Sample reminders loaded");
     
