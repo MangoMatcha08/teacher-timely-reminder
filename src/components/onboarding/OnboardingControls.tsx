@@ -7,8 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 const OnboardingControls: React.FC = () => {
-  // Safely access onboarding context
-  const onboardingContext = React.useContext(useOnboarding.Context || React.createContext(null));
+  // Get the onboarding context with proper error handling
+  const onboardingContext = useOnboarding();
   const [onboarding, setOnboarding] = React.useState({
     currentStep: 0,
     setCurrentStep: (step: number) => {},

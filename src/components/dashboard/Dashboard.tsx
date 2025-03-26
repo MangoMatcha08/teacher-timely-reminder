@@ -13,11 +13,15 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import Button from "@/components/shared/Button";
+import TestControls from "./TestControls";
+import { useAuth } from "@/context/AuthContext";
 
 const Dashboard = () => {
   const { schoolSetup, reminders } = useReminders();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [isQuickCreateOpen, setIsQuickCreateOpen] = React.useState(false);
+  const [showTestTools, setShowTestTools] = React.useState(false);
   
   const handleQuickCreateComplete = () => {
     setIsQuickCreateOpen(false);
@@ -41,6 +45,16 @@ const Dashboard = () => {
     return filtered;
   }, [reminders, selectedCategory, selectedPriority]);
   
+  // Toggle test tools with double click on settings
+  const handleSettingsDoubleClick = () => {
+    setShowTestTools(prev => !prev);
+    if (!showTestTools) {
+      toast.success("Firebase testing tools enabled");
+    } else {
+      toast.info("Firebase testing tools disabled");
+    }
+  };
+  
   return (
     <div className="container mx-auto px-3 py-4">
       <div className="flex flex-col space-y-4">
@@ -50,6 +64,7 @@ const Dashboard = () => {
             to="/settings"
             className="p-2 text-gray-600 hover:text-gray-900"
             aria-label="Settings"
+            onDoubleClick={handleSettingsDoubleClick}
           >
             <Settings className="w-5 h-5" />
           </Link>
@@ -123,6 +138,9 @@ const Dashboard = () => {
             <Button className="h-8 text-sm">Create Reminder</Button>
           </Link>
         </div>
+        
+        {/* Firebase Test Controls */}
+        {showTestTools && <TestControls />}
         
         <ReminderList reminders={filteredReminders} />
       </div>
