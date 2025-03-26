@@ -1,9 +1,9 @@
 
 import * as React from 'react';
-import { Reminder, ReminderState } from '../types';
+import { Reminder, ReminderState, ReminderType, ReminderTiming, DayOfWeek } from '../types';
 import { User } from '@supabase/supabase-js';
 import { saveToFirebase } from '../utils';
-import { getReminders } from "@/services/supabase/reminders";
+import { getReminders, saveReminder, deleteReminder } from "@/services/supabase/reminders";
 
 export const createSyncActions = (
   state: ReminderState,
@@ -32,7 +32,9 @@ export const createSyncActions = (
             // Convert string dates to actual Date objects and ensure correct typing
             const typedReminders: Reminder[] = fetchedReminders.map(reminder => ({
               ...reminder,
-              type: reminder.type as any || "_none",
+              type: reminder.type as ReminderType || "_none",
+              timing: reminder.timing as ReminderTiming,
+              days: reminder.days as DayOfWeek[],
               createdAt: reminder.createdAt ? new Date(reminder.createdAt) : new Date(),
               completed: reminder.completed || false
             }));
@@ -117,6 +119,3 @@ export const fetchRemindersFromCloud = async (
     return [];
   }
 };
-
-// Import the functions we need
-import { saveReminder, deleteReminder } from "@/services/supabase/reminders";
