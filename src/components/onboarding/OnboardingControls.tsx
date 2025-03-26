@@ -1,9 +1,12 @@
+
 import * as React from "react";
 import { useOnboarding } from "./context/OnboardingContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
+import { useReminders } from "@/context/ReminderContext";
 import { toast } from "sonner";
+import { finishOnboarding } from "./utils/OnboardingFinisher";
 
 const OnboardingControls: React.FC = () => {
   // Get the onboarding context
@@ -14,6 +17,7 @@ const OnboardingControls: React.FC = () => {
   
   // Get auth context once (correctly using the hook at the component level)
   const authContext = useAuth();
+  const reminderContext = useReminders();
   
   // Store state locally
   const [onboarding, setOnboarding] = React.useState({
@@ -28,6 +32,12 @@ const OnboardingControls: React.FC = () => {
     setCompletedOnboarding: (): true => {
       console.log("Onboarding completed in offline mode");
       return true;
+    }
+  });
+
+  const [reminders, setReminders] = React.useState({
+    saveSchoolSetup: (setup: any) => {
+      console.log("School setup saved in offline mode", setup);
     }
   });
   
@@ -51,10 +61,16 @@ const OnboardingControls: React.FC = () => {
           }
         });
       }
+
+      if (reminderContext && reminderContext.saveSchoolSetup) {
+        setReminders({
+          saveSchoolSetup: reminderContext.saveSchoolSetup
+        });
+      }
     } catch (error) {
       console.log("Working in offline mode:", error);
     }
-  }, [onboardingContext, authContext]);
+  }, [onboardingContext, authContext, reminderContext]);
   
   const { currentStep, setCurrentStep, setShowExitConfirm } = onboarding;
   
@@ -75,9 +91,7 @@ const OnboardingControls: React.FC = () => {
   const handleFinish = () => {
     try {
       // Call the complete onboarding function and navigate to the dashboard
-      auth.setCompletedOnboarding();
-      navigate("/dashboard");
-      toast.success("Setup completed! You're all set.");
+      finishOnboarding(onboardingContext, auth, reminders.saveSchoolSetup, navigate);
     } catch (error) {
       console.error("Error during finish:", error);
       // Still navigate even if there's an error
