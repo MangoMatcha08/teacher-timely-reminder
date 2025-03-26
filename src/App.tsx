@@ -1,6 +1,5 @@
 
-import { useState, useEffect } from 'react'
-import React from 'react' // Added explicit React import
+import React, { useState, useEffect } from 'react'
 import './App.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
@@ -122,14 +121,14 @@ function App() {
     <div className="min-h-screen w-full">
       <ErrorBoundary>
         <BrowserRouter>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <AuthProvider>
+          <AuthProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
               <ReminderProvider>
                 <AppRoutes />
                 <Toaster />
               </ReminderProvider>
-            </AuthProvider>
-          </ThemeProvider>
+            </ThemeProvider>
+          </AuthProvider>
         </BrowserRouter>
       </ErrorBoundary>
     </div>
