@@ -3,7 +3,7 @@ import * as React from "react";
 import { useOnboarding } from "./context/OnboardingContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth";
 import { toast } from "sonner";
 
 const OnboardingControls: React.FC = () => {
@@ -23,7 +23,7 @@ const OnboardingControls: React.FC = () => {
     setShowExitConfirm: (show: boolean) => {}
   });
   
-  // Store auth functions locally
+  // Store auth functions locally with proper return type
   const [auth, setAuth] = React.useState({
     setCompletedOnboarding: () => {
       console.log("Onboarding completed in offline mode");
