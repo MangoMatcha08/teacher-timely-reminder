@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
   
   // Set onboarding status - with correct return type
-  const setCompletedOnboarding = () => {
+  const setCompletedOnboarding = (): true => {
     console.log("Setting onboarding as completed");
     setHasCompletedOnboarding(true);
     return true;
