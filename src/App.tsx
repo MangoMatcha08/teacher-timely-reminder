@@ -72,13 +72,8 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// Safer App component without nested context providers
-function App() {
-  // Define error state directly in the main component
-  const [hasError, setHasError] = useState(false);
-  const [errorInfo, setErrorInfo] = useState<{ message: string } | null>(null);
-
-  // Use a simple effect to set up global error handling
+// Firebase error handler for global errors
+const FirebaseErrorHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error("Unhandled promise rejection:", event.reason);
@@ -95,6 +90,14 @@ function App() {
       window.removeEventListener("unhandledrejection", handleUnhandledRejection);
     };
   }, []);
+
+  return <>{children}</>;
+};
+
+// Main App component with optimized context nesting
+function App() {
+  const [hasError, setHasError] = useState(false);
+  const [errorInfo, setErrorInfo] = useState<{ message: string } | null>(null);
 
   // Render a simple error UI if React itself has issues
   if (hasError) {
@@ -116,20 +119,22 @@ function App() {
     );
   }
 
-  // Main rendering path with a better provider nesting order
+  // Main rendering path with optimized provider nesting
   return (
     <div className="min-h-screen w-full">
       <ErrorBoundary>
-        <BrowserRouter>
-          <AuthProvider>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-              <ReminderProvider>
-                <AppRoutes />
-                <Toaster />
-              </ReminderProvider>
-            </ThemeProvider>
-          </AuthProvider>
-        </BrowserRouter>
+        <FirebaseErrorHandler>
+          <BrowserRouter>
+            <AuthProvider>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+                <ReminderProvider>
+                  <AppRoutes />
+                  <Toaster />
+                </ReminderProvider>
+              </ThemeProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </FirebaseErrorHandler>
       </ErrorBoundary>
     </div>
   );

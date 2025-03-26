@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useContext, createContext } from "react";
+import React, { useState, useEffect, useContext, createContext, useMemo } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { login, register, logout, signInWithGoogle, loginWithTestAccount } from "@/services/firebase";
@@ -48,8 +47,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
+    let unsubscribe = () => {};
+    
     try {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+      unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
         
         if (user) {
@@ -64,13 +65,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         setIsInitialized(true);
       });
-
-      return () => unsubscribe();
     } catch (error) {
       console.error("Firebase auth initialization error:", error);
       // Gracefully handle Firebase initialization failure
       setIsInitialized(true);
     }
+
+    return () => unsubscribe();
   }, []);
 
   const handleLogin = async (email: string, password: string) => {
@@ -174,8 +175,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Create the provider value object outside the return statement
-  const contextValue: AuthContextType = {
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = React.useMemo(() => ({
     user,
     isAuthenticated: !!user,
     isInitialized,
@@ -187,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout: handleLogout,
     setCompleteOnboarding: completeOnboarding,
     resetOnboarding: resetOnboardingData,
-  };
+  }), [user, isInitialized, hasCompletedOnboarding]);
 
   return (
     <AuthContext.Provider value={contextValue}>
