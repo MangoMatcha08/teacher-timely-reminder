@@ -1,45 +1,29 @@
 
-import * as React from "react";
-import { AuthContextType } from "./types";
+import React, { createContext, useContext } from "react";
+import { User } from "@supabase/supabase-js";
 
-// Create React context with default values
-const AuthContext = React.createContext<AuthContextType>({
-  user: null,
-  isAuthenticated: false,
-  isInitialized: true,
-  hasCompletedOnboarding: false,
-  setCompletedOnboarding: () => true,
-  resetOnboarding: async () => {},
-  login: async () => {},
-  register: async () => {},
-  loginWithGoogle: async () => {},
-  loginWithTestAccount: async () => {},
-  signOut: async () => {}
-});
+export interface AuthContextProps {
+  user: User | null;
+  isAuthenticated: boolean;
+  isInitialized: boolean;
+  hasCompletedOnboarding: boolean;
+  offlineMode: boolean;
+  setCompletedOnboarding: () => true;
+  resetOnboarding: () => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  register: (email: string, password: string) => Promise<User>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithTestAccount: () => Promise<User>;
+  signOut: () => Promise<void>;
+}
 
-// Custom hook to use the auth context with error handling
-export const useAuth = () => {
-  // This hook must be called inside a component function
-  const context = React.useContext(AuthContext);
-  
-  if (!context) {
-    console.error("useAuth must be used within an AuthProvider");
-    // Return fallback object with same shape
-    return {
-      user: null,
-      isAuthenticated: false,
-      isInitialized: true,
-      hasCompletedOnboarding: false,
-      setCompletedOnboarding: () => true,
-      resetOnboarding: async () => {},
-      login: async () => {},
-      register: async () => {},
-      loginWithGoogle: async () => {},
-      loginWithTestAccount: async () => {},
-      signOut: async () => {}
-    };
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
+
+export const useAuth = (): AuthContextProps => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  
   return context;
 };
 

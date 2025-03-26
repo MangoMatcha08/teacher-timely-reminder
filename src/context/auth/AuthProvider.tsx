@@ -12,6 +12,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     isInitialized,
     hasCompletedOnboarding,
+    offlineMode,
     setCompletedOnboarding,
     setHasCompletedOnboarding
   } = useAuthState();
@@ -31,6 +32,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated: !!user,
     isInitialized,
     hasCompletedOnboarding,
+    offlineMode,
     setCompletedOnboarding,
     resetOnboarding,
     login,

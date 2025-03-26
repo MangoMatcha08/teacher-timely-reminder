@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { loadTestDataToSupabase, verifySupabaseConnection } from "@/services/supabaseTestData";
+import { checkSupabaseConnection } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/auth";
 import { useReminders } from "@/context/ReminderContext";
 import {
@@ -19,6 +20,7 @@ const TestControls: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [testStatus, setTestStatus] = useState<string | null>(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [detailedInfo, setDetailedInfo] = useState<any>(null);
   const { user } = useAuth();
   const { fetchReminders } = useReminders();
   
@@ -27,18 +29,34 @@ const TestControls: React.FC = () => {
     setTestStatus("Testing Supabase connection...");
     
     try {
-      const isConnected = await verifySupabaseConnection();
-      if (isConnected) {
-        setTestStatus("Supabase connection successful! ✅");
+      console.log("Testing connection to Supabase...");
+      const startTime = Date.now();
+      
+      // Try both connection check methods
+      const isConnected1 = await checkSupabaseConnection();
+      const isConnected2 = await verifySupabaseConnection();
+      
+      const duration = Date.now() - startTime;
+      
+      setDetailedInfo({
+        duration: `${duration}ms`,
+        isConnected1,
+        isConnected2,
+        timestamp: new Date().toISOString()
+      });
+      
+      if (isConnected1 || isConnected2) {
+        setTestStatus(`Supabase connection successful! ✅ (${duration}ms)`);
         toast.success("Supabase connection successful!");
       } else {
-        setTestStatus("Supabase connection failed. ❌");
+        setTestStatus(`Supabase connection failed. ❌ (${duration}ms)`);
         toast.error("Supabase connection failed");
       }
     } catch (error) {
       console.error("Error testing connection:", error);
       setTestStatus("Supabase connection error: " + (error instanceof Error ? error.message : "Unknown error"));
       toast.error("Supabase connection error");
+      setDetailedInfo({ error: String(error) });
     } finally {
       setLoading(false);
     }
@@ -63,7 +81,7 @@ const TestControls: React.FC = () => {
     setTestStatus("Loading test data to Supabase...");
     
     try {
-      await loadTestDataToSupabase(user.uid);
+      await loadTestDataToSupabase(user.id);
       setTestStatus("Test data loaded successfully! ✅");
       toast.success("Test data loaded successfully!");
       
@@ -105,6 +123,14 @@ const TestControls: React.FC = () => {
         {testStatus && (
           <div className="mt-2 text-xs text-muted-foreground">
             {testStatus}
+          </div>
+        )}
+        
+        {detailedInfo && (
+          <div className="mt-2 text-xs p-2 bg-gray-100 rounded overflow-auto max-h-20">
+            <pre className="text-muted-foreground">
+              {JSON.stringify(detailedInfo, null, 2)}
+            </pre>
           </div>
         )}
         
