@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { useOnboarding } from "./context/OnboardingContext";
+import { useOnboarding } from "./context";
 import StepIndicator from "./StepIndicator";
 import OnboardingControls from "./OnboardingControls";
 import ExitDialog from "./ExitDialog";

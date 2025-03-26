@@ -1,9 +1,13 @@
 
 import { OnboardingContextType } from "../context/types";
-import { Auth } from "@/context/auth/types";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "sonner";
 import { ReminderContextType } from "@/context/ReminderContext";
+
+// Define minimal Auth interface needed for this component
+interface Auth {
+  setCompletedOnboarding: () => true | void;
+}
 
 export const finishOnboarding = (
   onboarding: OnboardingContextType,

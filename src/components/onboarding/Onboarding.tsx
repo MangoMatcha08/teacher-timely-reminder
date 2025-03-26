@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { OnboardingProvider } from "./context/OnboardingContext";
+import { OnboardingProvider } from "./context";
 import OnboardingContent from "./OnboardingContent";
 
 // Comprehensive verification that React is available

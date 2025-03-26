@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { useOnboarding } from "./context/OnboardingContext";
+import { useOnboarding } from "./context";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";

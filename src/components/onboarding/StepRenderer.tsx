@@ -6,7 +6,7 @@ import PeriodSetup from "./steps/PeriodSetup";
 import SchoolHoursSetup from "./steps/SchoolHoursSetup";
 import CategorySetup from "./steps/CategorySetup";
 import ScheduleSetup from "./steps/ScheduleSetup";
-import { useOnboarding } from "./context/OnboardingContext";
+import { useOnboarding } from "./context";
 
 const StepRenderer: React.FC = () => {
   const onboarding = useOnboarding();

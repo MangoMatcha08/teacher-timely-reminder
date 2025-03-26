@@ -1,6 +1,7 @@
 
 import * as React from 'react';
 import { OnboardingState, TermType } from '../types';
+import { DayOfWeek, Period } from "@/context/ReminderContext";
 
 export const createOnboardingActions = (
   state: OnboardingState,
@@ -77,5 +78,3 @@ export const createOnboardingActions = (
     setShowExitConfirm
   };
 };
-
-import { DayOfWeek, Period } from "@/context/ReminderContext";
