@@ -16,7 +16,14 @@ const QuickReminderCreator: React.FC<QuickReminderCreatorProps> = ({ onComplete,
       onComplete();
     } catch (error) {
       console.error("Error in handleSuccess:", error);
-      // Still try to complete the operation even if toast fails
+      // Use a more resilient approach to notify the user
+      try {
+        // Try alert as a fallback if toast fails
+        alert("Reminder created successfully");
+      } catch (alertError) {
+        console.error("Even alert failed:", alertError);
+      }
+      // Still try to complete the operation even if notifications fail
       onComplete();
     }
   };
@@ -30,9 +37,15 @@ const QuickReminderCreator: React.FC<QuickReminderCreatorProps> = ({ onComplete,
       toast.error(errorMessage);
     } catch (toastError) {
       console.error("Error showing error toast:", toastError);
-      // Fallback error handling if toast fails
-      alert("Failed to create reminder: " + 
-        (error instanceof Error ? error.message : "Unknown error"));
+      // Multiple fallback layers
+      try {
+        // Try alert as a fallback if toast fails
+        alert("Failed to create reminder: " + 
+          (error instanceof Error ? error.message : "Unknown error"));
+      } catch (alertError) {
+        console.error("Critical UI notification failure:", alertError);
+        // At this point we've tried our best to notify the user
+      }
     }
   };
   

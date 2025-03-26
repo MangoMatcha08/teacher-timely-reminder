@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -8,15 +7,20 @@ import { Toaster as Sonner } from "sonner"
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  // Add error handling to safely access theme
-  let theme
-  try {
-    const themeContext = useTheme()
-    theme = themeContext?.theme || "system"
-  } catch (error) {
-    console.error("Theme context error:", error)
-    theme = "system" // Fallback to system if there's an error
-  }
+  // Add more robust error handling for theme context
+  const [theme, setTheme] = React.useState<string>("system")
+  
+  React.useEffect(() => {
+    try {
+      const themeContext = useTheme()
+      if (themeContext && themeContext.theme) {
+        setTheme(themeContext.theme)
+      }
+    } catch (error) {
+      console.error("Theme context error:", error)
+      // Keep using the default "system" theme that was set in useState
+    }
+  }, [])
 
   return (
     <Sonner
