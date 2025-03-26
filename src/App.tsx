@@ -15,8 +15,12 @@ import Schedule from './pages/Schedule'
 import Settings from './pages/Settings'
 import { ThemeProvider } from 'next-themes'
 
-// Add a console log to verify React is available
-console.log("App.tsx - React available:", !!React);
+// Verify React is available
+console.log("App.tsx - React check:", { 
+  isReactAvailable: !!React,
+  useState: !!React.useState,
+  useEffect: !!React.useEffect
+});
 
 // Separate the Routes component to isolate potential errors
 function AppRoutes() {
@@ -97,60 +101,49 @@ const FirebaseErrorHandler: React.FC<{ children: React.ReactNode }> = ({ childre
   return <>{children}</>;
 };
 
-// Main App component with optimized context nesting
-function App() {
-  const [hasError, setHasError] = React.useState(false);
-  const [errorInfo, setErrorInfo] = React.useState<{ message: string } | null>(null);
-
-  // Add a handler for initialization errors
+// Wrapper component to ensure React hooks work
+const ReactHookTester: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [testState, setTestState] = React.useState(false);
+  
   React.useEffect(() => {
-    try {
-      // Just a test to make sure React hooks work
-      const [test, setTest] = React.useState(false);
-      console.log("React hooks are working in App component");
-    } catch (error) {
-      console.error("React hooks testing error:", error);
-      setHasError(true);
-      setErrorInfo({ message: "React initialization error. Please refresh the page." });
-    }
+    console.log("ReactHookTester - React hooks are working");
+    setTestState(true);
   }, []);
-
-  // Render a simple error UI if React itself has issues
-  if (hasError) {
+  
+  if (!testState) {
+    console.log("ReactHookTester - Waiting for hooks confirmation");
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
-          <h2 className="text-xl font-bold text-amber-600">Application Notice</h2>
-          <p className="mt-2 text-gray-600">
-            {errorInfo?.message || "The application encountered an error. Please refresh the page."}
-          </p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-          >
-            Refresh
-          </button>
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 rounded-full border-4 border-teacher-blue border-t-transparent animate-spin mb-4" />
+          <p className="text-muted-foreground">Verifying application components...</p>
         </div>
       </div>
     );
   }
+  
+  return <>{children}</>;
+};
 
-  // Main rendering path with optimized provider nesting
+// Main App component with optimized context nesting
+function App() {
   return (
     <div className="min-h-screen w-full">
       <ErrorBoundary>
-        <FirebaseErrorHandler>
-          <BrowserRouter>
-            <AuthProvider>
-              <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-                <ReminderProvider>
-                  <AppRoutes />
-                  <Toaster />
-                </ReminderProvider>
-              </ThemeProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </FirebaseErrorHandler>
+        <ReactHookTester>
+          <FirebaseErrorHandler>
+            <BrowserRouter>
+              <AuthProvider>
+                <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+                  <ReminderProvider>
+                    <AppRoutes />
+                    <Toaster />
+                  </ReminderProvider>
+                </ThemeProvider>
+              </AuthProvider>
+            </BrowserRouter>
+          </FirebaseErrorHandler>
+        </ReactHookTester>
       </ErrorBoundary>
     </div>
   );

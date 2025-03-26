@@ -1,203 +1,140 @@
+
 import * as React from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { login, register, logout, signInWithGoogle, loginWithTestAccount } from "@/services/firebase";
-import { toast } from "sonner";
+import { getSchoolSetup, saveSchoolSetup } from "@/services/firebase";
+import { SchoolSetup } from "./ReminderContext";
+import { useNavigate } from "react-router-dom";
 
-interface AuthContextType {
+// Verify React is available in this file
+console.log("AuthContext.tsx - React check:", {
+  isReactAvailable: !!React,
+  useState: !!React.useState,
+  createContext: !!React.createContext
+});
+
+// Explicitly check for React hooks
+if (!React || !React.useState || !React.createContext) {
+  console.error("Critical: React hooks not available in AuthContext");
+  throw new Error("React or React hooks not available");
+}
+
+type AuthContextType = {
   user: User | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
   hasCompletedOnboarding: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  register: (email: string, password: string) => Promise<User>;
-  loginWithGoogle: () => Promise<User>;
-  loginWithTestAccount: () => Promise<User>;
-  logout: () => Promise<void>;
-  setCompleteOnboarding: () => void;
+  setCompletedOnboarding: (completed: boolean) => void;
   resetOnboarding: () => void;
-}
+};
 
-// Create context with a default value to avoid null checks
-const AuthContext = React.createContext<AuthContextType>({
-  user: null,
-  isAuthenticated: false,
-  isInitialized: false,
-  hasCompletedOnboarding: false,
-  login: async () => { throw new Error("AuthContext not initialized"); },
-  register: async () => { throw new Error("AuthContext not initialized"); },
-  loginWithGoogle: async () => { throw new Error("AuthContext not initialized"); },
-  loginWithTestAccount: async () => { throw new Error("AuthContext not initialized"); },
-  logout: async () => { throw new Error("AuthContext not initialized"); },
-  setCompleteOnboarding: () => { throw new Error("AuthContext not initialized"); },
-  resetOnboarding: () => { throw new Error("AuthContext not initialized"); },
-});
+// Create the context with a default value
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
+// Custom hook to use the auth context
 export const useAuth = () => {
   const context = React.useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
 
-// Explicitly check for React.useState before using it
-if (!React || !React.useState) {
-  console.error("React or React.useState is not available!", { React });
-}
-
+// Auth provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = React.useState<User | null>(null);
-  const [isInitialized, setIsInitialized] = React.useState(false);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
+  try {
+    // Add safety checks
+    if (!React.useState) {
+      console.error("React.useState is not available in AuthProvider!");
+      throw new Error("React.useState is not available");
+    }
 
-  React.useEffect(() => {
-    let unsubscribe = () => {};
+    const [user, setUser] = React.useState<User | null>(null);
+    const [isInitialized, setIsInitialized] = React.useState(false);
+    const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
     
-    try {
-      unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
-        
+    // Check for onboarding completion
+    React.useEffect(() => {
+      const checkOnboardingStatus = async () => {
         if (user) {
-          if (user.uid.startsWith("test-user-")) {
-            const testUserOnboarding = localStorage.getItem("testUserOnboarding");
-            setHasCompletedOnboarding(testUserOnboarding !== "reset");
-          } else {
-            const onboardingCompleted = localStorage.getItem("hasCompletedOnboarding");
-            setHasCompletedOnboarding(!!onboardingCompleted);
+          try {
+            const schoolSetup = await getSchoolSetup(user.uid);
+            setHasCompletedOnboarding(!!schoolSetup);
+          } catch (error) {
+            console.error("Error checking onboarding status:", error);
+            setHasCompletedOnboarding(false);
           }
+        } else {
+          setHasCompletedOnboarding(false);
         }
-        
+      };
+      
+      checkOnboardingStatus();
+    }, [user]);
+    
+    // Auth state listener
+    React.useEffect(() => {
+      console.log("Setting up auth state listener");
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
         setIsInitialized(true);
+        console.log("Auth state changed:", { user: user?.uid || "no user" });
       });
-    } catch (error) {
-      console.error("Firebase auth initialization error:", error);
-      // Gracefully handle Firebase initialization failure
-      setIsInitialized(true);
-    }
-
-    return () => unsubscribe();
-  }, []);
-
-  const handleLogin = async (email: string, password: string) => {
-    try {
-      const user = await login(email, password);
-      setUser(user);
-      return user;
-    } catch (error: any) {
-      const errorMsg = error.code === "auth/invalid-credential" 
-        ? "Invalid email or password" 
-        : error.code === "auth/api-key-not-valid" || error.code === "auth/app-not-authorized"
-        ? "Firebase authentication is unavailable. Please use the test account or try again later."
-        : error.message || "Login failed";
       
-      toast.error(errorMsg);
-      throw error;
-    }
-  };
-
-  const handleRegister = async (email: string, password: string) => {
-    try {
-      const user = await register(email, password);
-      setUser(user);
-      return user;
-    } catch (error: any) {
-      const errorMsg = error.code === "auth/email-already-in-use" 
-        ? "Email is already in use" 
-        : error.code === "auth/api-key-not-valid" || error.code === "auth/app-not-authorized"
-        ? "Firebase authentication is unavailable. Please use the test account or try again later."
-        : error.message || "Registration failed";
-      
-      toast.error(errorMsg);
-      throw error;
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      const user = await signInWithGoogle();
-      setUser(user);
-      return user;
-    } catch (error: any) {
-      const errorMsg = error.code === "auth/api-key-not-valid" || error.code === "auth/app-not-authorized"
-        ? "Firebase authentication is unavailable. Please use the test account or try again later."
-        : error.message || "Google sign-in failed";
-      
-      toast.error(errorMsg);
-      throw error;
-    }
-  };
-
-  const handleTestAccountLogin = async () => {
-    try {
-      const testUser = await loginWithTestAccount();
-      setUser(testUser);
-      
-      const testUserOnboarding = localStorage.getItem("testUserOnboarding");
-      if (testUserOnboarding === "reset") {
-        setHasCompletedOnboarding(false);
-      } else {
-        setHasCompletedOnboarding(true);
-        localStorage.setItem("testUserOnboarding", "completed");
+      return () => unsubscribe();
+    }, []);
+    
+    // Set onboarding status
+    const setCompletedOnboarding = (completed: boolean) => {
+      setHasCompletedOnboarding(completed);
+    };
+    
+    // Reset onboarding
+    const resetOnboarding = async () => {
+      if (user) {
+        try {
+          await saveSchoolSetup(user.uid, {} as SchoolSetup);
+          setHasCompletedOnboarding(false);
+        } catch (error) {
+          console.error("Error resetting onboarding:", error);
+          throw error;
+        }
       }
-      
-      return testUser;
-    } catch (error: any) {
-      toast.error(error.message || "Test account login failed");
-      throw error;
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      setUser(null);
-      setHasCompletedOnboarding(false);
-    } catch (error: any) {
-      toast.error(error.message || "Logout failed");
-      throw error;
-    }
-  };
-
-  const completeOnboarding = () => {
-    if (user?.uid.startsWith("test-user-")) {
-      localStorage.setItem("testUserOnboarding", "completed");
-    } else {
-      localStorage.setItem("hasCompletedOnboarding", "true");
-    }
-    setHasCompletedOnboarding(true);
-  };
-  
-  const resetOnboardingData = () => {
-    if (user?.uid.startsWith("test-user-")) {
-      localStorage.setItem("testUserOnboarding", "reset");
-      setHasCompletedOnboarding(false);
-      toast.success("Onboarding has been reset. Log out and back in to see changes.");
-    } else {
-      localStorage.removeItem("hasCompletedOnboarding");
-      setHasCompletedOnboarding(false);
-      toast.success("Onboarding data has been reset");
-    }
-  };
-
-  // Memoize context value to prevent unnecessary re-renders
-  const contextValue = React.useMemo(() => ({
-    user,
-    isAuthenticated: !!user,
-    isInitialized,
-    hasCompletedOnboarding,
-    login: handleLogin,
-    register: handleRegister,
-    loginWithGoogle: handleGoogleLogin,
-    loginWithTestAccount: handleTestAccountLogin,
-    logout: handleLogout,
-    setCompleteOnboarding: completeOnboarding,
-    resetOnboarding: resetOnboardingData,
-  }), [user, isInitialized, hasCompletedOnboarding]);
-
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+    };
+    
+    const value = {
+      user,
+      isAuthenticated: !!user,
+      isInitialized,
+      hasCompletedOnboarding,
+      setCompletedOnboarding,
+      resetOnboarding
+    };
+    
+    return (
+      <AuthContext.Provider value={value}>
+        {children}
+      </AuthContext.Provider>
+    );
+  } catch (error) {
+    console.error("Critical error in AuthProvider:", error);
+    
+    // Render error fallback
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
+          <h2 className="text-xl font-bold text-red-600">Authentication Error</h2>
+          <p className="mt-2 text-gray-600">
+            There was a problem with the authentication system. Please refresh the page.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 };

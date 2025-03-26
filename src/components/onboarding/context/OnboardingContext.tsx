@@ -7,6 +7,13 @@ import {
   getInitialOnboardingState 
 } from './utils';
 
+// Verify React is available in this file
+console.log("OnboardingContext.tsx - React check:", {
+  isReactAvailable: !!React,
+  useState: !!React.useState,
+  createContext: !!React.createContext
+});
+
 // Create the context
 const OnboardingContext = React.createContext<OnboardingContextType | undefined>(undefined);
 
@@ -21,6 +28,12 @@ export const useOnboarding = () => {
 
 // Provider component
 export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Add safety check
+  if (!React.useState) {
+    console.error("React.useState is not available in OnboardingProvider!");
+    throw new Error("React hooks not available");
+  }
+
   const [state, setState] = React.useState(getInitialOnboardingState());
   
   // Create actions and utility methods
