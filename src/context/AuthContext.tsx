@@ -11,7 +11,7 @@ const AuthContext = React.createContext({
   isAuthenticated: false,
   isInitialized: true,
   hasCompletedOnboarding: false,
-  setCompletedOnboarding: () => {},
+  setCompletedOnboarding: () => true,
   resetOnboarding: async () => {},
   login: async (email: string, password: string) => {},
   register: async (email: string, password: string) => {},
@@ -21,18 +21,18 @@ const AuthContext = React.createContext({
 
 // Custom hook to use the auth context with error handling
 export const useAuth = () => {
-  try {
-    const context = React.useContext(AuthContext);
-    return context;
-  } catch (error) {
-    console.error("Error in useAuth hook:", error);
-    // Return a fallback offline context
+  // This hook must only be called inside a component function
+  const context = React.useContext(AuthContext);
+  
+  if (!context) {
+    console.error("useAuth must be used within an AuthProvider");
+    // Return fallback object with same shape
     return {
       user: null,
       isAuthenticated: false,
-      isInitialized: true, // Initialized but offline
+      isInitialized: true,
       hasCompletedOnboarding: false,
-      setCompletedOnboarding: () => {},
+      setCompletedOnboarding: () => true,
       resetOnboarding: async () => {},
       login: async (email: string, password: string) => {},
       register: async (email: string, password: string) => {},
@@ -40,32 +40,12 @@ export const useAuth = () => {
       loginWithTestAccount: async () => {}
     };
   }
+  
+  return context;
 };
 
-// Auth provider component - with safer React checks
+// Component declaration - ensures React hooks can only be used inside component
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Ensure React is available before using hooks
-  if (typeof React === 'undefined' || !React.useState) {
-    console.error("React is not available in AuthProvider");
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4 text-center text-amber-600">React Error</h2>
-          <p className="mb-6 text-center text-muted-foreground">
-            There was a problem loading React. Please refresh the page.
-          </p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="w-full px-4 py-2 text-white bg-blue-500 rounded"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Safe state initializations with fallbacks for React availability issues
   const [user, setUser] = React.useState<User | null>(null);
   const [isInitialized, setIsInitialized] = React.useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
@@ -127,11 +107,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
   
-  // Set onboarding status
+  // Set onboarding status - fixed return type to match context definition
   const setCompletedOnboarding = () => {
     console.log("Setting onboarding as completed");
     setHasCompletedOnboarding(true);
-    return true; // Return true to match the expected return type
+    return true;
   };
   
   // Reset onboarding

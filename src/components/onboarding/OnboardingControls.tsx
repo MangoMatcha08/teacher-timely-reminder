@@ -7,18 +7,23 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 const OnboardingControls: React.FC = () => {
-  // Get the onboarding context with proper error handling
+  // Get the onboarding context
   const onboardingContext = useOnboarding();
+  
+  // Initialize navigate function
+  const navigate = useNavigate();
+  
+  // Get auth context once (correctly using the hook at the component level)
+  const authContext = useAuth();
+  
+  // Store state locally
   const [onboarding, setOnboarding] = React.useState({
     currentStep: 0,
     setCurrentStep: (step: number) => {},
     setShowExitConfirm: (show: boolean) => {}
   });
   
-  // Initialize navigate function safely
-  const navigate = useNavigate();
-  
-  // Safely access auth context with fallback
+  // Store auth functions locally
   const [auth, setAuth] = React.useState({
     setCompletedOnboarding: () => {
       console.log("Onboarding completed in offline mode");
@@ -26,7 +31,7 @@ const OnboardingControls: React.FC = () => {
     }
   });
   
-  // Load actual contexts when available
+  // Load actual contexts when available (without calling hooks inside)
   React.useEffect(() => {
     try {
       if (onboardingContext) {
@@ -37,20 +42,15 @@ const OnboardingControls: React.FC = () => {
         });
       }
       
-      try {
-        const authContext = useAuth();
-        if (authContext && authContext.setCompletedOnboarding) {
-          setAuth({
-            setCompletedOnboarding: authContext.setCompletedOnboarding
-          });
-        }
-      } catch (error) {
-        console.log("Working in offline auth mode");
+      if (authContext && authContext.setCompletedOnboarding) {
+        setAuth({
+          setCompletedOnboarding: authContext.setCompletedOnboarding
+        });
       }
     } catch (error) {
-      console.log("Working in offline onboarding mode");
+      console.log("Working in offline mode:", error);
     }
-  }, [onboardingContext]);
+  }, [onboardingContext, authContext]);
   
   const { currentStep, setCurrentStep, setShowExitConfirm } = onboarding;
   
