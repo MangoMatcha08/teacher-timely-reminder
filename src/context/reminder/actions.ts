@@ -145,3 +145,75 @@ export const createReminderActions = (
     fetchReminders
   };
 };
+
+export const syncReminder = async (
+  reminder: Reminder, 
+  userId: string | null,
+  dispatch: React.Dispatch<ReminderAction>
+) => {
+  if (!userId) {
+    console.error("Cannot sync reminder: No user ID provided");
+    return null;
+  }
+
+  try {
+    const syncedReminder = await saveReminder(reminder, userId);
+    
+    if (syncedReminder) {
+      dispatch({
+        type: "UPDATE_REMINDER",
+        payload: syncedReminder
+      });
+    }
+    
+    return syncedReminder;
+  } catch (error) {
+    console.error("Error syncing reminder:", error);
+    return null;
+  }
+};
+
+export const deleteReminderFromCloud = async (
+  reminderId: string,
+  userId: string | null
+) => {
+  if (!userId) {
+    console.error("Cannot delete reminder from cloud: No user ID provided");
+    return false;
+  }
+
+  try {
+    await deleteReminder(reminderId, userId);
+    return true;
+  } catch (error) {
+    console.error("Error deleting reminder from cloud:", error);
+    return false;
+  }
+};
+
+export const fetchRemindersFromCloud = async (
+  userId: string | null,
+  termId: string | undefined,
+  dispatch: React.Dispatch<ReminderAction>
+) => {
+  if (!userId) {
+    console.error("Cannot fetch reminders: No user ID provided");
+    return [];
+  }
+
+  try {
+    const reminders = await getReminders(userId, termId);
+    
+    if (reminders && reminders.length > 0) {
+      dispatch({
+        type: "SET_REMINDERS",
+        payload: reminders
+      });
+    }
+    
+    return reminders;
+  } catch (error) {
+    console.error("Error fetching reminders:", error);
+    return [];
+  }
+};
