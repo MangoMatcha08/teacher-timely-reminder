@@ -44,6 +44,27 @@ export const useAuth = () => {
 
 // Auth provider component - with safer React checks
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  // Ensure React is available before using hooks
+  if (typeof React === 'undefined' || !React.useState) {
+    console.error("React is not available in AuthProvider");
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4 text-center text-amber-600">React Error</h2>
+          <p className="mb-6 text-center text-muted-foreground">
+            There was a problem loading React. Please refresh the page.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="w-full px-4 py-2 text-white bg-blue-500 rounded"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Safe state initializations with fallbacks for React availability issues
   const [user, setUser] = React.useState<User | null>(null);
   const [isInitialized, setIsInitialized] = React.useState(false);
@@ -110,6 +131,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const setCompletedOnboarding = () => {
     console.log("Setting onboarding as completed");
     setHasCompletedOnboarding(true);
+    return true; // Return true to match the expected return type
   };
   
   // Reset onboarding
