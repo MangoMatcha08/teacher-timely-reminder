@@ -22,7 +22,7 @@ export const supabase = createClient<Database>(
 // Function to check if Supabase connection is working
 export const checkSupabaseConnection = async (): Promise<boolean> => {
   try {
-    const { error } = await supabase.from('profiles').select('id').limit(1);
+    const { error } = await supabase.from('reminders').select('id').limit(1);
     return !error;
   } catch (error) {
     console.error("Supabase connection check failed:", error);

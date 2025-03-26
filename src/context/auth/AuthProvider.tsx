@@ -40,12 +40,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signOut
   };
   
-  console.log("Auth context value prepared:", {
-    isAuthenticated: !!user,
-    isInitialized,
-    hasCompletedOnboarding
-  });
-  
   return (
     <AuthContext.Provider value={value}>
       {children}
