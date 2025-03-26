@@ -1,5 +1,4 @@
-
-import { User } from "firebase/auth";
+import { User } from "@supabase/supabase-js";
 
 export type DayOfWeek = "M" | "T" | "W" | "Th" | "F";
 
@@ -40,6 +39,7 @@ export interface Reminder {
   priority: ReminderPriority;
   completed?: boolean;
   termId?: string; // Term identifier
+  dueDate?: Date;   // Added due date field
 }
 
 export interface SchoolHours {

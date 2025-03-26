@@ -1,9 +1,8 @@
-
 import * as React from 'react';
 import { Reminder, ReminderState, SchoolSetup } from './types';
 import { getTodayDayCode, isTimePassed, saveToFirebase } from './utils';
-import { User } from 'firebase/auth';
-import * as FirebaseService from "@/services/firebase";
+import { User } from '@supabase/supabase-js';
+import * as SupabaseService from "@/services/supabase";
 
 export const createReminderActions = (
   state: ReminderState,
@@ -37,8 +36,8 @@ export const createReminderActions = (
     }));
     
     if (state.isOnline && user) {
-      FirebaseService.saveReminder(newReminder, user.uid)
-        .catch(error => console.error("Error saving reminder to Firebase:", error));
+      SupabaseService.saveReminder(newReminder, user.id)
+        .catch(error => console.error("Error saving reminder to Supabase:", error));
     }
   };
   
@@ -51,8 +50,8 @@ export const createReminderActions = (
     }));
     
     if (state.isOnline && user) {
-      FirebaseService.updateReminder(id, reminderData)
-        .catch(error => console.error("Error updating reminder in Firebase:", error));
+      SupabaseService.updateReminder(id, reminderData)
+        .catch(error => console.error("Error updating reminder in Supabase:", error));
     }
   };
   
@@ -63,8 +62,8 @@ export const createReminderActions = (
     }));
     
     if (state.isOnline && user) {
-      FirebaseService.deleteReminder(id)
-        .catch(error => console.error("Error deleting reminder from Firebase:", error));
+      SupabaseService.deleteReminder(id)
+        .catch(error => console.error("Error deleting reminder from Supabase:", error));
     }
   };
   
@@ -75,8 +74,8 @@ export const createReminderActions = (
     }));
     
     if (state.isOnline && user) {
-      FirebaseService.saveSchoolSetup(user.uid, setup)
-        .catch(error => console.error("Error saving school setup to Firebase:", error));
+      SupabaseService.saveSchoolSetup(user.id, setup)
+        .catch(error => console.error("Error saving school setup to Supabase:", error));
     }
   };
   
@@ -87,8 +86,8 @@ export const createReminderActions = (
           const completed = !reminder.completed;
           
           if (state.isOnline && user) {
-            FirebaseService.updateReminder(id, { completed })
-              .catch(error => console.error("Error updating reminder in Firebase:", error));
+            SupabaseService.updateReminder(id, { completed })
+              .catch(error => console.error("Error updating reminder in Supabase:", error));
           }
           
           return { ...reminder, completed };
@@ -118,7 +117,7 @@ export const createReminderActions = (
   
   const fetchReminders = () => {
     if (user) {
-      FirebaseService.getUserReminders(user.uid)
+      SupabaseService.getUserReminders(user.id)
         .then(reminders => {
           if (reminders.length > 0) {
             setState(prev => ({ ...prev, reminders }));
@@ -126,7 +125,7 @@ export const createReminderActions = (
         })
         .catch(error => console.error("Error fetching reminders:", error));
       
-      FirebaseService.getSchoolSetup(user.uid)
+      SupabaseService.getSchoolSetup(user.id)
         .then(schoolSetup => {
           if (schoolSetup) {
             setState(prev => ({ ...prev, schoolSetup }));

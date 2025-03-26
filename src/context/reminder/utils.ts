@@ -1,32 +1,15 @@
-
-import * as React from 'react';
 import { DayOfWeek, Reminder, ReminderState, SchoolSetup, Term } from './types';
-import * as FirebaseService from "@/services/firebase";
-import { User } from 'firebase/auth';
+import * as SupabaseService from "@/services/supabase";
+import { User } from '@supabase/supabase-js';
 
 // Helper function to get the current day code (M, T, W, Th, F)
 export const getTodayDayCode = (): DayOfWeek => {
-  const days: DayOfWeek[] = ["M", "T", "W", "Th", "F"];
-  const dayIndex = new Date().getDay() - 1; // 0 = Sunday, so -1 gives Monday as 0
-  return dayIndex >= 0 && dayIndex < 5 ? days[dayIndex] : "M"; // Default to Monday if weekend
+  return SupabaseService.getCurrentDayOfWeek();
 };
 
 // Function to create default term
 export const createDefaultTerm = (): Term => {
-  const now = new Date();
-  const endDate = new Date();
-  endDate.setMonth(now.getMonth() + 4); // Roughly a semester
-  
-  const currentYear = now.getFullYear();
-  const schoolYear = `${currentYear}-${currentYear + 1}`;
-  
-  return {
-    id: "term_default",
-    name: "Current Term",
-    startDate: now.toISOString(),
-    endDate: endDate.toISOString(),
-    schoolYear: schoolYear
-  };
+  return SupabaseService.createDefaultTerm();
 };
 
 // Function to check if a time has passed for a given period
@@ -112,7 +95,7 @@ export const loadFromLocalStorage = (): {
   return { reminders: parsedReminders, schoolSetup: parsedSchoolSetup };
 };
 
-// Function to save data to Firebase
+// Function to save data to Supabase
 export const saveToFirebase = async (
   data: ReminderState,
   user: User | null
@@ -121,19 +104,19 @@ export const saveToFirebase = async (
   
   try {
     for (const reminder of data.reminders) {
-      await FirebaseService.saveReminder(reminder, user.uid);
+      await SupabaseService.saveReminder(reminder, user.id);
     }
     
     if (data.schoolSetup) {
-      await FirebaseService.saveSchoolSetup(user.uid, data.schoolSetup);
+      await SupabaseService.saveSchoolSetup(user.id, data.schoolSetup);
     }
   } catch (error) {
-    console.error("Error saving data to Firebase:", error);
+    console.error("Error saving data to Supabase:", error);
     throw error;
   }
 };
 
-// Function to load data from Firebase
+// Function to load data from Supabase
 export const loadFromFirebase = async (
   user: User | null
 ): Promise<{ reminders: Reminder[], schoolSetup: SchoolSetup | null }> => {
@@ -142,15 +125,15 @@ export const loadFromFirebase = async (
   }
   
   try {
-    const cloudReminders = await FirebaseService.getUserReminders(user.uid);
-    const cloudSetup = await FirebaseService.getSchoolSetup(user.uid);
+    const cloudReminders = await SupabaseService.getUserReminders(user.id);
+    const cloudSetup = await SupabaseService.getSchoolSetup(user.id);
     
     return {
       reminders: cloudReminders,
       schoolSetup: cloudSetup || null
     };
   } catch (error) {
-    console.error("Error loading data from Firebase:", error);
+    console.error("Error loading data from Supabase:", error);
     throw error;
   }
 };

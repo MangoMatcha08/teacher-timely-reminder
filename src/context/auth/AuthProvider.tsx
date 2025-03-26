@@ -1,12 +1,11 @@
-
 import * as React from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { getSchoolSetup, saveSchoolSetup } from "@/services/supabase";
-import { SchoolSetup } from "../ReminderContext";
 import AuthContext from "./useAuth";
 import { AuthProviderProps } from "./types";
 import { toast } from "sonner";
+import { getSchoolSetup } from "@/services/supabase/schoolSetup";
+import { createDefaultDataForTestUser, loginWithGoogle, loginWithTestAccount, login, register, logout } from "@/services/supabase";
 
 // Component declaration - ensures React hooks can only be used inside component
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
@@ -102,7 +101,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     if (user) {
       try {
-        await saveSchoolSetup(user.id, {} as SchoolSetup);
+        await import("@/services/supabase").then(({ saveSchoolSetup }) => 
+          saveSchoolSetup(user.id, {} as any)
+        );
         setHasCompletedOnboarding(false);
         console.log("Onboarding reset successful");
       } catch (error) {
@@ -113,17 +114,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Authentication methods using Supabase
-  const login = async (email: string, password: string) => {
+  const handleLogin = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      
+      const user = await login(email, password);
       toast.success("Signed in successfully!");
-      return data.user;
+      return user;
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error(error.message || "Failed to sign in. Please try again.");
@@ -131,17 +126,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (email: string, password: string) => {
+  const handleRegister = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      
+      const user = await register(email, password);
       toast.success("Account created successfully!");
-      return data.user;
+      return user;
     } catch (error: any) {
       console.error("Register error:", error);
       toast.error(error.message || "Failed to create account. Please try again.");
@@ -149,17 +138,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const loginWithGoogle = async () => {
+  const handleLoginWithGoogle = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-      
-      if (error) throw error;
-      // This will redirect the browser, so any code after this may not run
+      await loginWithGoogle();
+      // This will redirect, so any code after this may not run
     } catch (error: any) {
       console.error("Google login error:", error);
       toast.error("Failed to sign in with Google. Please try again.");
@@ -167,105 +149,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const loginWithTestAccount = async () => {
+  const handleLoginWithTestAccount = async () => {
     try {
-      // Use a consistent test account for easier testing
-      const testEmail = "test@teacherreminder.app";
-      const testPassword = "test-password-123456";
-      
-      // Try to sign in with existing test account
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: testEmail,
-        password: testPassword
-      });
-      
-      if (!error && data.user) {
-        toast.success("Signed in with test account");
-        return data.user;
-      }
-      
-      // If sign in fails, create a new test account
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: testEmail,
-        password: testPassword,
-        options: {
-          data: {
-            display_name: "Test Teacher"
-          }
-        }
-      });
-      
-      if (signUpError) throw signUpError;
-      
-      if (signUpData.user) {
-        // Create default data for the test account
-        const testUserId = signUpData.user.id;
-        console.log("Test user created:", signUpData.user);
-        
-        // Create default data using our existing utility
-        setTimeout(async () => {
-          try {
-            // Create separate implementation here instead of importing
-            const testUser = signUpData.user;
-            if (testUser) {
-              // Create default school setup with mock data
-              const defaultSchoolSetup: SchoolSetup = {
-                termId: "term-default",
-                terms: [{
-                  id: "term-default",
-                  name: "Current Term",
-                  startDate: new Date().toISOString(),
-                  endDate: new Date(Date.now() + 86400000 * 120).toISOString(),
-                  schoolYear: "2023-2024"
-                }],
-                schoolDays: ["M", "T", "W", "Th", "F"],
-                periods: [
-                  {
-                    id: "period-1",
-                    name: "Period 1",
-                    schedules: [
-                      { dayOfWeek: "M", startTime: "8:00 AM", endTime: "8:50 AM" },
-                      { dayOfWeek: "T", startTime: "8:00 AM", endTime: "8:50 AM" },
-                      { dayOfWeek: "W", startTime: "8:00 AM", endTime: "8:50 AM" },
-                      { dayOfWeek: "Th", startTime: "8:00 AM", endTime: "8:50 AM" },
-                      { dayOfWeek: "F", startTime: "8:00 AM", endTime: "8:50 AM" }
-                    ]
-                  },
-                  {
-                    id: "period-2",
-                    name: "Period 2",
-                    schedules: [
-                      { dayOfWeek: "M", startTime: "9:00 AM", endTime: "9:50 AM" },
-                      { dayOfWeek: "T", startTime: "9:00 AM", endTime: "9:50 AM" },
-                      { dayOfWeek: "W", startTime: "9:00 AM", endTime: "9:50 AM" },
-                      { dayOfWeek: "Th", startTime: "9:00 AM", endTime: "9:50 AM" },
-                      { dayOfWeek: "F", startTime: "9:00 AM", endTime: "9:50 AM" }
-                    ]
-                  }
-                ],
-                schoolHours: {
-                  startTime: "7:45 AM",
-                  endTime: "3:15 PM",
-                  teacherArrivalTime: "7:30 AM"
-                },
-                categories: ["Materials/Set up", "Student support", "School events", "Instruction", "Administrative tasks"],
-                iepMeetings: {
-                  enabled: false
-                }
-              };
-              
-              await saveSchoolSetup(testUser.id, defaultSchoolSetup);
-            }
-          } catch (error) {
-            console.error("Error creating test data:", error);
-          }
-        }, 1000);
-        
-        toast.success("Test account created successfully!");
-        return signUpData.user;
-      }
-      
-      throw new Error("Failed to create test account");
+      const user = await loginWithTestAccount();
+      toast.success("Signed in with test account");
+      return user;
     } catch (error: any) {
       console.error("Test account error:", error);
       toast.error("Failed to sign in with test account. Please try again.");
@@ -275,8 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      await logout();
       toast.success("Signed out successfully");
     } catch (error: any) {
       console.error("Sign out error:", error);
@@ -291,10 +178,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hasCompletedOnboarding,
     setCompletedOnboarding,
     resetOnboarding,
-    login,
-    register,
-    loginWithGoogle,
-    loginWithTestAccount,
+    login: handleLogin,
+    register: handleRegister,
+    loginWithGoogle: handleLoginWithGoogle,
+    loginWithTestAccount: handleLoginWithTestAccount,
     signOut
   };
   
