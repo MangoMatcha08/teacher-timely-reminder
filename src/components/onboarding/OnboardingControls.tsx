@@ -1,135 +1,39 @@
 
 import * as React from "react";
-import { useOnboarding } from "./context";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/auth";
-import { useReminders } from "@/context/ReminderContext";
-import { toast } from "sonner";
-import { finishOnboarding } from "./utils/OnboardingFinisher";
+import { useOnboardingControls } from "./hooks/useOnboardingControls";
+import { createControlActions } from "./utils/controlActions";
+import { ExitButton, NavigationButtons } from "./controls/ControlButtons";
 
 const OnboardingControls: React.FC = () => {
-  // Get the onboarding context
-  const onboardingContext = useOnboarding();
-  
-  // Initialize navigate function
-  const navigate = useNavigate();
-  
-  // Get auth context once (correctly using the hook at the component level)
-  const authContext = useAuth();
-  const reminderContext = useReminders();
-  
-  // Store state locally
-  const [onboarding, setOnboarding] = React.useState({
-    currentStep: 0,
-    setCurrentStep: (step: number) => {},
-    setShowExitConfirm: (show: boolean) => {}
-  });
-  
-  // Store auth functions locally with proper return type
-  const [auth, setAuth] = React.useState({
-    // Ensure this always returns true to match the interface type
-    setCompletedOnboarding: (): true => {
-      console.log("Onboarding completed in offline mode");
-      return true;
-    }
-  });
-
-  const [reminders, setReminders] = React.useState({
-    saveSchoolSetup: (setup: any) => {
-      console.log("School setup saved in offline mode", setup);
-    }
-  });
-  
-  // Load actual contexts when available (without calling hooks inside)
-  React.useEffect(() => {
-    try {
-      if (onboardingContext) {
-        setOnboarding({
-          currentStep: onboardingContext.currentStep || 0,
-          setCurrentStep: onboardingContext.setCurrentStep || ((step: number) => {}),
-          setShowExitConfirm: onboardingContext.setShowExitConfirm || ((show: boolean) => {})
-        });
-      }
-      
-      if (authContext && authContext.setCompletedOnboarding) {
-        setAuth({
-          // Use a wrapper function to ensure true is always returned
-          setCompletedOnboarding: (): true => {
-            authContext.setCompletedOnboarding();
-            return true;
-          }
-        });
-      }
-
-      if (reminderContext && reminderContext.saveSchoolSetup) {
-        setReminders({
-          saveSchoolSetup: reminderContext.saveSchoolSetup
-        });
-      }
-    } catch (error) {
-      console.log("Working in offline mode:", error);
-    }
-  }, [onboardingContext, authContext, reminderContext]);
+  // Use our custom hook to get all the necessary state and contexts
+  const { onboardingContext, onboarding, auth, reminders, navigate } = useOnboardingControls();
   
   const { currentStep, setCurrentStep, setShowExitConfirm } = onboarding;
   
   const isLastStep = currentStep === 5;
   
-  const handleNext = () => {
-    setCurrentStep(currentStep + 1);
-  };
-  
-  const handlePrevious = () => {
-    setCurrentStep(currentStep - 1);
-  };
-  
-  const handleExit = () => {
-    setShowExitConfirm(true);
-  };
-  
-  const handleFinish = () => {
-    try {
-      // Call the complete onboarding function and navigate to the dashboard
-      finishOnboarding(onboardingContext, auth, reminders.saveSchoolSetup, navigate);
-    } catch (error) {
-      console.error("Error during finish:", error);
-      // Still navigate even if there's an error
-      navigate("/dashboard");
-      toast.success("Setup completed in offline mode!");
-    }
-  };
+  // Create control action handlers
+  const { handleNext, handlePrevious, handleExit, handleFinish } = createControlActions(
+    currentStep,
+    setCurrentStep,
+    setShowExitConfirm,
+    onboardingContext,
+    auth,
+    reminders,
+    navigate
+  );
   
   return (
     <div className="flex justify-between mt-8">
-      <Button
-        variant="secondary"
-        onClick={handleExit}
-      >
-        Exit Setup
-      </Button>
+      <ExitButton onClick={handleExit} />
       
-      <div>
-        {currentStep > 0 && (
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            className="mr-2"
-          >
-            Previous
-          </Button>
-        )}
-        
-        {isLastStep ? (
-          <Button onClick={handleFinish}>
-            Finish
-          </Button>
-        ) : (
-          <Button onClick={handleNext}>
-            Next
-          </Button>
-        )}
-      </div>
+      <NavigationButtons 
+        currentStep={currentStep}
+        isLastStep={isLastStep}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        onFinish={handleFinish}
+      />
     </div>
   );
 };

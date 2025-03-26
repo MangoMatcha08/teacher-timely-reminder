@@ -1,3 +1,4 @@
+
 import * as React from 'react';
 import { OnboardingState } from './types';
 import { checkForOverlaps } from './utils/overlap';
@@ -26,7 +27,7 @@ import {
 } from './utils/categoryOperations';
 import { getInitialOnboardingState } from './utils/initialState';
 
-export { getInitialOnboardingState };
+export { getInitialOnboardingState, createOnboardingActions };
 
 export const createOnboardingUtilityMethods = (
   state: OnboardingState,
