@@ -19,7 +19,7 @@ const AuthContext = React.createContext<AuthContextType>({
 
 // Custom hook to use the auth context with error handling
 export const useAuth = () => {
-  // This hook must only be called inside a component function
+  // This hook must be called inside a component function
   const context = React.useContext(AuthContext);
   
   if (!context) {
