@@ -115,7 +115,7 @@ const TestControls: React.FC = () => {
         )}
       </div>
       
-      {/* Add the UploadedReminders component here */}
+      {/* Display the UploadedReminders component */}
       <UploadedReminders />
       
       <Dialog open={showDialog} onOpenChange={setShowDialog}>

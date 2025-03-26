@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shared/Card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const UploadedReminders: React.FC = () => {
@@ -64,7 +64,10 @@ const UploadedReminders: React.FC = () => {
           <CardTitle className="text-sm text-red-600">Error Loading Reminders</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-xs text-red-500">{error}</p>
+          <div className="flex items-center text-red-500 gap-2">
+            <AlertCircle className="h-4 w-4" />
+            <p className="text-xs">{error}</p>
+          </div>
         </CardContent>
       </Card>
     );
