@@ -10,7 +10,7 @@ import PeriodSetup from "./steps/PeriodSetup";
 import SchoolHoursSetup from "./steps/SchoolHoursSetup";
 import CategorySetup from "./steps/CategorySetup";
 import ScheduleSetup from "./steps/ScheduleSetup";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth";
 import { useReminders } from "@/context/ReminderContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
