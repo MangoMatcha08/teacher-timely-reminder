@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useContext, createContext, useMemo } from "react";
+
+import * as React from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { login, register, logout, signInWithGoogle, loginWithTestAccount } from "@/services/firebase";
@@ -19,7 +20,7 @@ interface AuthContextType {
 }
 
 // Create context with a default value to avoid null checks
-const AuthContext = createContext<AuthContextType>({
+const AuthContext = React.createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   isInitialized: false,
@@ -34,7 +35,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
+  const context = React.useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
@@ -42,11 +43,11 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [user, setUser] = React.useState<User | null>(null);
+  const [isInitialized, setIsInitialized] = React.useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     let unsubscribe = () => {};
     
     try {

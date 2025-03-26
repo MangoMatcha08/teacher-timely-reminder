@@ -1,8 +1,11 @@
 
-import React from 'react';
+import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+
+// Make React available globally to avoid issues
+window.React = React;
 
 // Add a global error handler to catch unhandled errors
 const handleGlobalError = (event: ErrorEvent) => {
@@ -36,9 +39,6 @@ const handleGlobalError = (event: ErrorEvent) => {
 // Add event listener for uncaught errors
 window.addEventListener('error', handleGlobalError);
 
-// Make sure React is properly recognized in the global scope
-window.React = React;
-
 // Find or create root element with better error handling
 const getRootElement = () => {
   let rootElement = document.getElementById("root");
@@ -58,6 +58,9 @@ try {
   const rootElement = getRootElement();
   const root = createRoot(rootElement);
   
+  // Explicitly set React on window to ensure it's accessible
+  window.React = React;
+  
   root.render(
     <React.StrictMode>
       <App />
@@ -71,7 +74,7 @@ try {
   // Render a minimal error UI
   const rootElement = getRootElement();
   rootElement.innerHTML = `
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+    <div style="display: flex; flex-direction: column; align-items: center; justify-center; height: 100vh; font-family: sans-serif;">
       <h1 style="color: #e53e3e; margin-bottom: 1rem;">Failed to Start Application</h1>
       <p style="margin-bottom: 1rem;">The application could not be loaded. Please refresh the page or try again later.</p>
       <button 

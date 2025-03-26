@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react'
+import * as React from 'react'
 import './App.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
@@ -74,7 +74,7 @@ class ErrorBoundary extends React.Component<
 
 // Firebase error handler for global errors
 const FirebaseErrorHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  useEffect(() => {
+  React.useEffect(() => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error("Unhandled promise rejection:", event.reason);
       // Don't crash for Firebase-related errors
@@ -96,8 +96,8 @@ const FirebaseErrorHandler: React.FC<{ children: React.ReactNode }> = ({ childre
 
 // Main App component with optimized context nesting
 function App() {
-  const [hasError, setHasError] = useState(false);
-  const [errorInfo, setErrorInfo] = useState<{ message: string } | null>(null);
+  const [hasError, setHasError] = React.useState(false);
+  const [errorInfo, setErrorInfo] = React.useState<{ message: string } | null>(null);
 
   // Render a simple error UI if React itself has issues
   if (hasError) {

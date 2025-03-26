@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import * as React from 'react';
 import { DayOfWeek, Period } from "@/context/ReminderContext";
 import { createInitialSchedule, generateProgressivePeriodTimes, doPeriodsOverlap, TermType } from './OnboardingUtils';
 import { toast } from "sonner";
@@ -57,10 +57,10 @@ interface OnboardingContextType {
   removeCategory: (index: number) => void;
 }
 
-const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
+const OnboardingContext = React.createContext<OnboardingContextType | undefined>(undefined);
 
 export const useOnboarding = () => {
-  const context = useContext(OnboardingContext);
+  const context = React.useContext(OnboardingContext);
   if (!context) {
     throw new Error('useOnboarding must be used within an OnboardingProvider');
   }
@@ -68,24 +68,24 @@ export const useOnboarding = () => {
 };
 
 export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
+  const [currentStep, setCurrentStep] = React.useState(0);
+  const [selectedDays, setSelectedDays] = React.useState<DayOfWeek[]>([]);
   
-  const [schoolYear, setSchoolYear] = useState(`${new Date().getFullYear()}-${new Date().getFullYear() + 1}`);
-  const [termType, setTermType] = useState<TermType>("semester");
-  const [termName, setTermName] = useState("Fall Semester");
+  const [schoolYear, setSchoolYear] = React.useState(`${new Date().getFullYear()}-${new Date().getFullYear() + 1}`);
+  const [termType, setTermType] = React.useState<TermType>("semester");
+  const [termName, setTermName] = React.useState("Fall Semester");
   
-  const [schoolStart, setSchoolStart] = useState("8:00 AM");
-  const [schoolEnd, setSchoolEnd] = useState("3:00 PM");
-  const [teacherArrival, setTeacherArrival] = useState("7:30 AM");
+  const [schoolStart, setSchoolStart] = React.useState("8:00 AM");
+  const [schoolEnd, setSchoolEnd] = React.useState("3:00 PM");
+  const [teacherArrival, setTeacherArrival] = React.useState("7:30 AM");
   
-  const [iepMeetingsEnabled, setIepMeetingsEnabled] = useState(false);
-  const [iepBeforeSchool, setIepBeforeSchool] = useState(false);
-  const [iepBeforeSchoolTime, setIepBeforeSchoolTime] = useState("7:00 AM");
-  const [iepAfterSchool, setIepAfterSchool] = useState(false);
-  const [iepAfterSchoolTime, setIepAfterSchoolTime] = useState("3:30 PM");
+  const [iepMeetingsEnabled, setIepMeetingsEnabled] = React.useState(false);
+  const [iepBeforeSchool, setIepBeforeSchool] = React.useState(false);
+  const [iepBeforeSchoolTime, setIepBeforeSchoolTime] = React.useState("7:00 AM");
+  const [iepAfterSchool, setIepAfterSchool] = React.useState(false);
+  const [iepAfterSchoolTime, setIepAfterSchoolTime] = React.useState("3:30 PM");
   
-  const [categories, setCategories] = useState([
+  const [categories, setCategories] = React.useState([
     "Materials/Set up",
     "Student support",
     "School events",
@@ -93,14 +93,14 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     "Administrative tasks"
   ]);
   
-  const [customScheduleVisibility, setCustomScheduleVisibility] = useState<Record<string, boolean>>({});
+  const [customScheduleVisibility, setCustomScheduleVisibility] = React.useState<Record<string, boolean>>({});
   
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = React.useState(false);
   
   const defaultPeriod1 = generateProgressivePeriodTimes(0);
   const defaultPeriod2 = generateProgressivePeriodTimes(1);
   
-  const [periods, setPeriods] = useState<Period[]>([
+  const [periods, setPeriods] = React.useState<Period[]>([
     { 
       id: "period-1", 
       name: "Period 1", 
