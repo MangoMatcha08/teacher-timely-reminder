@@ -25,6 +25,7 @@ const OnboardingControls: React.FC = () => {
   
   // Store auth functions locally with proper return type
   const [auth, setAuth] = React.useState({
+    // Ensure this always returns true to match the interface type
     setCompletedOnboarding: (): true => {
       console.log("Onboarding completed in offline mode");
       return true;
@@ -44,7 +45,11 @@ const OnboardingControls: React.FC = () => {
       
       if (authContext && authContext.setCompletedOnboarding) {
         setAuth({
-          setCompletedOnboarding: authContext.setCompletedOnboarding
+          // Use a wrapper function to ensure true is always returned
+          setCompletedOnboarding: (): true => {
+            authContext.setCompletedOnboarding();
+            return true;
+          }
         });
       }
     } catch (error) {

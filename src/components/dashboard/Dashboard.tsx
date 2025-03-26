@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Settings, Calendar } from "lucide-react";
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Button from "@/components/shared/Button";
 import TestControls from "./TestControls";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth";
 
 const Dashboard = () => {
   const { schoolSetup, reminders } = useReminders();
@@ -45,7 +44,6 @@ const Dashboard = () => {
     return filtered;
   }, [reminders, selectedCategory, selectedPriority]);
   
-  // Toggle test tools with double click on settings
   const handleSettingsDoubleClick = () => {
     setShowTestTools(prev => !prev);
     if (!showTestTools) {
@@ -70,7 +68,6 @@ const Dashboard = () => {
           </Link>
         </div>
         
-        {/* Move filters below header */}
         <div className="flex flex-wrap gap-2 items-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -139,7 +136,6 @@ const Dashboard = () => {
           </Link>
         </div>
         
-        {/* Firebase Test Controls */}
         {showTestTools && <TestControls />}
         
         <ReminderList reminders={filteredReminders} />

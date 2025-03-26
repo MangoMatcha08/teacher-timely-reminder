@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth";
 import DashboardComponent from "@/components/dashboard/Dashboard";
 import Layout from "@/components/shared/Layout";
 
