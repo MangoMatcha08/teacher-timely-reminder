@@ -9,7 +9,7 @@ import { toast } from "sonner";
 // Minimal implementation of auth state in case context fails
 const defaultAuthState = {
   isAuthenticated: false,
-  isInitialized: true, // Changed to true so UI doesn't show loading indefinitely
+  isInitialized: true, // Start with true to avoid loading state if context fails
   hasCompletedOnboarding: false,
   resetOnboarding: () => {}
 };
@@ -19,12 +19,14 @@ const Auth = () => {
   const [authState, setAuthState] = useState(defaultAuthState);
   const navigate = useNavigate();
   
-  // Initialize auth state safely
+  // Safely initialize auth state
   useEffect(() => {
     try {
-      // Try to get auth from context
+      // Get auth from context
       const auth = useAuth();
-      setAuthState(auth);
+      if (auth) {
+        setAuthState(auth);
+      }
     } catch (error) {
       console.error("Error accessing auth context:", error);
       setAuthError("There was a problem connecting to the authentication service. Please try using the test account option.");
@@ -33,15 +35,16 @@ const Auth = () => {
   
   const { isAuthenticated, isInitialized, hasCompletedOnboarding, resetOnboarding } = authState;
   
+  // Handle navigation based on auth state
   useEffect(() => {
-    if (isInitialized && isAuthenticated) {
+    if (isInitialized && isAuthenticated && !authError) {
       if (hasCompletedOnboarding) {
         navigate("/dashboard");
       } else {
         navigate("/onboarding");
       }
     }
-  }, [isAuthenticated, isInitialized, hasCompletedOnboarding, navigate]);
+  }, [isAuthenticated, isInitialized, hasCompletedOnboarding, navigate, authError]);
   
   const handleResetOnboarding = () => {
     try {
@@ -108,6 +111,7 @@ const Auth = () => {
     );
   }
   
+  // Default case: show auth screen
   return <AuthScreen />;
 };
 
