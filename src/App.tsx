@@ -16,27 +16,47 @@ import Settings from './pages/Settings'
 import { ThemeProvider } from 'next-themes'
 
 function App() {
-  return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <BrowserRouter>
-        <AuthProvider>
-          <ReminderProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/create-reminder" element={<CreateReminder />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </ReminderProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </ThemeProvider>
-  )
+  // Wrap the application in error boundaries to prevent entire app from crashing
+  try {
+    return (
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <BrowserRouter>
+          <AuthProvider>
+            <ReminderProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/schedule" element={<Schedule />} />
+                <Route path="/create-reminder" element={<CreateReminder />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Toaster />
+            </ReminderProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
+    )
+  } catch (error) {
+    console.error("Critical application error:", error)
+    // Return a minimal error UI that doesn't depend on any providers
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md">
+          <h2 className="text-xl font-bold text-red-600">Something went wrong</h2>
+          <p className="mt-2 text-gray-600">The application encountered an error. Please refresh the page.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    )
+  }
 }
 
 export default App
