@@ -1,10 +1,13 @@
 import { DayOfWeek, Reminder, ReminderState, SchoolSetup, Term } from './types';
 import * as SupabaseService from "@/services/supabase";
 import { User } from '@supabase/supabase-js';
+import { getCurrentDayOfWeek } from "@/services/supabase/reminders";
+import { getReminders } from "@/services/supabase/reminders";
+import { saveReminder } from "@/services/supabase/reminders";
 
 // Helper function to get the current day code (M, T, W, Th, F)
 export const getTodayDayCode = (): DayOfWeek => {
-  return SupabaseService.getCurrentDayOfWeek();
+  return getCurrentDayOfWeek();
 };
 
 // Function to create default term
@@ -104,11 +107,12 @@ export const saveToFirebase = async (
   
   try {
     for (const reminder of data.reminders) {
-      await SupabaseService.saveReminder(reminder, user.id);
+      await saveReminder(reminder, user.id);
     }
     
     if (data.schoolSetup) {
-      await SupabaseService.saveSchoolSetup(user.id, data.schoolSetup);
+      const { saveSchoolSetup } = await import("@/services/supabase/schoolSetup");
+      await saveSchoolSetup(user.id, data.schoolSetup);
     }
   } catch (error) {
     console.error("Error saving data to Supabase:", error);
@@ -125,8 +129,9 @@ export const loadFromFirebase = async (
   }
   
   try {
-    const cloudReminders = await SupabaseService.getUserReminders(user.id);
-    const cloudSetup = await SupabaseService.getSchoolSetup(user.id);
+    const cloudReminders = await getReminders(user.id, undefined);
+    const { getSchoolSetup } = await import("@/services/supabase/schoolSetup");
+    const cloudSetup = await getSchoolSetup(user.id);
     
     return {
       reminders: cloudReminders,
